@@ -15,7 +15,10 @@ ${hours} hours/day
 Duration:
 ${duration}
 
-Return ONLY valid JSON.
+IMPORTANT: Return ONLY valid JSON.
+Do NOT include markdown.
+Do NOT include explanations.
+Do NOT include \`\`\`json blocks.
 
 Requirements:
 - Create learning tracks.
@@ -83,7 +86,31 @@ Output JSON format:
     throw new Error('Empty response from Gemini');
   }
 
-  // Strip markdown code fences if present (e.g. ```json ... ```)
-  const clean = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-  return JSON.parse(clean);
+  console.log("Raw Gemini Response:", text);
+
+  // Clean the response before JSON.parse()
+  const cleaned = text
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (parseError) {
+    console.warn("Standard JSON parse failed, trying fallback parser...", parseError);
+    // Fallback parser: Find the first "{" and the last "}" and extract only the JSON portion
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const jsonPortion = cleaned.substring(firstBrace, lastBrace + 1);
+      try {
+        return JSON.parse(jsonPortion);
+      } catch (fallbackError) {
+        console.error("Fallback JSON parse failed:", fallbackError);
+        throw new Error(`JSON parsing failed: ${fallbackError.message}. Raw response snippet: ${text.substring(0, 150)}...`);
+      }
+    } else {
+      throw new Error(`JSON parsing failed: ${parseError.message}. No matching braces found in response.`);
+    }
+  }
 };

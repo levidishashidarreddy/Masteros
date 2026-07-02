@@ -161,12 +161,11 @@ const Workspaces = () => {
     } catch (err) {
       // Don't show error if the request was intentionally aborted (modal closed)
       if (err.name === 'AbortError') return;
-      console.error("Gemini roadmap generation error:", err);
       const isKeyError = err.message.includes('API_KEY') || err.message.includes('403') || err.message.includes('401');
       setAiError(
         isKeyError
           ? 'API key is missing or invalid. Please set VITE_GEMINI_API_KEY in your .env file.'
-          : 'Unable to generate roadmap. Please check your internet connection and try again.'
+          : `Failed to generate roadmap: ${err.message}`
       );
     } finally {
       abortControllerRef.current = null;
