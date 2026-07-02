@@ -1,0 +1,23 @@
+[
+  { "id": "python", "name": "Python" },
+  { "id": "java", "name": "Java" },
+  { "id": "javascript", "name": "JavaScript" },
+  { "id": "c", "name": "C" },
+  { "id": "cpp", "name": "C++" },
+  { "id": "sql", "name": "SQL" },
+  { "id": "react", "name": "React" },
+  { "id": "nodejs", "name": "NodeJS" },
+  { "id": "typescript", "name": "TypeScript" },
+  { "id": "go", "name": "Go" },
+  { "id": "rust", "name": "Rust" },
+  { "id": "nextjs", "name": "NextJS" },
+  { "id": "vue", "name": "Vue" },
+  { "id": "angular", "name": "Angular" },
+  { "id": "django", "name": "Django" },
+  { "id": "spring_boot", "name": "Spring Boot" },
+  { "id": "docker", "name": "Docker" },
+  { "id": "kubernetes", "name": "Kubernetes" },
+  { "id": "aws", "name": "AWS" },
+  { "id": "flutter", "name": "Flutter" },
+  { "id": "react_native", "name": "React Native" }
+]

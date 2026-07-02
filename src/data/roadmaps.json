@@ -1,0 +1,217 @@
+{
+  "JavaScript": {
+    "title": "JavaScript",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "js-b-1", "title": "Variables" },
+          { "id": "js-b-2", "title": "Data Types" },
+          { "id": "js-b-3", "title": "Functions" }
+        ]
+      },
+      {
+        "id": "intermediate",
+        "title": "Intermediate",
+        "subtopics": [
+          { "id": "js-i-1", "title": "Arrays" },
+          { "id": "js-i-2", "title": "Objects" },
+          { "id": "js-i-3", "title": "DOM" }
+        ]
+      },
+      {
+        "id": "advanced",
+        "title": "Advanced",
+        "subtopics": [
+          { "id": "js-a-1", "title": "Async JS" },
+          { "id": "js-a-2", "title": "Fetch API" },
+          { "id": "js-a-3", "title": "Projects" }
+        ]
+      }
+    ]
+  },
+  "Python": {
+    "title": "Python",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "py-b-1", "title": "Variables" },
+          { "id": "py-b-2", "title": "Data Types" },
+          { "id": "py-b-3", "title": "Loops & Conditionals" }
+        ]
+      },
+      {
+        "id": "oop",
+        "title": "Object Oriented Programming",
+        "subtopics": [
+          { "id": "py-o-1", "title": "Classes & Objects" },
+          { "id": "py-o-2", "title": "Inheritance" },
+          { "id": "py-o-3", "title": "Polymorphism" }
+        ]
+      }
+    ]
+  },
+  "Frontend": {
+    "title": "Frontend",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "fe-b-1", "title": "HTML5 Semantic Tags" },
+          { "id": "fe-b-2", "title": "CSS3 Grid & Flexbox" },
+          { "id": "fe-b-3", "title": "JavaScript DOM" }
+        ]
+      },
+      {
+        "id": "frameworks",
+        "title": "Frameworks",
+        "subtopics": [
+          { "id": "fe-f-1", "title": "React Components" },
+          { "id": "fe-f-2", "title": "State Management" },
+          { "id": "fe-f-3", "title": "React Router" }
+        ]
+      }
+    ]
+  },
+  "Backend": {
+    "title": "Backend",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "be-b-1", "title": "NodeJS Basics" },
+          { "id": "be-b-2", "title": "Express Routing" },
+          { "id": "be-b-3", "title": "APIs and HTTP Methods" }
+        ]
+      },
+      {
+        "id": "db",
+        "title": "Databases",
+        "subtopics": [
+          { "id": "be-d-1", "title": "SQL Databases" },
+          { "id": "be-d-2", "title": "NoSQL MongoDB" }
+        ]
+      }
+    ]
+  },
+  "Full Stack": {
+    "title": "Full Stack",
+    "topics": [
+      {
+        "id": "frontend",
+        "title": "Frontend",
+        "subtopics": [
+          { "id": "fs-f-1", "title": "React UI" },
+          { "id": "fs-f-2", "title": "TailwindCSS Styling" }
+        ]
+      },
+      {
+        "id": "backend",
+        "title": "Backend",
+        "subtopics": [
+          { "id": "fs-b-1", "title": "NodeJS Server" },
+          { "id": "fs-b-2", "title": "MongoDB Database" }
+        ]
+      }
+    ]
+  },
+  "DSA": {
+    "title": "DSA",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "dsa-b-1", "title": "Arrays & Lists" },
+          { "id": "dsa-b-2", "title": "Strings" }
+        ]
+      },
+      {
+        "id": "ds",
+        "title": "Data Structures",
+        "subtopics": [
+          { "id": "dsa-d-1", "title": "Stacks & Queues" },
+          { "id": "dsa-d-2", "title": "Trees & Graphs" }
+        ]
+      },
+      {
+        "id": "algo",
+        "title": "Algorithms",
+        "subtopics": [
+          { "id": "dsa-a-1", "title": "Sorting & Searching" },
+          { "id": "dsa-a-2", "title": "Recursion & Backtracking" },
+          { "id": "dsa-a-3", "title": "Dynamic Programming" }
+        ]
+      }
+    ]
+  },
+  "Java": {
+    "title": "Java",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "jv-b-1", "title": "Java Syntax & Classes" },
+          { "id": "jv-b-2", "title": "Data Types & Variables" }
+        ]
+      },
+      {
+        "id": "oop",
+        "title": "Object Oriented Programming",
+        "subtopics": [
+          { "id": "jv-o-1", "title": "Inheritance & Polymorphism" },
+          { "id": "jv-o-2", "title": "Interfaces & Abstract Classes" }
+        ]
+      }
+    ]
+  },
+  "AI/ML": {
+    "title": "AI/ML",
+    "topics": [
+      {
+        "id": "math",
+        "title": "Mathematics",
+        "subtopics": [
+          { "id": "ai-m-1", "title": "Linear Algebra" },
+          { "id": "ai-m-2", "title": "Calculus" },
+          { "id": "ai-m-3", "title": "Probability & Statistics" }
+        ]
+      },
+      {
+        "id": "ml",
+        "title": "Machine Learning",
+        "subtopics": [
+          { "id": "ai-l-1", "title": "Supervised Learning" },
+          { "id": "ai-l-2", "title": "Unsupervised Learning" }
+        ]
+      }
+    ]
+  },
+  "DevOps": {
+    "title": "DevOps",
+    "topics": [
+      {
+        "id": "basics",
+        "title": "Basics",
+        "subtopics": [
+          { "id": "do-b-1", "title": "Linux & Bash" },
+          { "id": "do-b-2", "title": "Git Version Control" }
+        ]
+      },
+      {
+        "id": "container",
+        "title": "Containers & Orchestration",
+        "subtopics": [
+          { "id": "do-c-1", "title": "Docker Containers" },
+          { "id": "do-c-2", "title": "Kubernetes Orchestration" }
+        ]
+      }
+    ]
+  }
+}

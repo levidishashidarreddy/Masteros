@@ -1,0 +1,8 @@
+[
+  { "id": "fullstack", "name": "Become Full Stack Developer" },
+  { "id": "dsa", "name": "Learn DSA" },
+  { "id": "startup", "name": "Build Startup" },
+  { "id": "internship", "name": "Get Internship" },
+  { "id": "placements", "name": "Crack Placements" },
+  { "id": "ai", "name": "Learn AI" }
+]

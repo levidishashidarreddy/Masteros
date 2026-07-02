@@ -1,0 +1,40 @@
+[
+  { "id": "python", "name": "Python", "category": "Programming" },
+  { "id": "java", "name": "Java", "category": "Programming" },
+  { "id": "cpp", "name": "C++", "category": "Programming" },
+  { "id": "javascript", "name": "JavaScript", "category": "Programming" },
+  { "id": "c", "name": "C", "category": "Programming" },
+  { "id": "golang", "name": "Go", "category": "Programming" },
+  { "id": "rust", "name": "Rust", "category": "Programming" },
+  { "id": "typescript", "name": "TypeScript", "category": "Programming" },
+  
+  { "id": "react", "name": "React", "category": "Web Development" },
+  { "id": "nextjs", "name": "Next.js", "category": "Web Development" },
+  { "id": "nodejs", "name": "Node.js", "category": "Web Development" },
+  { "id": "html_css", "name": "HTML/CSS", "category": "Web Development" },
+  { "id": "vue", "name": "Vue", "category": "Web Development" },
+  { "id": "angular", "name": "Angular", "category": "Web Development" },
+  
+  { "id": "mongodb", "name": "MongoDB", "category": "Databases" },
+  { "id": "postgresql", "name": "PostgreSQL", "category": "Databases" },
+  { "id": "mysql", "name": "MySQL", "category": "Databases" },
+  { "id": "sqlite", "name": "SQLite", "category": "Databases" },
+  
+  { "id": "docker", "name": "Docker", "category": "DevOps" },
+  { "id": "kubernetes", "name": "Kubernetes", "category": "DevOps" },
+  { "id": "aws", "name": "AWS", "category": "DevOps" },
+  { "id": "github_actions", "name": "GitHub Actions", "category": "DevOps" },
+  
+  { "id": "tensorflow", "name": "TensorFlow", "category": "AI/ML" },
+  { "id": "pytorch", "name": "PyTorch", "category": "AI/ML" },
+  { "id": "scikit_learn", "name": "Scikit-Learn", "category": "AI/ML" },
+  { "id": "nlp", "name": "NLP", "category": "AI/ML" },
+  
+  { "id": "flutter", "name": "Flutter", "category": "Mobile" },
+  { "id": "react_native", "name": "React Native", "category": "Mobile" },
+  { "id": "swift", "name": "Swift", "category": "Mobile" },
+  
+  { "id": "git", "name": "Git", "category": "Tools" },
+  { "id": "postman", "name": "Postman", "category": "Tools" },
+  { "id": "figma", "name": "Figma", "category": "Tools" }
+]
