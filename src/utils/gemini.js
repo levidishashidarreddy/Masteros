@@ -1,3 +1,20 @@
+function extractJSON(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    if (text[i] === '}') depth--;
+
+    if (depth === 0) {
+      return text.slice(start, i + 1);
+    }
+  }
+
+  return null;
+}
+
 export const generateRoadmapFromGemini = async (goal, level, hours, duration, signal = null) => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDemoKeyReplaceMeWithReal';
   
@@ -15,10 +32,11 @@ ${hours} hours/day
 Duration:
 ${duration}
 
-IMPORTANT: Return ONLY valid JSON.
-Do NOT include markdown.
-Do NOT include explanations.
-Do NOT include \`\`\`json blocks.
+IMPORTANT:
+Return exactly one JSON object.
+Do not include markdown.
+Do not include explanations.
+Do not include extra text after the JSON.
 
 Requirements:
 - Create learning tracks.
@@ -86,6 +104,7 @@ Output JSON format:
     throw new Error('Empty response from Gemini');
   }
 
+  console.log("Raw Gemini Response Length:", text.length);
   console.log("Raw Gemini Response:", text);
 
   // Clean the response before JSON.parse()
@@ -94,23 +113,42 @@ Output JSON format:
     .replace(/```/g, "")
     .trim();
 
-  try {
-    return JSON.parse(cleaned);
-  } catch (parseError) {
-    console.warn("Standard JSON parse failed, trying fallback parser...", parseError);
-    // Fallback parser: Find the first "{" and the last "}" and extract only the JSON portion
-    const firstBrace = cleaned.indexOf('{');
-    const lastBrace = cleaned.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      const jsonPortion = cleaned.substring(firstBrace, lastBrace + 1);
-      try {
-        return JSON.parse(jsonPortion);
-      } catch (fallbackError) {
-        console.error("Fallback JSON parse failed:", fallbackError);
-        throw new Error(`JSON parsing failed: ${fallbackError.message}. Raw response snippet: ${text.substring(0, 150)}...`);
-      }
-    } else {
-      throw new Error(`JSON parsing failed: ${parseError.message}. No matching braces found in response.`);
-    }
+  const extracted = extractJSON(cleaned);
+  if (!extracted) {
+    throw new Error("No valid JSON object found in response");
   }
+
+  console.log("Extracted JSON Length:", extracted.length);
+  console.log("Extracted JSON:", extracted);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(extracted);
+  } catch (parseError) {
+    console.error("JSON parsing failed:", parseError);
+    throw new Error(`JSON parsing failed: ${parseError.message}`);
+  }
+
+  console.log("Parsed JSON:", parsed);
+
+  // Validation: Ensure tracks, projects, milestones exist
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error("Parsed response is not a valid JSON object");
+  }
+  if (!parsed.tracks || !Array.isArray(parsed.tracks)) {
+    throw new Error("Missing 'tracks' array in generated JSON");
+  }
+  parsed.tracks.forEach((track, index) => {
+    if (!track.name) {
+      throw new Error(`Track at index ${index} is missing a name`);
+    }
+    if (!track.projects) {
+      throw new Error(`Track at index ${index} is missing projects`);
+    }
+    if (!track.milestones) {
+      throw new Error(`Track at index ${index} is missing milestones`);
+    }
+  });
+
+  return parsed;
 };

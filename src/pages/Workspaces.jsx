@@ -165,7 +165,7 @@ const Workspaces = () => {
       setAiError(
         isKeyError
           ? 'API key is missing or invalid. Please set VITE_GEMINI_API_KEY in your .env file.'
-          : `Failed to generate roadmap: ${err.message}`
+          : 'Please try again later. If this issue persists, the AI service is under maintenance and our engineering team will look into it.'
       );
     } finally {
       abortControllerRef.current = null;
