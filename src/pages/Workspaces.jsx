@@ -58,7 +58,7 @@ const Workspaces = () => {
 
   // Custom roadmaps currently being customized
   const [activeRoadmaps, setActiveRoadmaps] = useState([]);
-  
+
   // Custom & search path builders
   const [customPathText, setCustomPathText] = useState('');
 
@@ -71,13 +71,15 @@ const Workspaces = () => {
   const [aiLevel, setAiLevel] = useState('Beginner');
   const [aiHours, setAiHours] = useState('2');
   const [aiDuration, setAiDuration] = useState('6 months');
-  
+
   const [aiRawData, setAiRawData] = useState(null);
   const [aiSelectedTracks, setAiSelectedTracks] = useState([]);
   const [aiConfiguredRoadmap, setAiConfiguredRoadmap] = useState([]);
   const [aiSelectedProjects, setAiSelectedProjects] = useState([]);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiStage, setAiStage] = useState('');
   const abortControllerRef = useRef(null);
 
   // Full reset of modal + AI state — called on close and cancel
@@ -107,7 +109,47 @@ const Workspaces = () => {
     setAiError('');
     setErrors({});
   };
+  const generateWithRetry = async (
+    subject,
+    level,
+    hours,
+    duration,
+    signal,
+    retries = 3
+  ) => {
 
+    let lastError;
+
+    for (let i = 1; i <= retries; i++) {
+      try {
+        setAiStage(`🔄 Attempt ${i}/${retries}`);
+
+        return await generateRoadmapFromGemini(
+          subject,
+          level,
+          hours,
+          duration,
+          signal
+        );
+
+      } catch (err) {
+        lastError = err;
+
+        if (err.name === "AbortError")
+          throw err;
+
+        if (i < retries) {
+          setAiStage(`⚠️ Retry ${i}/${retries}`);
+
+          await new Promise(resolve =>
+            setTimeout(resolve, i * 2000)
+          );
+        }
+      }
+    }
+
+    throw lastError;
+  };
   const handleStartAiGeneration = async () => {
     if (!aiSubject.trim()) {
       setErrors(prev => ({ ...prev, aiSubject: 'Please enter what you want to learn.' }));
@@ -116,17 +158,98 @@ const Workspaces = () => {
     setErrors({});
     setAiGenerating(true);
     setAiError('');
+    const cacheKey =
+      `roadmap_${aiSubject.trim().toLowerCase()
+      }_${aiLevel
+      }_${aiHours
+      }_${aiDuration
+      }`;
+
+    // Check cache first
+    const cachedRoadmap = localStorage.getItem(cacheKey);
+
+    if (cachedRoadmap) {
+      console.log("⚡ Loaded roadmap from cache");
+      setAiProgress(100);
+      setAiStage('⚡ Loaded from cache');
+
+      const data = JSON.parse(cachedRoadmap);
+
+      setAiRawData(data);
+
+      const initialConfig = data.tracks.map((track, idx) => ({
+        id: `${track.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${idx}`,
+        title: track.name,
+        projects: track.projects || [],
+        milestones: track.milestones || [],
+        topics: (track.topics || []).map((topic, tIdx) => ({
+          id: `topic-${Date.now()}-${tIdx}-${Math.random()}`,
+          title: topic.name,
+          expanded: true,
+          subtopics: (topic.subtopics || []).map((sub, sIdx) => ({
+            id: `sub-${Date.now()}-${sIdx}-${Math.random()}`,
+            title: typeof sub === 'string' ? sub : sub.name,
+            done: false
+          }))
+        }))
+      }));
+
+      setAiConfiguredRoadmap(initialConfig);
+      setAiSelectedTracks(initialConfig.map(t => t.title));
+
+      setAiProgress(100);
+      setAiStage('⚡ Loaded from cache');
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 1000)
+      );
+
+      setAiStep(2);
+      setAiGenerating(false);
+
+      return;
+    }
+    setAiProgress(10);
+    setAiStage('🧠 Understanding your goal');
+
+    setTimeout(() => {
+      setAiProgress(30);
+      setAiStage('📚 Creating learning tracks');
+    }, 1500);
+
+    setTimeout(() => {
+      setAiProgress(60);
+      setAiStage('📝 Generating topics');
+    }, 3000);
+
+    setTimeout(() => {
+      setAiProgress(85);
+      setAiStage('🚀 Creating projects');
+    }, 4500);
 
     // Create a new AbortController for this request
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     try {
-      const data = await generateRoadmapFromGemini(aiSubject, aiLevel, aiHours, aiDuration, controller.signal);
+      const data = await generateWithRetry(
+        aiSubject,
+        aiLevel,
+        aiHours,
+        aiDuration,
+        controller.signal
+      );
       if (!data || !data.tracks || data.tracks.length === 0) {
         throw new Error("Invalid roadmap JSON returned");
       }
       setAiRawData(data);
+      // Save roadmap to cache
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify(data)
+      );
+
+      console.log("💾 Saved roadmap to cache");
 
       // Initialize all tracks as selected
       const initialConfig = data.tracks.map((track, idx) => ({
@@ -148,7 +271,7 @@ const Workspaces = () => {
 
       setAiConfiguredRoadmap(initialConfig);
       setAiSelectedTracks(initialConfig.map(t => t.title));
-      
+
       // Auto-populate Title and Desc
       if (!newTitle.trim()) {
         setNewTitle(aiSubject);
@@ -156,6 +279,12 @@ const Workspaces = () => {
       if (!newDesc.trim()) {
         setNewDesc(`AI Generated Track: ${aiSubject} (${aiLevel} level, ${aiHours}h/day for ${aiDuration})`);
       }
+      setAiProgress(100);
+      setAiStage('✅ Finalizing roadmap');
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 1500)
+      );
 
       setAiStep(2);
     } catch (err) {
@@ -169,7 +298,10 @@ const Workspaces = () => {
       );
     } finally {
       abortControllerRef.current = null;
+
       setAiGenerating(false);
+      setAiProgress(0);
+      setAiStage('');
     }
   };
 
@@ -404,7 +536,7 @@ const Workspaces = () => {
 
     if (creationMethod === 'ai') {
       const filteredRoadmaps = aiConfiguredRoadmap.filter(track => aiSelectedTracks.includes(track.title));
-      
+
       const tag = filteredRoadmaps.map(r => r.title.slice(0, 4).toUpperCase()).join(' · ');
 
       const wsId = `ws-${Date.now()}`;
@@ -473,7 +605,7 @@ const Workspaces = () => {
 
       await addWorkspace(newWs);
     }
-    
+
     // Clear & close via full reset
     resetModalState();
   };
@@ -494,9 +626,9 @@ const Workspaces = () => {
           else if (diffMins > 0) timeAgo = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
 
           const colorClass = ws.colorTheme === 'primary' ? 'bg-primary/10 border border-primary/20 text-primary'
-                           : ws.colorTheme === 'secondary' ? 'bg-secondary/10 border border-secondary/20 text-secondary'
-                           : ws.colorTheme === 'tertiary' ? 'bg-tertiary/10 border border-tertiary/20 text-tertiary'
-                           : 'bg-white/15 border border-white/20 text-white';
+            : ws.colorTheme === 'secondary' ? 'bg-secondary/10 border border-secondary/20 text-secondary'
+              : ws.colorTheme === 'tertiary' ? 'bg-tertiary/10 border border-tertiary/20 text-tertiary'
+                : 'bg-white/15 border border-white/20 text-white';
 
           list.push({
             id: t.id,
@@ -516,7 +648,7 @@ const Workspaces = () => {
 
   // Get active workspaces sorted by custom visibility order
   const featuredWorkspacesOrder = userProfile?.featuredWorkspaces || [];
-  
+
   const sortedWorkspaces = [...workspaces].sort((a, b) => {
     const idxA = featuredWorkspacesOrder.indexOf(a.id);
     const idxB = featuredWorkspacesOrder.indexOf(b.id);
@@ -569,11 +701,10 @@ const Workspaces = () => {
               <button
                 key={idx}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-5 py-2 rounded-full font-label-md text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer ${
-                  activeFilter === filter
-                    ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
-                    : 'bg-[#111118] text-on-surface-variant border border-white/5 hover:text-white'
-                }`}
+                className={`px-5 py-2 rounded-full font-label-md text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer ${activeFilter === filter
+                  ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
+                  : 'bg-[#111118] text-on-surface-variant border border-white/5 hover:text-white'
+                  }`}
               >
                 {filter}
               </button>
@@ -583,7 +714,7 @@ const Workspaces = () => {
           {/* Workspaces Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {/* Create new workspace card */}
-            <div 
+            <div
               onClick={() => setIsModalOpen(true)}
               className="h-[280px] rounded-xl border border-dashed border-white/10 bg-[#111118]/40 flex flex-col items-center justify-center gap-4 hover:border-primary/50 hover:bg-primary-container/10 cursor-pointer transition-all group"
             >
@@ -599,9 +730,9 @@ const Workspaces = () => {
             {filteredWorkspaces.length === 0 ? (
               <div className="col-span-1 md:col-span-1 lg:col-span-2 flex items-center justify-center">
                 <div className="w-full">
-                  <EmptyState 
-                    icon="layers" 
-                    title="Create your first workspace" 
+                  <EmptyState
+                    icon="layers"
+                    title="Create your first workspace"
                     description="Create your first workspace to start learning and building."
                     actionLabel="Create Workspace"
                     onAction={() => setIsModalOpen(true)}
@@ -644,9 +775,9 @@ const Workspaces = () => {
             ) : (
               <div className="bg-[#111118] border border-white/5 rounded-xl divide-y divide-white/5">
                 {workspaceLogs.slice(0, 5).map((log) => (
-                  <div 
-                    key={log.id} 
-                    className="p-5 flex items-center gap-4 hover:bg-white/[0.01] transition-colors cursor-pointer" 
+                  <div
+                    key={log.id}
+                    className="p-5 flex items-center gap-4 hover:bg-white/[0.01] transition-colors cursor-pointer"
                     onClick={() => navigate(`/workspaces/${log.wsId}`)}
                   >
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center ${log.colorClass}`}>
@@ -716,9 +847,8 @@ const Workspaces = () => {
                     setCreationMethod('manual');
                     setErrors(prev => ({ ...prev, ai: '', roadmaps: '' }));
                   }}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    creationMethod === 'manual' ? 'bg-primary text-white' : 'text-on-surface-variant hover:text-white'
-                  }`}
+                  className={`flex-1 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${creationMethod === 'manual' ? 'bg-primary text-white' : 'text-on-surface-variant hover:text-white'
+                    }`}
                 >
                   Manual
                 </button>
@@ -728,9 +858,8 @@ const Workspaces = () => {
                     setCreationMethod('ai');
                     setErrors(prev => ({ ...prev, roadmaps: '' }));
                   }}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    creationMethod === 'ai' ? 'bg-primary text-white' : 'text-on-surface-variant hover:text-white'
-                  }`}
+                  className={`flex-1 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${creationMethod === 'ai' ? 'bg-primary text-white' : 'text-on-surface-variant hover:text-white'
+                    }`}
                 >
                   AI Generated
                 </button>
@@ -752,11 +881,10 @@ const Workspaces = () => {
                         key={path}
                         type="button"
                         onClick={() => handleSelectPath(path)}
-                        className={`py-2 px-1 text-[10px] font-bold uppercase rounded-lg border text-center transition-all cursor-pointer truncate ${
-                          active
-                            ? 'border-primary bg-primary/25 text-white'
-                            : 'border-white/5 bg-transparent text-on-surface-variant hover:text-white'
-                        }`}
+                        className={`py-2 px-1 text-[10px] font-bold uppercase rounded-lg border text-center transition-all cursor-pointer truncate ${active
+                          ? 'border-primary bg-primary/25 text-white'
+                          : 'border-white/5 bg-transparent text-on-surface-variant hover:text-white'
+                          }`}
                       >
                         {path}
                       </button>
@@ -859,9 +987,8 @@ const Workspaces = () => {
                                       onClick={() => handleToggleSubtopic(rIdx, tIdx, sIdx)}
                                       className="flex items-center gap-2 cursor-pointer select-none text-on-surface hover:text-white"
                                     >
-                                      <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
-                                        sub.done ? 'border-primary bg-primary' : 'border-white/10 group-hover:border-primary/50'
-                                      }`}>
+                                      <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${sub.done ? 'border-primary bg-primary' : 'border-white/10 group-hover:border-primary/50'
+                                        }`}>
                                         {sub.done && <span className="material-symbols-outlined text-white text-[8px] font-bold">check</span>}
                                       </div>
                                       <span className={sub.done ? 'line-through text-on-surface-variant' : 'font-medium'}>
@@ -997,11 +1124,10 @@ const Workspaces = () => {
                             setAiSubject(chip);
                             if (errors.aiSubject) setErrors(prev => ({ ...prev, aiSubject: '' }));
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
-                            aiSubject === chip
-                              ? 'bg-primary/20 border-primary text-white scale-[1.03]'
-                              : 'bg-white/5 border-transparent text-on-surface-variant hover:text-white'
-                          }`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${aiSubject === chip
+                            ? 'bg-primary/20 border-primary text-white scale-[1.03]'
+                            : 'bg-white/5 border-transparent text-on-surface-variant hover:text-white'
+                            }`}
                         >
                           {chip}
                         </button>
@@ -1064,6 +1190,32 @@ const Workspaces = () => {
                     >
                       {aiGenerating ? 'Generating learning tracks...' : 'Generate Roadmap'}
                     </Button>
+                    {aiGenerating && (
+                      <div className="mt-4 p-4 rounded-xl bg-[#111118] border border-white/5">
+
+                        <div className="flex justify-between mb-2">
+                          <span className="text-[11px] text-white font-bold">
+                            {aiStage}
+                          </span>
+
+                          <span className="text-[11px] text-primary font-bold">
+                            {aiProgress}%
+                          </span>
+                        </div>
+
+                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-700"
+                            style={{ width: `${aiProgress}%` }}
+                          />
+                        </div>
+
+                        <p className="mt-3 text-[10px] text-on-surface-variant">
+                          Building your personalized roadmap...
+                        </p>
+
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1083,14 +1235,12 @@ const Workspaces = () => {
                         <div
                           key={track.title}
                           onClick={() => handleToggleTrack(track.title)}
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                            checked ? 'bg-primary-container/10 border-primary' : 'bg-transparent border-white/5 hover:border-white/10'
-                          }`}
+                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${checked ? 'bg-primary-container/10 border-primary' : 'bg-transparent border-white/5 hover:border-white/10'
+                            }`}
                         >
                           <span className="text-[11px] font-bold text-white">{track.title}</span>
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                            checked ? 'border-primary bg-primary' : 'border-white/10'
-                          }`}>
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${checked ? 'border-primary bg-primary' : 'border-white/10'
+                            }`}>
                             {checked && <span className="material-symbols-outlined text-white text-[10px] font-bold">check</span>}
                           </div>
                         </div>
@@ -1298,17 +1448,15 @@ const Workspaces = () => {
                                 setAiSelectedProjects([...aiSelectedProjects, project.name]);
                               }
                             }}
-                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                              checked ? 'bg-primary-container/10 border-primary' : 'bg-transparent border-white/5 hover:border-white/10'
-                            }`}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${checked ? 'bg-primary-container/10 border-primary' : 'bg-transparent border-white/5 hover:border-white/10'
+                              }`}
                           >
                             <div>
                               <span className="text-[11px] font-bold text-white block">{project.name}</span>
                               <span className="text-[8px] text-primary uppercase font-bold tracking-wider">{project.trackTitle}</span>
                             </div>
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                              checked ? 'border-primary bg-primary' : 'border-white/10'
-                            }`}>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${checked ? 'border-primary bg-primary' : 'border-white/10'
+                              }`}>
                               {checked && <span className="material-symbols-outlined text-white text-[10px] font-bold">check</span>}
                             </div>
                           </div>
