@@ -16,6 +16,24 @@ const AVATAR_PRESETS = [
   { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
 ];
 
+const formatLastSeen = (timestamp) => {
+  if (!timestamp) return 'Offline';
+  const diffMs = Date.now() - new Date(timestamp).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
+const isOnlyEmojis = (str) => {
+  if (!str) return false;
+  const emojiRegex = /^(\s*[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2000}-\u{32FF}\u{1F200}-\u{1F2FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F900}-\u{1F9FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{1FC00}-\u{1FFFD}]\s*)+$/u;
+  return emojiRegex.test(str);
+};
+
 const Friends = () => {
   const {
     userId,
@@ -33,7 +51,11 @@ const Friends = () => {
     userProfile,
     tasks,
     workspaces,
-    loading
+    loading,
+    presenceStates,
+    typingStates,
+    setMyTypingStatus,
+    markMessagesAsSeen
   } = useContext(TaskContext);
 
   const myName = userProfile?.fullName || 'User';
@@ -85,7 +107,12 @@ const Friends = () => {
   // Chat window state
   const [activeChatFriendId, setActiveChatFriendId] = useState(null);
   const [chatMessageText, setChatMessageText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const typingTimeoutRef = useRef(null);
   const chatBottomRef = useRef(null);
 
   // Scroll to chat bottom
@@ -94,6 +121,13 @@ const Friends = () => {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chats, activeChatFriendId]);
+
+  // Mark messages as seen when chat opens or gets new messages
+  useEffect(() => {
+    if (activeChatFriendId) {
+      markMessagesAsSeen(activeChatFriendId);
+    }
+  }, [activeChatFriendId, chats, markMessagesAsSeen]);
 
   // Handle searching users
   const handleSearchChange = (e) => {
@@ -112,32 +146,79 @@ const Friends = () => {
     setSearchResults(filtered);
   };
 
-  // Chat reply typing simulator trigger
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!chatMessageText.trim() || !activeChatFriendId) return;
-
-    sendChatMessage(activeChatFriendId, chatMessageText.trim());
-    setChatMessageText('');
-
-    // Simulate friend typing indicator after 1 sec
-    setTimeout(() => {
-      setIsTyping(true);
-    }, 1000);
-    setTimeout(() => {
-      setIsTyping(false);
-    }, 2800);
+  // Typing change and keystroke listeners
+  const handleInputChange = (e) => {
+    setChatMessageText(e.target.value);
+    if (activeChatFriendId) {
+      setMyTypingStatus(true);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        setMyTypingStatus(false);
+      }, 3000);
+    }
   };
 
-  // Chat Attachment simulators
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Chat reply typing status and message sending
+  const handleSendMessage = async (e) => {
+    if (e) e.preventDefault();
+    const textToSend = chatMessageText.trim();
+    if ((!textToSend && !pendingAttachment) || !activeChatFriendId || isSending) return;
+
+    setIsSending(true);
+
+    // Stop typing status immediately
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    setMyTypingStatus(false);
+
+    try {
+      if (pendingAttachment) {
+        // Send attachment message
+        const attachType = pendingAttachment.type;
+        const attachText = attachType === 'image' 
+          ? `🖼️ Shared image: ${pendingAttachment.name}`
+          : `📄 Shared attachment: ${pendingAttachment.name}`;
+        
+        await sendChatMessage(activeChatFriendId, textToSend || attachText, attachType, pendingAttachment, replyingTo);
+      } else {
+        // Send normal text message
+        await sendChatMessage(activeChatFriendId, textToSend, 'text', null, replyingTo);
+      }
+
+      setChatMessageText('');
+      setPendingAttachment(null);
+      setReplyingTo(null);
+      setShowEmojiPicker(false);
+    } catch (err) {
+      console.error("Error sending message:", err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Chat Attachment handlers setting preview state
   const handleAttachFile = () => {
     if (!activeChatFriendId) return;
-    sendChatMessage(activeChatFriendId, '📄 Shared attachment: dsa_roadmap_v2.pdf', 'file', { name: 'dsa_roadmap_v2.pdf', type: 'pdf' });
+    setPendingAttachment({ name: 'dsa_roadmap_v2.pdf', type: 'pdf' });
   };
 
   const handleAttachImage = () => {
     if (!activeChatFriendId) return;
-    sendChatMessage(activeChatFriendId, '🖼️ Shared image node: dashboard_mockup.png', 'image', { name: 'dashboard_mockup.png', url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&q=80' });
+    setPendingAttachment({ 
+      name: 'dashboard_mockup.png', 
+      type: 'image', 
+      url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&q=80' 
+    });
   };
 
   const handleShareWorkspace = () => {
@@ -439,8 +520,15 @@ const Friends = () => {
                 
                 {/* Chat Left pane (Friend drawer list) */}
                 <div className="md:col-span-4 border-r border-white/5 flex flex-col h-full bg-[#0D0D14]/20">
-                  <div className="p-4 border-b border-white/5">
+                  <div className="p-4 border-b border-white/5 space-y-2">
                     <span className="text-[10px] font-black uppercase text-on-surface-variant tracking-wider block">Conversations</span>
+                    <input
+                      type="text"
+                      placeholder="Filter conversations..."
+                      value={chatSearchQuery}
+                      onChange={(e) => setChatSearchQuery(e.target.value)}
+                      className="w-full bg-[#111118]/80 border border-white/5 rounded-lg px-2.5 py-1.5 text-[11px] text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary"
+                    />
                   </div>
                   
                   <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-white/5">
@@ -453,74 +541,153 @@ const Friends = () => {
                         />
                       </div>
                     ) : (
-                      friends.map((friendId) => {
-                        const userObj = allUsers.find(u => u.userId === friendId);
-                        if (!userObj) return null;
-                        const preset = getPresetStyles(userObj.profilePicture);
-                        const chatHistory = chats[friendId] || [];
-                        const lastMsg = chatHistory[chatHistory.length - 1];
-                        const isCurrent = activeChatFriendId === friendId;
+                      (() => {
+                        const filteredFriends = friends.filter(friendId => {
+                          const userObj = allUsers.find(u => u.userId === friendId);
+                          if (!userObj) return false;
+                          return userObj.fullName.toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
+                                 userObj.username.toLowerCase().includes(chatSearchQuery.toLowerCase());
+                        });
 
-                        return (
-                          <div
-                            key={friendId}
-                            onClick={() => setActiveChatFriendId(friendId)}
-                            className={`p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/[0.01] transition-all relative ${
-                              isCurrent ? 'bg-primary/5' : ''
-                            }`}
-                          >
-                            {isCurrent && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="relative">
-                                <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                                  <span className="material-symbols-outlined text-sm">{preset.icon}</span>
+                        if (filteredFriends.length === 0) {
+                          return <p className="text-xs text-on-surface-variant italic p-4 text-center">No friends match "{chatSearchQuery}"</p>;
+                        }
+
+                        return filteredFriends.map((friendId) => {
+                          const userObj = allUsers.find(u => u.userId === friendId);
+                          if (!userObj) return null;
+                          const preset = getPresetStyles(userObj.profilePicture);
+                          const chatHistory = chats[friendId] || [];
+                          const lastMsg = chatHistory[chatHistory.length - 1];
+                          const isCurrent = activeChatFriendId === friendId;
+
+                          // Online status check
+                          const isOnline = presenceStates[friendId]?.online;
+                          const lastSeenTime = presenceStates[friendId]?.lastSeen;
+
+                          // Typing check
+                          const friendTypingData = typingStates[friendId];
+                          const isFriendTyping = friendTypingData?.typing && 
+                            (Date.now() - new Date(friendTypingData.updatedAt).getTime() < 10000);
+
+                          // Unread badge count
+                          const unreadCount = chatHistory.filter(
+                            (msg) => msg.senderId !== userId && !msg.seen
+                          ).length;
+
+                          return (
+                            <div
+                              key={friendId}
+                              onClick={() => {
+                                setActiveChatFriendId(friendId);
+                                setReplyingTo(null);
+                                setPendingAttachment(null);
+                              }}
+                              className={`p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/[0.01] transition-all relative ${
+                                isCurrent ? 'bg-primary/5' : ''
+                              }`}
+                            >
+                              {isCurrent && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="relative">
+                                  <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
+                                    <span className="material-symbols-outlined text-sm">{preset.icon}</span>
+                                  </div>
+                                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 border border-[#0D0D14] rounded-full transition-all ${
+                                    isOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-gray-600'
+                                  }`} />
                                 </div>
-                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-[#0D0D14] rounded-full" />
+                                <div className="min-w-0">
+                                  <h4 className="text-xs font-bold text-white leading-tight flex items-center gap-1">
+                                    {userObj.fullName}
+                                    {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping inline-block" />}
+                                  </h4>
+                                  {isFriendTyping ? (
+                                    <p className="text-[11px] text-green-400 font-bold italic animate-pulse mt-0.5">typing...</p>
+                                  ) : (
+                                    <p className="text-[11px] text-on-surface-variant truncate mt-0.5 flex items-center">
+                                      {lastMsg && lastMsg.senderId === userId && (
+                                        lastMsg.status === 'seen' || lastMsg.seen ? (
+                                          <span className="text-primary font-bold text-[9px] mr-1 shrink-0">✓✓</span>
+                                        ) : lastMsg.status === 'delivered' ? (
+                                          <span className="text-on-surface-variant/40 font-bold text-[9px] mr-1 shrink-0">✓✓</span>
+                                        ) : (
+                                          <span className="text-on-surface-variant/40 font-bold text-[9px] mr-1 shrink-0">✓</span>
+                                        )
+                                      )}
+                                      <span className="truncate">
+                                        {lastMsg ? (lastMsg.senderId === userId ? 'You: ' : '') + lastMsg.text : 'Start chatting...'}
+                                      </span>
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <h4 className="text-xs font-bold text-white leading-tight">{userObj.fullName}</h4>
-                                <p className="text-[11px] text-on-surface-variant truncate mt-0.5">
-                                  {lastMsg ? (lastMsg.senderId === 'me' ? 'You: ' : '') + lastMsg.text : 'Start chatting...'}
-                                </p>
+                              
+                              <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                <span className="text-[9px] text-on-surface-variant/65 font-mono">
+                                  {lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isOnline ? 'Active' : formatLastSeen(lastSeenTime))}
+                                </span>
+                                {unreadCount > 0 && (
+                                  <span className="bg-primary text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg shadow-primary/20 animate-bounce">
+                                    {unreadCount}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            
-                            <div className="shrink-0 flex flex-col items-end gap-1">
-                              <span className="text-[9px] text-on-surface-variant font-mono">
-                                {lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })
+                          );
+                        });
+                      })()
                     )}
                   </div>
                 </div>
 
                 {/* Chat Right pane (Messaging Board) */}
-                <div className="md:col-span-8 flex flex-col h-full">
+                <div className="md:col-span-8 flex flex-col h-full bg-[#111118]/20">
                   {activeChatFriendId ? (
                     (() => {
                       const activeFriend = allUsers.find(u => u.userId === activeChatFriendId);
                       const chatHistory = chats[activeChatFriendId] || [];
                       const preset = getPresetStyles(activeFriend?.profilePicture);
+
+                      // Presence
+                      const activeFriendPresence = presenceStates[activeChatFriendId];
+                      const isActiveFriendOnline = activeFriendPresence?.online;
+                      const activeFriendLastSeen = activeFriendPresence?.lastSeen;
+
+                      // Typing
+                      const friendTypingData = typingStates[activeChatFriendId];
+                      const isFriendTyping = friendTypingData?.typing && 
+                        (Date.now() - new Date(friendTypingData.updatedAt).getTime() < 10000);
                       
                       return (
                         <div className="flex flex-col h-full relative">
                           {/* Chat Window Header */}
                           <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#0D0D14]/25 shrink-0">
                             <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white`}>
-                                <span className="material-symbols-outlined text-sm">{preset.icon}</span>
+                              <div className="relative">
+                                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white`}>
+                                  <span className="material-symbols-outlined text-sm">{preset.icon}</span>
+                                </div>
+                                <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border border-[#0D0D14] rounded-full ${
+                                  isActiveFriendOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-gray-600'
+                                }`} />
                               </div>
-                              <div>
+                              <div className="text-left">
                                 <h4 className="text-xs font-bold text-white leading-none flex items-center gap-1.5">
                                   {activeFriend?.fullName}
                                   {activeFriend && getUserTopBadges(activeFriend).map((badge, bIdx) => (
                                     <span key={bIdx} className="text-xs" title="Unlocked Badge">{badge}</span>
                                   ))}
                                 </h4>
-                                <span className="text-[9px] text-primary/80 font-bold uppercase tracking-wider block mt-1">active session</span>
+                                {isActiveFriendOnline ? (
+                                  <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1 mt-1 animate-pulse">
+                                    ● Online
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-on-surface-variant/70 font-semibold block mt-1">
+                                    {activeFriendLastSeen ? `Last seen ${formatLastSeen(activeFriendLastSeen)}` : 'Offline'}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -547,16 +714,36 @@ const Friends = () => {
                                />
                              ) : (
                               chatHistory.map((msg, index) => {
-                                const isMe = msg.senderId === 'me';
-                                
+                                const isMe = msg.senderId === userId;
+                                const isGrouped = index > 0 && chatHistory[index - 1].senderId === msg.senderId;
+                                const showAvatar = !isMe && !isGrouped;
+                                const onlyEmojis = isOnlyEmojis(msg.text);
+
                                 return (
-                                  <div key={index} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                                    <div className="flex items-end gap-2 group max-w-[80%]">
+                                  <div key={msg.id || index} className={`flex items-start gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-1' : 'mt-4'}`}>
+                                    
+                                    {/* Left Spacer/Avatar for non-Me messages */}
+                                    {!isMe && (
+                                      showAvatar ? (
+                                        <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0 shadow-md`} title={activeFriend?.fullName}>
+                                          <span className="material-symbols-outlined text-[11px]">{preset.icon}</span>
+                                        </div>
+                                      ) : (
+                                        <div className="w-7 shrink-0" />
+                                      )
+                                    )}
+
+                                    {/* Message content block */}
+                                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                                      {!isMe && !isGrouped && (
+                                        <span className="text-[10px] font-bold text-on-surface-variant/80 mb-0.5 px-1">{activeFriend?.fullName}</span>
+                                      )}
                                       
-                                      {/* Reaction emoji selector overlay */}
-                                      {!isMe && (
-                                        <div className="opacity-0 group-hover:opacity-100 flex gap-1 p-1 bg-background border border-white/10 rounded-full scale-90 transition-opacity">
-                                          {['👍', '❤️', '🔥', '😮'].map(emoji => (
+                                      <div className="flex items-center gap-2 group relative">
+                                        
+                                        {/* Hover actions (Reply & Emoji selection) */}
+                                        <div className={`opacity-0 group-hover:opacity-100 flex items-center gap-1.5 p-1 bg-[#111118] border border-white/10 rounded-full scale-90 transition-all shadow-xl absolute -top-8 ${isMe ? 'left-0' : 'right-0'} z-20`}>
+                                          {['👍', '❤️', '🔥', '😂'].map(emoji => (
                                             <button 
                                               key={emoji}
                                               onClick={() => addChatReaction(activeChatFriendId, index, emoji)}
@@ -565,68 +752,194 @@ const Friends = () => {
                                               {emoji}
                                             </button>
                                           ))}
+                                          <div className="w-[1px] h-3.5 bg-white/10 mx-0.5" />
+                                          <button
+                                            type="button"
+                                            onClick={() => setReplyingTo({ id: msg.id, text: msg.text, senderId: msg.senderId, senderName: isMe ? 'You' : activeFriend?.fullName })}
+                                            className="hover:scale-125 transition-transform text-xs text-on-surface-variant hover:text-white cursor-pointer px-1"
+                                            title="Reply"
+                                          >
+                                            <span className="material-symbols-outlined text-[13px] font-bold">reply</span>
+                                          </button>
                                         </div>
-                                      )}
 
-                                      <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed relative ${
-                                        isMe 
-                                          ? 'bg-primary text-white rounded-br-none shadow-[0_0_12px_rgba(139,92,246,0.1)]' 
-                                          : 'bg-white/5 border border-white/5 text-white rounded-bl-none'
-                                      }`}>
-                                        
-                                        {/* Shared Workspace Payload Card */}
-                                        {msg.type === 'workspace' && (
-                                          <div className="p-3 bg-[#0D0D14]/65 border border-primary/20 rounded-xl space-y-3 mb-2 min-w-[200px]">
-                                            <div className="flex items-center gap-2">
-                                              <span className="material-symbols-outlined text-primary text-base">groups</span>
-                                              <span className="font-bold text-white text-[11px]">Workspace Shared</span>
+                                        {/* Message bubble itself */}
+                                        <div className={`${
+                                          onlyEmojis 
+                                            ? 'text-3xl p-1 bg-transparent border-none' 
+                                            : `p-3 rounded-2xl text-xs font-medium leading-relaxed relative ${
+                                                isMe 
+                                                  ? 'bg-primary text-white rounded-br-none shadow-[0_4px_12px_rgba(139,92,246,0.15)]' 
+                                                  : 'bg-white/5 border border-white/5 text-white rounded-bl-none hover:bg-white/[0.08]'
+                                              }`
+                                        } transition-colors duration-150`}>
+                                          
+                                          {/* Replying context box */}
+                                          {msg.replyTo && (
+                                            <div className={`p-2.5 rounded-lg text-[10px] leading-tight mb-2 border-l-2 text-left ${
+                                              isMe ? 'bg-black/25 border-white/30 text-white/80' : 'bg-[#0D0D14]/60 border-primary/40 text-on-surface-variant'
+                                            }`}>
+                                              <div className="font-bold text-[9px] mb-0.5">{msg.replyTo.senderName}</div>
+                                              <div className="truncate italic">"{msg.replyTo.text}"</div>
                                             </div>
-                                            <p className="text-[10px] text-on-surface-variant font-medium">Collaborate inside: "{msg.payload?.title || 'Shared Workspace'}"</p>
-                                            <button 
-                                              onClick={() => alert(`Collaborative invitation loaded for workspace ID: ${msg.payload?.wsId}`)}
-                                              className="w-full bg-primary/20 border border-primary text-[10px] font-bold uppercase tracking-wider text-white py-1.5 rounded hover:bg-primary/30 transition-all cursor-pointer"
-                                            >
-                                              Join Node
-                                            </button>
-                                          </div>
-                                        )}
+                                          )}
 
-                                        {msg.text}
-                                        
-                                        {/* Reactions display */}
-                                        {msg.reactions && msg.reactions.length > 0 && (
-                                          <div className="absolute -bottom-2 right-2 bg-[#111118] border border-white/10 rounded-full px-1.5 py-0.5 text-[9px] flex gap-0.5 shadow-md">
-                                            {msg.reactions.map((r, i) => <span key={i}>{r}</span>)}
-                                          </div>
-                                        )}
+                                          {/* Shared Workspace Card */}
+                                          {msg.type === 'workspace' && (
+                                            <div className="p-3 bg-[#0D0D14]/65 border border-primary/20 rounded-xl space-y-3 mb-2 min-w-[200px]">
+                                              <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-primary text-base">groups</span>
+                                                <span className="font-bold text-white text-[11px]">Workspace Shared</span>
+                                              </div>
+                                              <p className="text-[10px] text-on-surface-variant font-medium">Collaborate inside: "{msg.payload?.title || 'Shared Workspace'}"</p>
+                                              <button 
+                                                onClick={() => alert(`Collaborative invitation loaded for workspace ID: ${msg.payload?.wsId}`)}
+                                                className="w-full bg-primary/20 border border-primary text-[10px] font-bold uppercase tracking-wider text-white py-1.5 rounded hover:bg-primary/30 transition-all cursor-pointer"
+                                              >
+                                                Join Node
+                                              </button>
+                                            </div>
+                                          )}
+
+                                          {/* Image Attachment Rendering */}
+                                          {msg.type === 'image' && msg.payload?.url && (
+                                            <div className="mb-2 max-w-[240px] rounded-lg overflow-hidden border border-white/5 shadow-md">
+                                              <img src={msg.payload.url} alt={msg.payload.name || 'Shared Image'} className="object-cover w-full h-32 hover:scale-105 transition-transform duration-300" />
+                                            </div>
+                                          )}
+
+                                          {/* File Attachment Rendering */}
+                                          {msg.type === 'file' && (
+                                            <div className={`p-2.5 rounded-lg flex items-center gap-2.5 mb-2 border ${
+                                              isMe ? 'bg-black/15 border-white/10' : 'bg-[#0D0D14]/40 border-white/5'
+                                            }`}>
+                                              <span className="material-symbols-outlined text-base text-primary">description</span>
+                                              <div className="min-w-0 text-left">
+                                                <p className="text-[10px] font-bold text-white truncate">{msg.payload?.name || 'Shared file'}</p>
+                                                <p className="text-[8px] text-on-surface-variant">PDF Document</p>
+                                              </div>
+                                              <button 
+                                                onClick={() => alert(`Downloading attachment: ${msg.payload?.name}`)}
+                                                className="p-1 rounded hover:bg-white/10 text-white shrink-0 ml-auto"
+                                              >
+                                                <span className="material-symbols-outlined text-sm">download</span>
+                                              </button>
+                                            </div>
+                                          )}
+
+                                          {/* Message text content */}
+                                          {!onlyEmojis && <p className="whitespace-pre-wrap text-left break-words">{msg.text}</p>}
+                                          {onlyEmojis && <p className="text-3xl select-all">{msg.text}</p>}
+                                          
+                                          {/* Reactions display */}
+                                          {msg.reactions && msg.reactions.length > 0 && (
+                                            <div className="absolute -bottom-2.5 right-2 bg-[#111118] border border-white/10 rounded-full px-1.5 py-0.5 text-[9px] flex gap-0.5 shadow-md z-10 hover:scale-110 transition-transform">
+                                              {Array.from(new Set(msg.reactions)).map((r, i) => <span key={i}>{r}</span>)}
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
+
+                                      {/* Timestamp and delivery status */}
+                                      <span className="text-[9px] text-on-surface-variant/40 font-mono mt-1 px-1 flex items-center gap-1.5">
+                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {isMe && (
+                                          msg.status === 'seen' || msg.seen ? (
+                                            <span className="text-primary font-bold text-[10px]" title="Seen">✓✓</span>
+                                          ) : msg.status === 'delivered' ? (
+                                            <span className="text-on-surface-variant/40 font-bold text-[10px]" title="Delivered">✓✓</span>
+                                          ) : (
+                                            <span className="text-on-surface-variant/40 font-bold text-[10px]" title="Sent">✓</span>
+                                          )
+                                        )}
+                                      </span>
+
                                     </div>
-                                    <span className="text-[9px] text-on-surface-variant/40 font-mono px-1">
-                                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      {isMe && index === chatHistory.length - 1 && <span className="text-primary font-bold ml-1.5">✓ Seen</span>}
-                                    </span>
                                   </div>
                                 );
                               })
-                            )}
+                             )}
 
-                            {/* Typing Indicator */}
-                            {isTyping && (
-                              <div className="flex items-center gap-2 text-on-surface-variant/50 text-[11px] p-2 animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-                                <span className="font-bold text-[9px] uppercase tracking-wider ml-1">typing...</span>
+                             {/* Typing Indicator */}
+                             {isFriendTyping && (
+                               <div className="flex items-center gap-3 mt-4 animate-fade-in">
+                                 <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0 shadow-md`}>
+                                   <span className="material-symbols-outlined text-[11px]">{preset.icon}</span>
+                                 </div>
+                                 <div className="bg-white/5 border border-white/5 px-3 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5">
+                                   <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0s' }}></span>
+                                   <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                   <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                                   <span className="text-[9px] uppercase font-black text-on-surface-variant tracking-wider ml-1">{activeFriend?.fullName} is typing...</span>
+                                 </div>
+                               </div>
+                             )}
+
+                             <div ref={chatBottomRef} />
+                          </div>
+
+                          {/* Replying Context Bar */}
+                          {replyingTo && (
+                            <div className="px-4 py-2 border-t border-white/5 bg-primary/5 flex items-center justify-between gap-3 border-l-2 border-primary animate-fade-in shrink-0">
+                              <div className="min-w-0 text-left">
+                                <p className="text-[10px] font-bold text-primary">Replying to {replyingTo.senderName}</p>
+                                <p className="text-xs text-white/70 truncate">{replyingTo.text}</p>
+                              </div>
+                              <button 
+                                type="button" 
+                                onClick={() => setReplyingTo(null)}
+                                className="p-1 rounded hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-xs">close</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Attachment Preview Bar */}
+                          {pendingAttachment && (
+                            <div className="px-4 py-2 border-t border-white/5 bg-[#0D0D14]/40 flex items-center justify-between gap-3 animate-fade-in shrink-0">
+                              <div className="flex items-center gap-2 min-w-0 text-left">
+                                <span className="material-symbols-outlined text-primary text-base">
+                                  {pendingAttachment.type === 'image' ? 'image' : 'description'}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-white truncate">{pendingAttachment.name}</p>
+                                  <p className="text-[10px] text-on-surface-variant">Click Send to upload</p>
+                                </div>
+                              </div>
+                              <button 
+                                type="button" 
+                                onClick={() => setPendingAttachment(null)}
+                                className="p-1 rounded hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-xs">close</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Chat Input Bar */}
+                          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-[#0D0D14]/25 flex items-center gap-3 shrink-0 relative">
+                            
+                            {/* Inline Emoji Picker Popover */}
+                            {showEmojiPicker && (
+                              <div className="absolute bottom-16 left-4 bg-[#111118] border border-white/10 p-2.5 rounded-xl flex gap-2 flex-wrap max-w-[220px] shadow-2xl z-30 animate-fade-in">
+                                {['👍', '❤️', '🔥', '😂', '😮', '🎉', '💡', '🚀', '👀', '💯'].map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => {
+                                      setChatMessageText(prev => prev + emoji);
+                                      setShowEmojiPicker(false);
+                                    }}
+                                    className="text-base p-1.5 hover:bg-white/5 rounded hover:scale-125 transition-transform cursor-pointer"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
                               </div>
                             )}
 
-                            <div ref={chatBottomRef} />
-                          </div>
-
-                          {/* Chat Input Bar */}
-                          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-[#0D0D14]/25 flex items-center gap-3 shrink-0">
-                            
-                            {/* Attachments Dropdown buttons */}
+                            {/* Attachments buttons */}
                             <div className="flex gap-1">
                               <button 
                                 type="button"
@@ -644,21 +957,38 @@ const Friends = () => {
                               >
                                 <span className="material-symbols-outlined text-[18px]">attach_file</span>
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className={`p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
+                                  showEmojiPicker ? 'text-primary' : 'text-on-surface-variant hover:text-white'
+                                }`}
+                                title="Pick Emoji"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">mood</span>
+                              </button>
                             </div>
 
-                            <input
-                              type="text"
+                            {/* Upgraded Textarea Input */}
+                            <textarea
                               value={chatMessageText}
-                              onChange={(e) => setChatMessageText(e.target.value)}
-                              placeholder="Write a message..."
-                              className="flex-grow bg-[#111118] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary"
+                              onChange={handleInputChange}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Write a message... (Enter to send, Shift+Enter for new line)"
+                              rows="1"
+                              className="flex-grow bg-[#111118] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary resize-none min-h-[38px] max-h-[120px] no-scrollbar"
                             />
+                            
                             <button
                               type="submit"
-                              disabled={!chatMessageText.trim()}
-                              className="p-2.5 rounded-xl bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center cursor-pointer disabled:opacity-45"
+                              disabled={(!chatMessageText.trim() && !pendingAttachment) || isSending}
+                              className="p-2.5 rounded-xl bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center cursor-pointer disabled:opacity-40"
                             >
-                              <span className="material-symbols-outlined text-sm font-bold">send</span>
+                              {isSending ? (
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                              ) : (
+                                <span className="material-symbols-outlined text-sm font-bold">send</span>
+                              )}
                             </button>
                           </form>
                         </div>

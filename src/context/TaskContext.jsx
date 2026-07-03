@@ -287,6 +287,8 @@ export const TaskProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [chats, setChats] = useState({});
   const [collaborators, setCollaborators] = useState({});
+  const [presenceStates, setPresenceStates] = useState({});
+  const [typingStates, setTypingStates] = useState({});
   const [privacySettings, setPrivacySettings] = useState({
     profileVisibility: 'Public',
     showSkills: 'Everyone',
@@ -441,6 +443,52 @@ export const TaskProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Presence heartbeat & unload hook
+  useEffect(() => {
+    if (!currentUser || !userProfile || !userProfile.userId) return;
+    
+    const presenceRef = doc(db, 'presence', userProfile.userId);
+    
+    const setOnline = async () => {
+      try {
+        await setDoc(presenceRef, {
+          online: true,
+          lastSeen: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error setting presence online:", err);
+      }
+    };
+    
+    const setOffline = async () => {
+      try {
+        await setDoc(presenceRef, {
+          online: false,
+          lastSeen: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error setting presence offline:", err);
+      }
+    };
+    
+    setOnline();
+    
+    // Heartbeat every 20s
+    const interval = setInterval(setOnline, 20000);
+    
+    const handleUnload = () => {
+      setOffline();
+    };
+    
+    window.addEventListener('beforeunload', handleUnload);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+      setOffline();
+    };
+  }, [currentUser, userProfile?.userId]);
+
   // 2. Real-time Firestore sync of user collections
   useEffect(() => {
     if (!currentUser || !userProfile) {
@@ -453,6 +501,8 @@ export const TaskProvider = ({ children }) => {
       setSentRequests([]);
       setChats({});
       setAllUsers([]);
+      setPresenceStates({});
+      setTypingStates({});
       // Clean up any message subcollection listeners
       Object.values(msgListenersRef.current).forEach((unsub) => unsub());
       msgListenersRef.current = {};
@@ -568,9 +618,27 @@ export const TaskProvider = ({ children }) => {
           );
           msgListenersRef.current[chatRoomId] = onSnapshot(msgQuery, (msgSnapshot) => {
             const msgs = [];
+            const batch = writeBatch(db);
+            let hasDeliveryUpdate = false;
+
             msgSnapshot.forEach((mDoc) => {
-              msgs.push({ id: mDoc.id, ...mDoc.data() });
+              const data = mDoc.data();
+              const msgId = mDoc.id;
+
+              // Mark as delivered if received by us but marked as 'sent'
+              if (data.senderId !== userProfile.userId && data.status === 'sent') {
+                batch.update(doc(db, `chats/${chatRoomId}/messages`, msgId), { status: 'delivered' });
+                hasDeliveryUpdate = true;
+                data.status = 'delivered';
+              }
+
+              msgs.push({ id: msgId, ...data });
             });
+
+            if (hasDeliveryUpdate) {
+              batch.commit().catch(err => console.error("Error setting delivered status:", err));
+            }
+
             setChats(prev => ({
               ...prev,
               [friendUserId]: msgs
@@ -578,6 +646,26 @@ export const TaskProvider = ({ children }) => {
           });
         }
       });
+    });
+
+    // J. Listen to presence
+    const presenceQuery = collection(db, 'presence');
+    const unsubscribePresence = onSnapshot(presenceQuery, (snapshot) => {
+      const states = {};
+      snapshot.forEach((docSnap) => {
+        states[docSnap.id] = docSnap.data();
+      });
+      setPresenceStates(states);
+    });
+
+    // K. Listen to typing status
+    const typingQuery = collection(db, 'typingStatus');
+    const unsubscribeTyping = onSnapshot(typingQuery, (snapshot) => {
+      const states = {};
+      snapshot.forEach((docSnap) => {
+        states[docSnap.id] = docSnap.data();
+      });
+      setTypingStates(states);
     });
 
     return () => {
@@ -589,6 +677,8 @@ export const TaskProvider = ({ children }) => {
       unsubscribeFriends();
       unsubscribeSentReqs();
       unsubscribeChats();
+      unsubscribePresence();
+      unsubscribeTyping();
       // Clean up message listeners
       Object.values(msgListenersRef.current).forEach((unsub) => unsub());
       msgListenersRef.current = {};
@@ -1127,7 +1217,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   // ================= CHAT OPERATIONS =================
-  const sendChatMessage = async (friendUserId, text, type = 'text', payload = null) => {
+  const sendChatMessage = async (friendUserId, text, type = 'text', payload = null, replyTo = null) => {
     if (!currentUser || !userProfile) return;
     const friendUser = allUsers.find(u => u.userId === friendUserId);
     if (!friendUser) return;
@@ -1143,16 +1233,57 @@ export const TaskProvider = ({ children }) => {
 
     const msgId = `msg-${Date.now()}`;
     const newMsg = {
-      senderId: 'me',
+      senderId: userProfile.userId,
       senderUserId: userProfile.userId,
       text,
       timestamp: new Date().toISOString(),
       seen: false,
+      status: 'sent',
       reactions: [],
       type,
-      payload
+      payload,
+      replyTo
     };
     await setDoc(doc(db, `chats/${chatRoomId}/messages`, msgId), newMsg);
+  };
+
+  const markMessagesAsSeen = async (friendUserId) => {
+    if (!currentUser || !userProfile || !userProfile.userId) return;
+    const chatRoomId = [userProfile.userId, friendUserId].sort().join('_');
+    const friendMessages = chats[friendUserId] || [];
+    
+    // Find all messages from the friend that are not 'seen'
+    const unseenMsgs = friendMessages.filter(
+      (msg) => msg.senderId !== userProfile.userId && msg.status !== 'seen'
+    );
+    
+    if (unseenMsgs.length > 0) {
+      try {
+        const batch = writeBatch(db);
+        unseenMsgs.forEach((msg) => {
+          batch.update(doc(db, `chats/${chatRoomId}/messages`, msg.id), { 
+            status: 'seen', 
+            seen: true 
+          });
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error("Error marking messages as seen:", err);
+      }
+    }
+  };
+
+  const setMyTypingStatus = async (isTyping) => {
+    if (!currentUser || !userProfile || !userProfile.userId) return;
+    try {
+      const typingRef = doc(db, 'typingStatus', userProfile.userId);
+      await setDoc(typingRef, {
+        typing: isTyping,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.error("Error setting typing status:", err);
+    }
   };
 
   const addChatReaction = async (friendUserId, msgIndex, reaction) => {
@@ -1392,6 +1523,10 @@ export const TaskProvider = ({ children }) => {
         sentRequests,
         chats,
         collaborators,
+        presenceStates,
+        typingStates,
+        setMyTypingStatus,
+        markMessagesAsSeen,
         privacySettings,
         setPrivacySettings,
         addTask,
