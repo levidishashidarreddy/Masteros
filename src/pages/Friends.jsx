@@ -324,10 +324,10 @@ const Friends = () => {
     <div className="flex min-h-screen bg-background text-on-surface radial-glow-bg select-none">
       <Sidebar />
       
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         <Header hideSearch={true} hideStreak={true} hideLogo={true} />
 
-        <div className="w-full px-8 pt-4 pb-12 space-y-8 flex flex-col h-[calc(100vh-80px)] animate-page-transition">
+        <div className="w-full px-8 pt-4 pb-4 flex flex-col gap-4 min-h-0 flex-1 animate-page-transition overflow-hidden">
           
           {/* Header titles */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5 shrink-0">
@@ -432,7 +432,7 @@ const Friends = () => {
             ))}
           </div>
 
-          {/* ================= TABS CONTENT ================= */}
+          {/* Tabs Content — must flex-1 and min-h-0 so the chat panel doesn't overflow */}
           <div className="flex-1 min-h-0">
             
             {/* 1. LEADERBOARDS TAB */}
@@ -529,10 +529,10 @@ const Friends = () => {
 
             {/* 2. CHATS TAB */}
             {activeTab === 'Chats' && (
-              <div className="h-full grid grid-cols-1 md:grid-cols-12 border border-white/5 rounded-2xl bg-[#111118]/65 overflow-hidden animate-fade-in" style={{ isolation: 'isolate' }}>
+              <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-12 border border-white/5 rounded-2xl bg-[#111118]/65 overflow-hidden animate-fade-in" style={{ isolation: 'isolate' }}>
                 
                 {/* Chat Left pane (Friend drawer list) — hidden on mobile when a chat is open */}
-                <div className={`md:col-span-4 border-r border-white/5 flex flex-col h-full bg-[#0D0D14]/20 ${activeChatFriendId ? 'hidden md:flex' : 'flex'}`}>
+                <div className={`md:col-span-4 border-r border-white/5 flex flex-col min-h-0 bg-[#0D0D14]/20 ${activeChatFriendId ? 'hidden md:flex' : 'flex'}`}>
                   <div className="p-4 border-b border-white/5 space-y-2">
                     <span className="text-[10px] font-black uppercase text-on-surface-variant tracking-wider block">Conversations</span>
                     <input
@@ -655,7 +655,7 @@ const Friends = () => {
                 </div>
 
                 {/* Chat Right pane (Messaging Board) — full-screen on mobile */}
-                <div className={`md:col-span-8 flex flex-col h-full bg-[#111118]/20 ${activeChatFriendId ? 'flex col-span-1 md:col-span-8' : 'hidden md:flex'}`}>
+                <div className={`md:col-span-8 flex flex-col min-h-0 bg-[#111118]/20 ${activeChatFriendId ? 'flex col-span-1 md:col-span-8' : 'hidden md:flex'}`}>
                   {activeChatFriendId ? (
                     (() => {
                       const activeFriend = allUsers.find(u => u.userId === activeChatFriendId);
@@ -673,7 +673,7 @@ const Friends = () => {
                         (Date.now() - new Date(friendTypingData.updatedAt).getTime() < 10000);
                       
                       return (
-                        <div className="flex flex-col h-full relative">
+                        <div className="flex flex-col min-h-0 flex-1">
                           {/* Chat Window Header */}
                           <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#0D0D14]/25 shrink-0 relative">
                             <div className="flex items-center gap-3">
@@ -737,7 +737,11 @@ const Friends = () => {
                           </div>
 
                           {/* Message Logs */}
-                          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 no-scrollbar bg-[#0D0D14]/10" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
+                          <div
+                            ref={chatContainerRef}
+                            className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1 no-scrollbar bg-[#0D0D14]/10"
+                            style={{ overscrollBehavior: 'contain' }}
+                          >
                              {chatHistory.length === 0 ? (
                                <EmptyState 
                                  icon="chat" 
