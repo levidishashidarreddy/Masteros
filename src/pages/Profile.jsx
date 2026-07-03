@@ -74,9 +74,47 @@ const Profile = () => {
 
   const presetAvatar = AVATAR_PRESETS.find(p => p.id === avatar);
 
-  // Editable Bio Modal States
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [bioText, setBioText] = useState(bio);
+
+  // Social links state
+  const socialLinks = userProfile?.socialLinks || {};
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
+  const [socialForm, setSocialForm] = useState({
+    github: '',
+    linkedin: '',
+    instagram: '',
+    twitter: '',
+    portfolio: ''
+  });
+
+  const openSocialModal = () => {
+    setSocialForm({
+      github: socialLinks.github || '',
+      linkedin: socialLinks.linkedin || '',
+      instagram: socialLinks.instagram || '',
+      twitter: socialLinks.twitter || '',
+      portfolio: socialLinks.portfolio || ''
+    });
+    setIsSocialModalOpen(true);
+  };
+
+  const handleSaveSocial = (e) => {
+    e.preventDefault();
+    setUserProfile((prev) => ({
+      ...prev,
+      socialLinks: { ...socialForm }
+    }));
+    setIsSocialModalOpen(false);
+  };
+
+  const SOCIAL_ICONS = [
+    { key: 'github',    faClass: 'fa-brands fa-github',    label: 'GitHub',    color: '#E2E8F0' },
+    { key: 'linkedin',  faClass: 'fa-brands fa-linkedin',  label: 'LinkedIn',  color: '#0A66C2' },
+    { key: 'instagram', faClass: 'fa-brands fa-instagram', label: 'Instagram', color: '#E1306C' },
+    { key: 'twitter',   faClass: 'fa-brands fa-x-twitter', label: 'X / Twitter', color: '#E2E8F0' },
+    { key: 'portfolio', faClass: 'fa-solid fa-globe',      label: 'Portfolio', color: '#A78BFA' }
+  ];
 
   const handleSaveBio = (e) => {
     e.preventDefault();
@@ -138,6 +176,35 @@ const Profile = () => {
                 {branch && <><span>•</span><span>{branch}</span></>}
                 <span>•</span>
                 <span>{year}</span>
+              </div>
+
+              {/* Social Links Row */}
+              <div className="flex items-center gap-3 mt-4">
+                {SOCIAL_ICONS.map(({ key, faClass, label, color }) => {
+                  const url = socialLinks[key];
+                  if (!url) return null;
+                  return (
+                    <a
+                      key={key}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={label}
+                      onClick={e => { e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); e.preventDefault(); }}
+                      className="group w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 hover:border-primary/40 hover:bg-primary/10 transition-all duration-200 hover:scale-110"
+                      style={{ color }}
+                    >
+                      <i className={`${faClass} text-sm`} />
+                    </a>
+                  );
+                })}
+                <button
+                  onClick={openSocialModal}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/5 hover:border-primary/20 hover:bg-white/10 text-on-surface-variant hover:text-white transition-all cursor-pointer"
+                  title="Edit Social Links"
+                >
+                  <span className="material-symbols-outlined text-[15px]">add_link</span>
+                </button>
               </div>
             </div>
           </div>
@@ -265,7 +332,6 @@ const Profile = () => {
         </div>
       </main>
 
-      {/* EDIT BIO MODAL */}
       <Modal isOpen={isBioModalOpen} onClose={() => setIsBioModalOpen(false)} title="Edit Bio">
         <form onSubmit={handleSaveBio} className="space-y-5">
           <div className="space-y-2">
@@ -286,6 +352,33 @@ const Profile = () => {
             <Button type="submit" variant="primary">
               Save Changes
             </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* SOCIAL LINKS MODAL */}
+      <Modal isOpen={isSocialModalOpen} onClose={() => setIsSocialModalOpen(false)} title="Social Links">
+        <form onSubmit={handleSaveSocial} className="space-y-5">
+          <p className="text-xs text-on-surface-variant">Add your profile URLs. Only icons will appear publicly. Leave blank to hide.</p>
+          <div className="space-y-3">
+            {SOCIAL_ICONS.map(({ key, faClass, label, color }) => (
+              <div key={key} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0" style={{ color }}>
+                  <i className={`${faClass} text-sm`} />
+                </div>
+                <input
+                  type="url"
+                  value={socialForm[key]}
+                  onChange={e => setSocialForm(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={`${label} profile URL`}
+                  className="flex-1 bg-[#111118] border border-white/5 rounded-lg px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setIsSocialModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary">Save Links</Button>
           </div>
         </form>
       </Modal>

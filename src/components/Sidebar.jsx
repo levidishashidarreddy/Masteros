@@ -36,6 +36,17 @@ const Sidebar = () => {
 
   return (
     <>
+      {/* Floating Mobile Menu Trigger */}
+      <div className="md:hidden fixed top-3 left-4 z-40">
+        <button 
+          onClick={() => setIsExpanded(true)}
+          className="w-10 h-10 rounded-xl bg-[#0D0D14]/90 border border-white/5 text-on-surface-variant hover:text-white flex items-center justify-center backdrop-blur-md shadow-lg cursor-pointer"
+          title="Open Menu"
+        >
+          <span className="material-symbols-outlined text-[22px]">menu</span>
+        </button>
+      </div>
+
       {/* SINGLE IN-PLACE COLLAPSIBLE SIDEBAR CONTAINER */}
       <aside 
         className={`h-screen border-r border-white/5 bg-[#0D0D14]/80 backdrop-blur-xl shrink-0 z-40 select-none transition-all duration-300 relative ${

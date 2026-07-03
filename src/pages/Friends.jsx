@@ -114,11 +114,24 @@ const Friends = () => {
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const typingTimeoutRef = useRef(null);
   const chatBottomRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const prevChatFriendIdRef = useRef(null);
 
-  // Scroll to chat bottom
+  // Smart auto-scroll: only scroll if near the bottom OR switching chats
   useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    const container = chatContainerRef.current;
+    if (!container) return;
+    const switchedChat = prevChatFriendIdRef.current !== activeChatFriendId;
+    prevChatFriendIdRef.current = activeChatFriendId;
+    if (switchedChat) {
+      // Always jump to bottom on chat switch
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 150) {
+      // User is near bottom — smooth scroll down
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [chats, activeChatFriendId]);
 
@@ -516,10 +529,10 @@ const Friends = () => {
 
             {/* 2. CHATS TAB */}
             {activeTab === 'Chats' && (
-              <div className="h-full grid grid-cols-1 md:grid-cols-12 border border-white/5 rounded-2xl bg-[#111118]/65 overflow-hidden animate-fade-in">
+              <div className="h-full grid grid-cols-1 md:grid-cols-12 border border-white/5 rounded-2xl bg-[#111118]/65 overflow-hidden animate-fade-in" style={{ isolation: 'isolate' }}>
                 
-                {/* Chat Left pane (Friend drawer list) */}
-                <div className="md:col-span-4 border-r border-white/5 flex flex-col h-full bg-[#0D0D14]/20">
+                {/* Chat Left pane (Friend drawer list) — hidden on mobile when a chat is open */}
+                <div className={`md:col-span-4 border-r border-white/5 flex flex-col h-full bg-[#0D0D14]/20 ${activeChatFriendId ? 'hidden md:flex' : 'flex'}`}>
                   <div className="p-4 border-b border-white/5 space-y-2">
                     <span className="text-[10px] font-black uppercase text-on-surface-variant tracking-wider block">Conversations</span>
                     <input
@@ -641,8 +654,8 @@ const Friends = () => {
                   </div>
                 </div>
 
-                {/* Chat Right pane (Messaging Board) */}
-                <div className="md:col-span-8 flex flex-col h-full bg-[#111118]/20">
+                {/* Chat Right pane (Messaging Board) — full-screen on mobile */}
+                <div className={`md:col-span-8 flex flex-col h-full bg-[#111118]/20 ${activeChatFriendId ? 'flex col-span-1 md:col-span-8' : 'hidden md:flex'}`}>
                   {activeChatFriendId ? (
                     (() => {
                       const activeFriend = allUsers.find(u => u.userId === activeChatFriendId);
@@ -662,8 +675,16 @@ const Friends = () => {
                       return (
                         <div className="flex flex-col h-full relative">
                           {/* Chat Window Header */}
-                          <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#0D0D14]/25 shrink-0">
+                          <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#0D0D14]/25 shrink-0 relative">
                             <div className="flex items-center gap-3">
+                              {/* Mobile back button */}
+                              <button
+                                className="md:hidden p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white transition-all cursor-pointer mr-1"
+                                onClick={() => setActiveChatFriendId(null)}
+                                title="Back to conversations"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">arrow_back_ios</span>
+                              </button>
                               <div className="relative">
                                 <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white`}>
                                   <span className="material-symbols-outlined text-sm">{preset.icon}</span>
@@ -693,19 +714,30 @@ const Friends = () => {
 
                             {/* DM Controls */}
                             <div className="flex gap-2">
-                              <button 
-                                onClick={handleShareWorkspace}
-                                className="p-1.5 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-white/2 border border-white/5"
-                                title="Share Collaboration Workspace"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">groups</span>
-                                Invite
+                               {/* Glassmorphic Collaborate/Invite button */}
+                               <button 
+                                 onClick={handleShareWorkspace}
+                                 className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer overflow-hidden"
+                                 style={{
+                                   background: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(99,102,241,0.12) 100%)',
+                                   border: '1px solid rgba(139,92,246,0.30)',
+                                   boxShadow: '0 0 14px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.07)',
+                                   backdropFilter: 'blur(8px)',
+                                   color: '#DDD6FE',
+                                   transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)'
+                                 }}
+                                 onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 22px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.10)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.55)'; }}
+                                 onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 14px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.30)'; }}
+                                 title="Share Collaboration Workspace"
+                               >
+                                 <span className="material-symbols-outlined text-[15px] group-hover:rotate-12 transition-transform duration-200" style={{ color: '#A78BFA' }}>hub</span>
+                                 <span className="hidden sm:inline">Collaborate</span>
                               </button>
                             </div>
                           </div>
 
                           {/* Message Logs */}
-                          <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0D0D14]/10">
+                          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 no-scrollbar bg-[#0D0D14]/10" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
                              {chatHistory.length === 0 ? (
                                <EmptyState 
                                  icon="chat" 
@@ -715,12 +747,48 @@ const Friends = () => {
                              ) : (
                               chatHistory.map((msg, index) => {
                                 const isMe = msg.senderId === userId;
-                                const isGrouped = index > 0 && chatHistory[index - 1].senderId === msg.senderId;
-                                const showAvatar = !isMe && !isGrouped;
+                                const prevMsg = chatHistory[index - 1];
+                                const isGrouped = index > 0 && prevMsg.senderId === msg.senderId;
+                                // Group only if within 5 minutes of previous message from same sender
+                                const isTimeGrouped = isGrouped && (new Date(msg.timestamp) - new Date(prevMsg.timestamp)) < 5 * 60 * 1000;
+                                const showAvatar = !isMe && !isTimeGrouped;
                                 const onlyEmojis = isOnlyEmojis(msg.text);
 
+                                // Date separator: show when day changes between messages
+                                const msgDate = new Date(msg.timestamp);
+                                const prevMsgDate = index > 0 ? new Date(chatHistory[index - 1].timestamp) : null;
+                                const showDateSep = !prevMsgDate || msgDate.toDateString() !== prevMsgDate.toDateString();
+                                const dateLabel = (() => {
+                                  const today = new Date();
+                                  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                                  if (msgDate.toDateString() === today.toDateString()) return 'Today';
+                                  if (msgDate.toDateString() === yesterday.toDateString()) return 'Yesterday';
+                                  return msgDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                                })();
+
+                                // Unread separator: first message from the friend that's unseen
+                                const firstUnread = chatHistory.find(m => m.senderId !== userId && !m.seen);
+                                const showUnreadSep = firstUnread && msg.id === firstUnread.id;
+
                                 return (
-                                  <div key={msg.id || index} className={`flex items-start gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-1' : 'mt-4'}`}>
+                                  <div key={msg.id || index} className="message-bubble-opt">
+                                  {/* Date separator */}
+                                  {showDateSep && (
+                                    <div className="flex items-center gap-3 my-4">
+                                      <div className="flex-1 h-px bg-white/5" />
+                                      <span className="text-[9px] uppercase font-bold text-on-surface-variant/60 tracking-widest px-2 py-0.5 bg-white/3 rounded-full border border-white/5">{dateLabel}</span>
+                                      <div className="flex-1 h-px bg-white/5" />
+                                    </div>
+                                  )}
+                                  {/* Unread separator */}
+                                  {showUnreadSep && (
+                                    <div className="flex items-center gap-3 my-4">
+                                      <div className="flex-1 h-px bg-primary/25" />
+                                      <span className="text-[9px] uppercase font-bold text-primary/80 tracking-widest px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">New Messages</span>
+                                      <div className="flex-1 h-px bg-primary/25" />
+                                    </div>
+                                  )}
+                                  <div className={`flex items-start gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} ${isTimeGrouped ? 'mt-0.5' : 'mt-3'}`}>
                                     
                                     {/* Left Spacer/Avatar for non-Me messages */}
                                     {!isMe && (
@@ -855,6 +923,7 @@ const Friends = () => {
                                       </span>
 
                                     </div>
+                                  </div>
                                   </div>
                                 );
                               })
