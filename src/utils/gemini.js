@@ -16,8 +16,12 @@ function extractJSON(text) {
 }
 
 export const generateRoadmapFromGemini = async (goal, level, hours, duration, signal = null) => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDemoKeyReplaceMeWithReal';
-  
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Gemini API key missing");
+  }
+
   const prompt = `Create a structured learning roadmap.
 
 Goal:
@@ -46,6 +50,13 @@ Requirements:
 - Suggest milestones.
 - Keep progression level friendly.
 
+LIMITS:
+- Maximum 5 tracks
+- Maximum 8 topics per track
+- Maximum 8 subtopics per topic
+- Maximum 3 projects per track
+- Maximum 3 milestones per track
+
 Output JSON format:
 {
   "tracks": [
@@ -71,14 +82,20 @@ Output JSON format:
   ]
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const controller = new AbortController();
 
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 30000);
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-goog-api-key': apiKey,
     },
+    signal: signal || controller.signal,
     body: JSON.stringify({
       contents: [{
         parts: [{
@@ -86,10 +103,12 @@ Output JSON format:
         }]
       }],
       generationConfig: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        temperature: 0.2,
+        maxOutputTokens: 8192
       }
     }),
-    ...(signal ? { signal } : {})
+
   });
 
   if (!response.ok) {
@@ -97,7 +116,7 @@ Output JSON format:
     const errMsg = errData?.error?.message || response.statusText;
     throw new Error(`Gemini API call failed (${response.status}): ${errMsg}`);
   }
-
+  clearTimeout(timeout);
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
@@ -105,7 +124,7 @@ Output JSON format:
   }
 
   console.log("Raw Gemini Response Length:", text.length);
-  console.log("Raw Gemini Response:", text);
+  console.log("Raw Gemini Response:", text.substring(0, 300));
 
   // Clean the response before JSON.parse()
   const cleaned = text
@@ -119,7 +138,7 @@ Output JSON format:
   }
 
   console.log("Extracted JSON Length:", extracted.length);
-  console.log("Extracted JSON:", extracted);
+  console.log("Extracted JSON:", extracted.substring(0, 300));
 
   let parsed;
   try {
@@ -129,7 +148,7 @@ Output JSON format:
     throw new Error(`JSON parsing failed: ${parseError.message}`);
   }
 
-  console.log("Parsed JSON:", parsed);
+  console.log("Parsed JSON:", parsed.tracks?.length);
 
   // Validation: Ensure tracks, projects, milestones exist
   if (!parsed || typeof parsed !== 'object') {
