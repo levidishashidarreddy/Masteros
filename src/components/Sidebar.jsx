@@ -2,15 +2,7 @@ import React, { useState, useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { TaskContext } from '../context/TaskContext';
 import PandaCompanion from './PandaCompanion';
-
-const AVATAR_PRESETS = [
-  { id: 'tech', label: 'Tech Prodigy', icon: 'developer_mode', bg: 'from-blue-500 to-indigo-600' },
-  { id: 'startup', label: 'Founder', icon: 'rocket_launch', bg: 'from-amber-400 to-orange-600' },
-  { id: 'design', label: 'Designer', icon: 'palette', bg: 'from-pink-500 to-rose-600' },
-  { id: 'ai', label: 'AI Researcher', icon: 'psychology', bg: 'from-purple-500 to-violet-600' },
-  { id: 'flow', label: 'Flow Master', icon: 'bolt', bg: 'from-teal-400 to-emerald-600' },
-  { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
-];
+import { AvatarImg, getAvatar } from './Avatar';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -18,8 +10,7 @@ const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPandaModalOpen, setIsPandaModalOpen] = useState(false);
 
-  const avatarId = userProfile?.profilePicture || 'tech';
-  const preset = AVATAR_PRESETS.find(p => p.id === avatarId);
+  const avatarSrc = getAvatar(userProfile);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -73,17 +64,7 @@ const Sidebar = () => {
           className="absolute left-[14px] top-6 h-11 w-11 rounded-full overflow-hidden border border-primary/20 p-[1.5px] cursor-pointer hover:border-primary transition-colors shadow-lg shadow-primary/5 z-10"
           title="Profile Page"
         >
-          {preset ? (
-            <div className={`w-full h-full rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white`}>
-              <span className="material-symbols-outlined text-[20px] font-bold">{preset.icon}</span>
-            </div>
-          ) : (
-            <img
-              className="w-full h-full object-cover rounded-full"
-              alt="User profile avatar"
-              src={avatarId || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"}
-            />
-          )}
+          <AvatarImg src={avatarSrc} sizeCls="w-full h-full" iconCls="text-[20px]" />
         </div>
 
         {/* Hamburger Toggle button (Left-middle-top, directly under avatar) */}

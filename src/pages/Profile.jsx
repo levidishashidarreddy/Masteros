@@ -6,15 +6,7 @@ import Modal from '../components/Modal';
 import Button from '../components/Button';
 import { TaskContext } from '../context/TaskContext';
 import { ProfileSkeleton } from '../components/Skeleton';
-
-const AVATAR_PRESETS = [
-  { id: 'tech', label: 'Tech Prodigy', icon: 'developer_mode', bg: 'from-blue-500 to-indigo-600' },
-  { id: 'startup', label: 'Founder', icon: 'rocket_launch', bg: 'from-amber-400 to-orange-600' },
-  { id: 'design', label: 'Designer', icon: 'palette', bg: 'from-pink-500 to-rose-600' },
-  { id: 'ai', label: 'AI Researcher', icon: 'psychology', bg: 'from-purple-500 to-violet-600' },
-  { id: 'flow', label: 'Flow Master', icon: 'bolt', bg: 'from-teal-400 to-emerald-600' },
-  { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
-];
+import { AvatarImg, getAvatar } from '../components/Avatar';
 
 const Profile = () => {
   const { userProfile, setUserProfile, userId, friends, allUsers, tasks, workspaces, loading } = useContext(TaskContext);
@@ -29,7 +21,7 @@ const Profile = () => {
   const year = userProfile?.year || '';
   const skills = userProfile?.skills && userProfile?.skills.length > 0 ? userProfile?.skills : [];
   const currentlyLearning = userProfile?.currentlyLearning || [];
-  const avatar = userProfile?.profilePicture || 'tech';
+  const avatar = getAvatar(userProfile);
   const connections = friends ? friends.length : 0;
   const bio = userProfile?.bio || 'Focused on building clean, performant applications and leveling up every day.';
   const fitness = userProfile?.fitness;
@@ -72,7 +64,6 @@ const Profile = () => {
   }, [loading]);
 
 
-  const presetAvatar = AVATAR_PRESETS.find(p => p.id === avatar);
 
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [bioText, setBioText] = useState(bio);
@@ -150,17 +141,7 @@ const Profile = () => {
           {/* Header Card */}
           <div className="flex items-center gap-6 p-8 rounded-2xl bg-[#111118] border border-white/5 relative overflow-hidden">
             <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-primary p-0.5 shadow-2xl flex items-center justify-center bg-background shrink-0">
-              {presetAvatar ? (
-                <div className={`w-full h-full rounded-full bg-gradient-to-tr ${presetAvatar.bg} flex items-center justify-center text-white`}>
-                  <span className="material-symbols-outlined text-3xl font-bold">{presetAvatar.icon}</span>
-                </div>
-              ) : (
-                <img
-                  className="w-full h-full object-cover rounded-full"
-                  alt="Profile Avatar"
-                  src={avatar}
-                />
-              )}
+              <AvatarImg src={avatar} sizeCls="w-full h-full" iconCls="text-3xl" />
             </div>
             <div className="flex-grow min-w-0">
               <div className="flex flex-wrap items-center gap-3">

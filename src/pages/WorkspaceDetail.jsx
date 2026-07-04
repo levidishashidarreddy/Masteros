@@ -11,14 +11,7 @@ import { WorkspaceDetailSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
 
-const AVATAR_PRESETS = [
-  { id: 'tech', label: 'Tech Prodigy', icon: 'developer_mode', bg: 'from-blue-500 to-indigo-600' },
-  { id: 'startup', label: 'Founder', icon: 'rocket_launch', bg: 'from-amber-400 to-orange-600' },
-  { id: 'design', label: 'Designer', icon: 'palette', bg: 'from-pink-500 to-rose-600' },
-  { id: 'ai', label: 'AI Researcher', icon: 'psychology', bg: 'from-purple-500 to-violet-600' },
-  { id: 'flow', label: 'Flow Master', icon: 'bolt', bg: 'from-teal-400 to-emerald-600' },
-  { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
-];
+import { AvatarImg, getAvatar } from '../components/Avatar';
 
 const WorkspaceDetail = () => {
   const { id } = useParams();
@@ -1040,21 +1033,11 @@ const WorkspaceDetail = () => {
                   const userObj = isMe ? null : allUsers.find(u => u.userId === collab.userId);
                   const name = isMe ? myName : (userObj ? userObj.fullName : collab.userId);
                   const username = isMe ? myUsername : (userObj ? userObj.username : '@friend');
-                  const avatarId = isMe ? myAvatar : (userObj ? userObj.profilePicture : 'tech');
-                  const preset = AVATAR_PRESETS.find(p => p.id === avatarId) || { icon: 'person', bg: 'from-gray-500 to-slate-600' };
 
                   return (
                     <div key={collab.userId} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        {AVATAR_PRESETS.some(p => p.id === avatarId) ? (
-                          <div className={`w-8.5 h-8.5 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                            <span className="material-symbols-outlined text-xs">{preset.icon}</span>
-                          </div>
-                        ) : (
-                          <div className="w-8.5 h-8.5 rounded-full overflow-hidden bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
-                            <img src={avatarId || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"} alt="avatar" className="w-full h-full object-cover rounded-full" />
-                          </div>
-                        )}
+                        <AvatarImg src={getAvatar(isMe ? userProfile : userObj)} sizeCls="w-8 h-8" iconCls="text-xs" />
                         <div>
                           <h4 className="text-xs font-bold text-white leading-none">{name}</h4>
                           <span className="text-[10px] text-on-surface-variant leading-none block mt-1">{username}</span>

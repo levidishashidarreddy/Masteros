@@ -6,37 +6,11 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import { SkeletonBlock } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { AvatarImg, getAvatar } from '../components/Avatar';
 
-const AVATAR_PRESETS = [
-  { id: 'tech', label: 'Tech Prodigy', icon: 'developer_mode', bg: 'from-blue-500 to-indigo-600' },
-  { id: 'startup', label: 'Founder', icon: 'rocket_launch', bg: 'from-amber-400 to-orange-600' },
-  { id: 'design', label: 'Designer', icon: 'palette', bg: 'from-pink-500 to-rose-600' },
-  { id: 'ai', label: 'AI Researcher', icon: 'psychology', bg: 'from-purple-500 to-violet-600' },
-  { id: 'flow', label: 'Flow Master', icon: 'bolt', bg: 'from-teal-400 to-emerald-600' },
-  { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
-];
-
-// Helper: render preset icon-gradient or custom photo avatar
-const renderAvatar = (avatarId, sizeClass = 'w-10 h-10', iconSize = 'text-sm') => {
-  const preset = AVATAR_PRESETS.find((p) => p.id === avatarId);
-  if (preset) {
-    return (
-      <div className={`${sizeClass} rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-        <span className={`material-symbols-outlined ${iconSize}`}>{preset.icon}</span>
-      </div>
-    );
-  }
-  // Custom URL or base64
-  return (
-    <div className={`${sizeClass} rounded-full overflow-hidden bg-white/5 border border-white/10 shrink-0`}>
-      <img
-        src={avatarId || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
-        alt="avatar"
-        className="w-full h-full object-cover"
-      />
-    </div>
-  );
-};
+// Thin wrapper so existing renderAvatar(src, sizeCls, iconCls) call-sites keep working
+const renderAvatar = (src, sizeCls = 'w-10 h-10', iconCls = 'text-sm') =>
+  <AvatarImg src={src} sizeCls={sizeCls} iconCls={iconCls} />;
 
 // Helper: evaluate friend's presence state from presenceStates map
 const getFriendPresence = (presenceStates, friendId) => {
@@ -110,7 +84,7 @@ const Friends = () => {
   const myUsername = userProfile?.username || '@user';
   const myUniversity = userProfile?.university || '';
   const mySkills = userProfile?.skills || [];
-  const myAvatar = userProfile?.profilePicture || 'tech';
+  const myAvatar = getAvatar(userProfile);
   
   // Current user's stats for Leaderboard
   const myXP = userProfile?.xp || 0;
