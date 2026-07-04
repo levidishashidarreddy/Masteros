@@ -20,7 +20,7 @@ const Landing = () => {
                 </span>
               </div>
               <span className="font-display-lg text-[22px] leading-tight font-bold tracking-tight text-white">
-                Progress<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
+                Master<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
               </span>
             </div>
             <div className="hidden md:flex gap-8">

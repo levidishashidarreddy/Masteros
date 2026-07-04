@@ -393,6 +393,12 @@
 
 /* MOBILE LAYER OVERRIDES */
 @media (max-width: 768px) {
+  /* Prevent horizontal scroll globally and ensure smooth scroll */
+  html, body {
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+  }
+
   aside {
     position: fixed !important;
     left: 0;
@@ -400,27 +406,182 @@
     bottom: 0;
     height: 100vh !important;
     z-index: 50 !important;
-    transform: translateX(-100%);
+    transform: translateX(-280px) !important; /* Move fully offscreen on mobile */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    visibility: hidden;
   }
   
   aside.w-\[280px\] {
     transform: translateX(0) !important;
     width: 280px !important;
+    visibility: visible !important;
   }
   
   aside.w-\[72px\] {
-    transform: translateX(-100%) !important;
-    width: 0 !important;
+    transform: translateX(-280px) !important; /* Ensure it moves offscreen completely */
+    width: 280px !important; /* Keep width consistent so transition works */
+    visibility: hidden !important;
   }
 
   main {
     padding: 16px !important;
   }
   
+  /* Stack header column-reverse (Logo row top, Search row bottom) */
   header {
+    height: auto !important;
+    min-height: 64px !important;
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    padding: 12px 16px !important;
+    gap: 8px !important;
+  }
+  
+  header > div:first-child {
+    display: none !important;
+  }
+  
+  header > div:nth-child(2) {
+    width: 100% !important;
+    flex: none !important;
+    justify-content: stretch !important;
+  }
+  
+  header .group {
+    width: 100% !important;
+  }
+  
+  header input {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  header > div:last-child {
+    width: 100% !important;
+    flex: none !important;
+    justify-content: flex-end !important;
+    padding-left: 40px !important; /* Avoid overlap with floating menu trigger */
+    gap: 8px !important;
+  }
+
+  /* Main content padding-top adjustments to avoid floating hamburger overlap */
+  .w-full.px-12.py-10,
+  main > div.w-full {
     padding-left: 16px !important;
     padding-right: 16px !important;
+    padding-top: 48px !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Centering empty state cards */
+  .flex.flex-col.items-center.justify-center.text-center.p-8.bg-\[\#111118\]\/40 {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+  }
+
+  /* Social Workspace overrides */
+  .text-3xl.font-bold.text-white.tracking-tight {
+    font-size: 20px !important;
+  }
+  
+  /* Convert tabs into horizontally scrollable row */
+  .flex.border-b.border-white\/5.gap-6.shrink-0 {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    gap: 16px !important;
+    padding-bottom: 4px !important;
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+  .flex.border-b.border-white\/5.gap-6.shrink-0::-webkit-scrollbar {
+    display: none !important;
+  }
+  .flex.border-b.border-white\/5.gap-6.shrink-0 button {
+    flex-shrink: 0 !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Leaderboard Cards Transformation */
+  table, thead, tbody, th, td, tr {
+    display: block !important;
+  }
+  thead {
+    display: none !important;
+  }
+  tbody tr {
+    background: rgba(17, 17, 24, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  tbody td:nth-child(1) {
+    padding: 0 !important;
+    text-align: left !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #8B5CF6 !important;
+    display: inline-block !important;
+  }
+  tbody td:nth-child(2) {
+    padding: 0 !important;
+    display: block !important;
+  }
+  /* Scale user profile details in Leaderboard card */
+  tbody td:nth-child(2) img,
+  tbody td:nth-child(2) .w-9.h-9 {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  tbody td:nth-child(4), 
+  tbody td:nth-child(5), 
+  tbody td:nth-child(6) {
+    padding: 0 !important;
+    display: inline-block !important;
+    width: auto !important;
+    margin-right: 16px !important;
+    font-size: 11px !important;
+    text-align: left !important;
+  }
+  tbody td:nth-child(4) {
+    color: #FB923C !important;
+  }
+  tbody td:nth-child(5)::before {
+    content: "Tasks: " !important;
+    color: #94A3B8 !important;
+  }
+  tbody td:nth-child(6) {
+    float: right !important;
+    margin-right: 0 !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Settings Page responsive elements */
+  .grid.grid-cols-6.gap-2 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  /* Landing Page adjustments */
+  .fixed.top-0.w-full.z-50.backdrop-blur-xl {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    height: 64px !important;
+  }
+  .font-display-lg.text-\[68px\].font-black,
+  .font-display-lg.text-\[44px\].leading-\[1\.1\] {
+    font-size: 32px !important;
+    line-height: 1.15 !important;
+  }
+  .text-lg.text-on-surface-variant\/80 {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
   }
 
   .px-8 {
