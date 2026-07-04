@@ -47,10 +47,18 @@ const Sidebar = () => {
         </button>
       </div>
 
+      {/* Backdrop for mobile drawer */}
+      {isExpanded && (
+        <div 
+          onClick={() => setIsExpanded(false)}
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-45 animate-fade-in"
+        />
+      )}
+
       {/* SINGLE IN-PLACE COLLAPSIBLE SIDEBAR CONTAINER */}
       <aside 
-        className={`h-screen border-r border-white/5 bg-[#0D0D14]/80 backdrop-blur-xl shrink-0 z-40 select-none transition-all duration-300 relative ${
-          isExpanded ? 'w-[280px]' : 'w-[72px]'
+        className={`fixed md:relative h-screen border-r border-white/5 bg-[#0D0D14]/85 md:bg-[#0D0D14]/80 backdrop-blur-xl shrink-0 z-50 md:z-40 select-none transition-all duration-300 ${
+          isExpanded ? 'translate-x-0 w-[280px]' : '-translate-x-full md:translate-x-0 md:w-[72px]'
         }`}
         style={{ 
           transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' 

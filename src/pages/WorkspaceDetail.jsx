@@ -1046,9 +1046,15 @@ const WorkspaceDetail = () => {
                   return (
                     <div key={collab.userId} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8.5 h-8.5 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                          <span className="material-symbols-outlined text-xs">{preset.icon}</span>
-                        </div>
+                        {AVATAR_PRESETS.some(p => p.id === avatarId) ? (
+                          <div className={`w-8.5 h-8.5 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
+                            <span className="material-symbols-outlined text-xs">{preset.icon}</span>
+                          </div>
+                        ) : (
+                          <div className="w-8.5 h-8.5 rounded-full overflow-hidden bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
+                            <img src={avatarId || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"} alt="avatar" className="w-full h-full object-cover rounded-full" />
+                          </div>
+                        )}
                         <div>
                           <h4 className="text-xs font-bold text-white leading-none">{name}</h4>
                           <span className="text-[10px] text-on-surface-variant leading-none block mt-1">{username}</span>

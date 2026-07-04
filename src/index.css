@@ -440,3 +440,25 @@
     padding: 20px !important;
   }
 }
+
+/* Theme Preference Overrides */
+:root[data-theme="indigo"] {
+  --color-primary: #6366F1;
+  --color-secondary: #4F46E5;
+  --color-tertiary: #818CF8;
+  --color-primary-container: rgba(99, 102, 241, 0.06);
+}
+
+:root[data-theme="teal"] {
+  --color-primary: #0D9488;
+  --color-secondary: #0F766E;
+  --color-tertiary: #2DD4BF;
+  --color-primary-container: rgba(13, 148, 136, 0.06);
+}
+
+:root[data-theme="sunset"] {
+  --color-primary: #EA580C;
+  --color-secondary: #D97706;
+  --color-tertiary: #F59E0B;
+  --color-primary-container: rgba(234, 88, 12, 0.06);
+}

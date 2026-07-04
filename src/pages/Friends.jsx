@@ -16,6 +16,54 @@ const AVATAR_PRESETS = [
   { id: 'fitness', label: 'Athlete', icon: 'fitness_center', bg: 'from-red-500 to-crimson-600' }
 ];
 
+// Helper: render preset icon-gradient or custom photo avatar
+const renderAvatar = (avatarId, sizeClass = 'w-10 h-10', iconSize = 'text-sm') => {
+  const preset = AVATAR_PRESETS.find((p) => p.id === avatarId);
+  if (preset) {
+    return (
+      <div className={`${sizeClass} rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
+        <span className={`material-symbols-outlined ${iconSize}`}>{preset.icon}</span>
+      </div>
+    );
+  }
+  // Custom URL or base64
+  return (
+    <div className={`${sizeClass} rounded-full overflow-hidden bg-white/5 border border-white/10 shrink-0`}>
+      <img
+        src={avatarId || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
+        alt="avatar"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
+// Helper: evaluate friend's presence state from presenceStates map
+const getFriendPresence = (presenceStates, friendId) => {
+  const p = presenceStates[friendId];
+  if (!p) return { state: 'offline', lastSeen: null };
+  const dbStatus = p.status || (p.online ? 'online' : 'offline');
+  const lastSeen = p.lastSeen || null;
+  if (dbStatus === 'offline') return { state: 'offline', lastSeen };
+  if (!lastSeen) return { state: 'offline', lastSeen: null };
+  const diffMs = Date.now() - new Date(lastSeen).getTime();
+  if (diffMs > 45000) return { state: 'offline', lastSeen };
+  return { state: dbStatus, lastSeen };
+};
+
+// Helper: "Last seen X minutes/hours/days ago" detail string
+const formatLastSeenDetail = (timestamp) => {
+  if (!timestamp) return 'Offline';
+  const diffMs = Date.now() - new Date(timestamp).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Last seen just now';
+  if (diffMins < 60) return `Last seen ${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `Last seen ${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `Last seen ${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+};
+
 const formatLastSeen = (timestamp) => {
   if (!timestamp) return 'Offline';
   const diffMs = Date.now() - new Date(timestamp).getTime();
@@ -325,12 +373,19 @@ const Friends = () => {
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
-        <Header hideSearch={true} hideStreak={true} hideLogo={true} />
+        {/* Hide Header on mobile when chat is open */}
+        <div className={`${activeChatFriendId ? 'hidden md:block' : ''}`}>
+          <Header hideSearch={true} hideStreak={true} hideLogo={true} />
+        </div>
 
-        <div className="w-full px-8 pt-4 pb-4 flex flex-col gap-4 min-h-0 flex-1 animate-page-transition overflow-hidden">
+        <div className={`w-full flex flex-col min-h-0 flex-1 animate-page-transition overflow-hidden ${
+          activeChatFriendId ? 'px-0 pt-0 pb-0 gap-0 md:px-8 md:pt-4 md:pb-4 md:gap-4' : 'px-8 pt-4 pb-4 gap-4'
+        }`}>
           
-          {/* Header titles */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5 shrink-0">
+          {/* Header titles — hidden on mobile when chat is open */}
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5 shrink-0 ${
+            activeChatFriendId ? 'hidden md:flex' : 'flex'
+          }`}>
             <div>
               <h2 className="text-3xl font-bold text-white tracking-tight mb-1">Social Workspace</h2>
               <p className="text-on-surface-variant text-sm font-medium">Coordinate roadmaps, track streaks, and share development milestones.</p>
@@ -351,7 +406,9 @@ const Friends = () => {
 
           {/* ================= SEARCH RESULTS PANEL ================= */}
           {searchQuery && (
-            <div className="bg-[#111118]/95 border border-primary/20 p-5 rounded-2xl space-y-4 shrink-0 shadow-2xl animate-fade-in relative z-20">
+            <div className={`bg-[#111118]/95 border border-primary/20 p-5 rounded-2xl space-y-4 shrink-0 shadow-2xl animate-fade-in relative z-20 ${
+              activeChatFriendId ? 'hidden md:block' : 'block'
+            }`}>
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-[10px] font-black uppercase text-on-surface-variant tracking-wider">Search Results for "{searchQuery}"</span>
                 <button onClick={() => setSearchQuery('')} className="text-[10px] font-bold text-primary hover:underline">Clear Search</button>
@@ -409,8 +466,10 @@ const Friends = () => {
             </div>
           )}
 
-          {/* Tabs header */}
-          <div className="flex border-b border-white/5 gap-6 shrink-0">
+          {/* Tabs header — hidden on mobile when a chat thread is open */}
+          <div className={`flex border-b border-white/5 gap-6 shrink-0 ${
+            activeTab === 'Chats' && activeChatFriendId ? 'hidden md:flex' : 'flex'
+          }`}>
             {['Leaderboards', 'Chats', 'Add Friends', 'Requests'].map((tab) => (
               <button
                 key={tab}
@@ -470,7 +529,6 @@ const Friends = () => {
                     </thead>
                     <tbody className="divide-y divide-white/5 text-sm">
                       {getLeaderboardList().map((user, idx) => {
-                        const preset = getPresetStyles(user.profilePicture);
                         const isMe = user.isMe;
                         
                         return (
@@ -495,9 +553,7 @@ const Friends = () => {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-3">
-                                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                                  <span className="material-symbols-outlined text-sm">{preset.icon}</span>
-                                </div>
+                                {renderAvatar(user.profilePicture, 'w-9 h-9', 'text-sm')}
                                 <div className="min-w-0">
                                   <h4 className="font-bold text-white text-xs leading-none flex items-center gap-1.5">
                                     {user.fullName}
@@ -544,7 +600,7 @@ const Friends = () => {
                     />
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-white/5">
+                  <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                     {friends.length === 0 ? (
                       <div className="p-4">
                         <EmptyState 
@@ -569,24 +625,31 @@ const Friends = () => {
                         return filteredFriends.map((friendId) => {
                           const userObj = allUsers.find(u => u.userId === friendId);
                           if (!userObj) return null;
-                          const preset = getPresetStyles(userObj.profilePicture);
                           const chatHistory = chats[friendId] || [];
                           const lastMsg = chatHistory[chatHistory.length - 1];
                           const isCurrent = activeChatFriendId === friendId;
 
-                          // Online status check
-                          const isOnline = presenceStates[friendId]?.online;
-                          const lastSeenTime = presenceStates[friendId]?.lastSeen;
+                          // Presence (3-state: online / away / offline)
+                          const pres = getFriendPresence(presenceStates, friendId);
+                          const isOnline = pres.state === 'online';
+                          const isAway   = pres.state === 'away';
+                          const lastSeenTime = pres.lastSeen;
 
                           // Typing check
                           const friendTypingData = typingStates[friendId];
-                          const isFriendTyping = friendTypingData?.typing && 
+                          const isFriendTyping = friendTypingData?.typing &&
                             (Date.now() - new Date(friendTypingData.updatedAt).getTime() < 10000);
 
                           // Unread badge count
                           const unreadCount = chatHistory.filter(
                             (msg) => msg.senderId !== userId && !msg.seen
                           ).length;
+
+                          const presenceDotCls = isOnline
+                            ? 'bg-green-500 shadow-[0_0_8px_#22c55e]'
+                            : isAway
+                              ? 'bg-yellow-500 shadow-[0_0_8px_#eab308]'
+                              : 'bg-gray-600';
 
                           return (
                             <div
@@ -603,12 +666,8 @@ const Friends = () => {
                               {isCurrent && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="relative">
-                                  <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                                    <span className="material-symbols-outlined text-sm">{preset.icon}</span>
-                                  </div>
-                                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 border border-[#0D0D14] rounded-full transition-all ${
-                                    isOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-gray-600'
-                                  }`} />
+                                  {renderAvatar(userObj.profilePicture, 'w-10 h-10', 'text-sm')}
+                                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 border border-[#0D0D14] rounded-full transition-all ${presenceDotCls}`} />
                                 </div>
                                 <div className="min-w-0">
                                   <h4 className="text-xs font-bold text-white leading-tight flex items-center gap-1">
@@ -629,16 +688,23 @@ const Friends = () => {
                                         )
                                       )}
                                       <span className="truncate">
-                                        {lastMsg ? (lastMsg.senderId === userId ? 'You: ' : '') + lastMsg.text : 'Start chatting...'}
+                                        {lastMsg
+                                          ? (lastMsg.senderId === userId
+                                              ? 'You: '
+                                              : `${userObj.fullName.split(' ')[0]}: `
+                                            ) + lastMsg.text
+                                          : 'Start chatting...'}
                                       </span>
                                     </p>
                                   )}
                                 </div>
                               </div>
-                              
+
                               <div className="shrink-0 flex flex-col items-end gap-1.5">
                                 <span className="text-[9px] text-on-surface-variant/65 font-mono">
-                                  {lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isOnline ? 'Active' : formatLastSeen(lastSeenTime))}
+                                  {lastMsg
+                                    ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    : isOnline ? 'Active' : isAway ? 'Away' : formatLastSeen(lastSeenTime)}
                                 </span>
                                 {unreadCount > 0 && (
                                   <span className="bg-primary text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg shadow-primary/20 animate-bounce">
@@ -660,12 +726,13 @@ const Friends = () => {
                     (() => {
                       const activeFriend = allUsers.find(u => u.userId === activeChatFriendId);
                       const chatHistory = chats[activeChatFriendId] || [];
-                      const preset = getPresetStyles(activeFriend?.profilePicture);
 
-                      // Presence
-                      const activeFriendPresence = presenceStates[activeChatFriendId];
-                      const isActiveFriendOnline = activeFriendPresence?.online;
-                      const activeFriendLastSeen = activeFriendPresence?.lastSeen;
+                      // Presence (3-state)
+                      const activePres = getFriendPresence(presenceStates, activeChatFriendId);
+                      const isActiveFriendOnline  = activePres.state === 'online';
+                      const isActiveFriendAway    = activePres.state === 'away';
+                      const isActiveFriendOffline = activePres.state === 'offline';
+                      const activeFriendLastSeen  = activePres.lastSeen;
 
                       // Typing
                       const friendTypingData = typingStates[activeChatFriendId];
@@ -686,11 +753,11 @@ const Friends = () => {
                                 <span className="material-symbols-outlined text-[18px]">arrow_back_ios</span>
                               </button>
                               <div className="relative">
-                                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white`}>
-                                  <span className="material-symbols-outlined text-sm">{preset.icon}</span>
-                                </div>
+                                {renderAvatar(activeFriend?.profilePicture, 'w-9 h-9', 'text-sm')}
                                 <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border border-[#0D0D14] rounded-full ${
-                                  isActiveFriendOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-gray-600'
+                                  isActiveFriendOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]'
+                                  : isActiveFriendAway ? 'bg-yellow-500 shadow-[0_0_8px_#eab308]'
+                                  : 'bg-gray-600'
                                 }`} />
                               </div>
                               <div className="text-left">
@@ -700,13 +767,19 @@ const Friends = () => {
                                     <span key={bIdx} className="text-xs" title="Unlocked Badge">{badge}</span>
                                   ))}
                                 </h4>
-                                {isActiveFriendOnline ? (
+                                {isActiveFriendOnline && (
                                   <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1 mt-1 animate-pulse">
                                     ● Online
                                   </span>
-                                ) : (
+                                )}
+                                {isActiveFriendAway && (
+                                  <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-wider flex items-center gap-1 mt-1">
+                                    ● Away
+                                  </span>
+                                )}
+                                {isActiveFriendOffline && (
                                   <span className="text-[10px] text-on-surface-variant/70 font-semibold block mt-1">
-                                    {activeFriendLastSeen ? `Last seen ${formatLastSeen(activeFriendLastSeen)}` : 'Offline'}
+                                    {activeFriendLastSeen ? formatLastSeenDetail(activeFriendLastSeen) : 'Offline'}
                                   </span>
                                 )}
                               </div>
@@ -739,7 +812,7 @@ const Friends = () => {
                           {/* Message Logs */}
                           <div
                             ref={chatContainerRef}
-                            className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1 no-scrollbar bg-[#0D0D14]/10"
+                            className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1 bg-[#0D0D14]/10"
                             style={{ overscrollBehavior: 'contain' }}
                           >
                              {chatHistory.length === 0 ? (
@@ -797,9 +870,7 @@ const Friends = () => {
                                     {/* Left Spacer/Avatar for non-Me messages */}
                                     {!isMe && (
                                       showAvatar ? (
-                                        <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0 shadow-md`} title={activeFriend?.fullName}>
-                                          <span className="material-symbols-outlined text-[11px]">{preset.icon}</span>
-                                        </div>
+                                        renderAvatar(activeFriend?.profilePicture, 'w-7 h-7', 'text-[11px]')
                                       ) : (
                                         <div className="w-7 shrink-0" />
                                       )
@@ -936,9 +1007,7 @@ const Friends = () => {
                              {/* Typing Indicator */}
                              {isFriendTyping && (
                                <div className="flex items-center gap-3 mt-4 animate-fade-in">
-                                 <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0 shadow-md`}>
-                                   <span className="material-symbols-outlined text-[11px]">{preset.icon}</span>
-                                 </div>
+                                 {renderAvatar(activeFriend?.profilePicture, 'w-7 h-7', 'text-[11px]')}
                                  <div className="bg-white/5 border border-white/5 px-3 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5">
                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0s' }}></span>
                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.2s' }}></span>
@@ -1012,24 +1081,34 @@ const Friends = () => {
                               </div>
                             )}
 
-                            {/* Attachments buttons */}
+                            {/* Attachments buttons (Disabled for V2) */}
                             <div className="flex gap-1">
-                              <button 
-                                type="button"
-                                onClick={handleAttachImage}
-                                className="p-2 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors cursor-pointer"
-                                title="Share Image"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">image</span>
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={handleAttachFile}
-                                className="p-2 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors cursor-pointer"
-                                title="Share File"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">attach_file</span>
-                              </button>
+                              <div className="relative group/tooltip">
+                                <button 
+                                  type="button"
+                                  disabled
+                                  className="p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">image</span>
+                                </button>
+                                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#111118] border border-white/10 text-[10px] text-primary font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 translate-y-1 group-hover/tooltip:translate-y-0 whitespace-nowrap z-30">
+                                  Image sharing coming in V2
+                                </div>
+                              </div>
+
+                              <div className="relative group/tooltip">
+                                <button 
+                                  type="button"
+                                  disabled
+                                  className="p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">attach_file</span>
+                                </button>
+                                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#111118] border border-white/10 text-[10px] text-primary font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 translate-y-1 group-hover/tooltip:translate-y-0 whitespace-nowrap z-30">
+                                  File attachments coming in V2
+                                </div>
+                              </div>
+
                               <button
                                 type="button"
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -1090,16 +1169,13 @@ const Friends = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {allUsers.filter(u => u.userId !== userId && !friends.includes(u.userId)).map((user) => {
-                    const preset = getPresetStyles(user.profilePicture);
                     const isRequested = sentRequests.includes(user.userId);
                     
                     return (
                       <div key={user.userId} className="bg-[#111118]/80 border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-48 hover:border-primary/20 transition-all group relative">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedProfileUser(user)}>
-                            <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                              <span className="material-symbols-outlined text-lg">{preset.icon}</span>
-                            </div>
+                            {renderAvatar(user.profilePicture, 'w-11 h-11', 'text-lg')}
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold text-white leading-tight flex items-center gap-1">
                                 {user.fullName}
@@ -1150,14 +1226,11 @@ const Friends = () => {
                   <div className="space-y-3 max-w-xl mx-auto">
                     {incomingRequests.map((req) => {
                       const userObj = allUsers.find(u => u.userId === req.meta.senderId);
-                      const preset = getPresetStyles(userObj?.profilePicture);
                       
                       return (
                         <div key={req.id} className="p-4 bg-[#111118] border border-white/5 rounded-xl flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedProfileUser(userObj)}>
-                            <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
-                              <span className="material-symbols-outlined text-sm">{preset.icon}</span>
-                            </div>
+                            {renderAvatar(userObj?.profilePicture, 'w-10 h-10', 'text-sm')}
                             <div>
                               <h4 className="text-xs font-bold text-white leading-none">{userObj ? userObj.fullName : 'Someone'}</h4>
                               <p className="text-[10px] text-on-surface-variant mt-1">{userObj?.username} · {userObj?.university}</p>
@@ -1198,19 +1271,16 @@ const Friends = () => {
         title="Friend Profile View"
       >
         {selectedProfileUser && (() => {
-          const preset = getPresetStyles(selectedProfileUser.profilePicture);
           const isFriend = friends.includes(selectedProfileUser.userId);
           
           return (
             <div className="space-y-6">
               
               {/* Profile Card Header */}
-              <div className="flex items-center gap-4 bg-[#0D0D14] border border-white/5 p-5 rounded-xl">
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0 shadow-xl`}>
-                  <span className="material-symbols-outlined text-2xl font-bold">{preset.icon}</span>
-                </div>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 bg-[#0D0D14] border border-white/5 p-5 rounded-xl">
+                {renderAvatar(selectedProfileUser.profilePicture, 'w-16 h-16 shadow-xl', 'text-2xl font-bold')}
                 <div>
-                  <h3 className="text-lg font-bold text-white leading-tight flex items-center gap-1.5">
+                  <h3 className="text-lg font-bold text-white leading-tight flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
                     {selectedProfileUser.fullName}
                     {getUserTopBadges(selectedProfileUser).map((badge, bIdx) => (
                       <span key={bIdx} className="text-xs" title="Unlocked Badge">{badge}</span>
@@ -1268,6 +1338,38 @@ const Friends = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Social Links */}
+              {selectedProfileUser.socialLinks && Object.values(selectedProfileUser.socialLinks).some(Boolean) && (
+                <div className="space-y-2">
+                  <label className="block text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Social Links</label>
+                  <div className="flex items-center gap-2.5">
+                    {[
+                      { key: 'github',    icon: 'fa-brands fa-github',    label: 'GitHub',       color: '#E2E8F0' },
+                      { key: 'linkedin',  icon: 'fa-brands fa-linkedin',  label: 'LinkedIn',     color: '#0A66C2' },
+                      { key: 'instagram', icon: 'fa-brands fa-instagram', label: 'Instagram',    color: '#E1306C' },
+                      { key: 'twitter',   icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', color: '#E2E8F0' },
+                      { key: 'portfolio', icon: 'fa-solid fa-globe',      label: 'Portfolio',    color: '#A78BFA' }
+                    ].map(({ key, icon, label, color }) => {
+                      const url = selectedProfileUser.socialLinks[key];
+                      if (!url) return null;
+                      return (
+                        <a
+                          key={key}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={label}
+                          className="w-9 h-9 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 hover:border-primary/40 hover:bg-primary/10 transition-all duration-200 hover:scale-110"
+                          style={{ color }}
+                        >
+                          <i className={`${icon} text-sm`} />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Private notice */}
               <div className="p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-lg flex items-center gap-2.5 text-[10px] text-yellow-400 font-semibold leading-tight">

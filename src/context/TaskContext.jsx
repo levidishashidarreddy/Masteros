@@ -443,51 +443,127 @@ export const TaskProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Apply theme from localStorage instantly on mount to avoid flashes
+  useEffect(() => {
+    const cachedTheme = localStorage.getItem('themePreference') || 'cyberpunk';
+    document.documentElement.setAttribute('data-theme', cachedTheme);
+  }, []);
+
+  // Update theme in localStorage & document element when userProfile changes
+  useEffect(() => {
+    if (userProfile?.themePreference) {
+      localStorage.setItem('themePreference', userProfile.themePreference);
+      document.documentElement.setAttribute('data-theme', userProfile.themePreference);
+    }
+  }, [userProfile?.themePreference]);
+
   // Presence heartbeat & unload hook
   useEffect(() => {
     if (!currentUser || !userProfile || !userProfile.userId) return;
     
     const presenceRef = doc(db, 'presence', userProfile.userId);
-    
-    const setOnline = async () => {
+    let lastActivity = Date.now();
+    let currentStatus = 'online';
+
+    const updatePresenceInFirestore = async (newStatus) => {
+      currentStatus = newStatus;
       try {
         await setDoc(presenceRef, {
-          online: true,
+          status: newStatus,
           lastSeen: new Date().toISOString()
         }, { merge: true });
       } catch (err) {
-        console.error("Error setting presence online:", err);
+        console.error("Error setting presence:", err);
       }
     };
-    
+
+    const handleActivity = () => {
+      lastActivity = Date.now();
+      if (currentStatus === 'away') {
+        updatePresenceInFirestore('online');
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        updatePresenceInFirestore('away');
+      } else {
+        updatePresenceInFirestore('online');
+      }
+    };
+
+    // Add activity listeners
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Initial online write
+    updatePresenceInFirestore('online');
+
+    // Heartbeat every 15 seconds
+    const heartbeatInterval = setInterval(() => {
+      const inactiveDuration = Date.now() - lastActivity;
+      if (inactiveDuration > 120000 && currentStatus === 'online') {
+        // Inactive for > 2 mins
+        updatePresenceInFirestore('away');
+      } else if (document.visibilityState === 'hidden' && currentStatus === 'online') {
+        updatePresenceInFirestore('away');
+      } else {
+        // Send heartbeat
+        updatePresenceInFirestore(currentStatus);
+      }
+    }, 15000);
+
     const setOffline = async () => {
       try {
         await setDoc(presenceRef, {
-          online: false,
+          status: 'offline',
           lastSeen: new Date().toISOString()
         }, { merge: true });
       } catch (err) {
         console.error("Error setting presence offline:", err);
       }
     };
-    
-    setOnline();
-    
-    // Heartbeat every 20s
-    const interval = setInterval(setOnline, 20000);
-    
+
     const handleUnload = () => {
       setOffline();
     };
-    
+
     window.addEventListener('beforeunload', handleUnload);
-    
+
     return () => {
-      clearInterval(interval);
+      clearInterval(heartbeatInterval);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleUnload);
       setOffline();
     };
   }, [currentUser, userProfile?.userId]);
+
+  // Logout method that updates presence to offline instantly
+  const logout = async () => {
+    if (currentUser && userProfile?.userId) {
+      try {
+        const presenceRef = doc(db, 'presence', userProfile.userId);
+        await setDoc(presenceRef, {
+          status: 'offline',
+          lastSeen: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error setting presence offline during logout:", err);
+      }
+    }
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
+  };
 
   // 2. Real-time Firestore sync of user collections
   useEffect(() => {
@@ -1512,6 +1588,7 @@ export const TaskProvider = ({ children }) => {
         isOnboarded,
         userProfile,
         setUserProfile: setUserProfileWrapper,
+        logout,
         userId: userProfile?.userId || '',
         initializeUserCollections,
         tasks,
