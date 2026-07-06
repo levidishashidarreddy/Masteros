@@ -8,7 +8,6 @@ import Modal from '../components/Modal';
 import InputField from '../components/InputField';
 import { TaskContext } from '../context/TaskContext';
 import { WorkspaceDetailSkeleton } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
 
 import { AvatarImg, getAvatar } from '../components/Avatar';
@@ -31,10 +30,11 @@ const WorkspaceDetail = () => {
     toggleTask, 
     togglePin,
     friends,
-    collaborators,
     inviteCollaborator,
+    removeCollaborator,
     allUsers,
     userProfile,
+    presenceStates,
     logProductiveActivity,
     loading: contextLoading
   } = useContext(TaskContext);
@@ -141,9 +141,13 @@ const WorkspaceDetail = () => {
   const [editTopicTitle, setEditTopicTitle] = useState('');
 
   // Overhaul states
-  const [showCollabPopover, setShowCollabPopover] = useState(false);
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isCollabCollapsed, setIsCollabCollapsed] = useState(true);
+
+  const toggleCollabCollapse = () => {
+    setIsCollabCollapsed(!isCollabCollapsed);
+  };
 
   // Subtopic inline state
   const [activeTopicForSubtopic, setActiveTopicForSubtopic] = useState(null);
@@ -181,14 +185,9 @@ const WorkspaceDetail = () => {
     ws.title.toLowerCase().includes('fitness') || 
     ws.title.toLowerCase().includes('gym');
 
-  const myName = userProfile?.fullName || 'User';
-  const myUsername = userProfile?.username || '@user';
-  const myAvatar = userProfile?.profilePicture || 'tech';
-  
   const isWorkspaceOwner = ws.ownerId === currentUser?.uid;
   const ownerUser = allUsers.find(u => u.uid === ws.ownerId);
   const ownerName = ownerUser ? (ownerUser.fullName || ownerUser.username) : 'Owner';
-  const ownerUsername = ownerUser ? ownerUser.username : 'owner';
 
   // Construct collabList from ws.collaborators array
   const collabList = [
@@ -560,86 +559,6 @@ const WorkspaceDetail = () => {
                 <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight leading-tight">
                   {ws.title}
                 </h1>
-
-                {/* Overhauled Collaboration and Invite button in Header */}
-                <div className="flex items-center flex-wrap gap-2 mt-2 relative">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowCollabPopover(!showCollabPopover)}
-                      className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full text-xs font-bold text-white hover:bg-white/10 transition-all cursor-pointer shadow-md"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">groups</span>
-                      <span>Collaborators ({collabList.length})</span>
-                    </button>
-
-                    {showCollabPopover && (
-                      <div className="absolute left-0 mt-2 w-64 bg-[#0D0D14]/95 border border-white/10 rounded-xl p-4 shadow-2xl z-50 backdrop-blur-xl animate-fade-in text-left">
-                        <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
-                          <span className="text-[9px] font-black uppercase text-primary tracking-widest">Workspace Team</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setShowCollabPopover(false)} 
-                            className="text-[12px] text-on-surface-variant hover:text-white bg-transparent border-0 cursor-pointer"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="space-y-4">
-                          {/* Owner */}
-                          <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest block">Owner</span>
-                            <div className="flex items-center gap-2">
-                              <AvatarImg src={getAvatar(ownerUser)} sizeCls="w-7 h-7" />
-                              <div>
-                                <div className="text-xs font-bold text-white leading-none">{ownerName}</div>
-                                <div className="text-[9px] text-on-surface-variant mt-0.5">@{ownerUsername}</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Collaborators */}
-                          <div className="space-y-1.5">
-                            <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest block">Collaborators</span>
-                            {(ws.collaborators || []).length === 0 ? (
-                              <div className="text-[10px] text-on-surface-variant italic">No collaborators in this workspace yet.</div>
-                            ) : (
-                              <div className="space-y-2.5 max-h-40 overflow-y-auto no-scrollbar">
-                                {(ws.collaborators || []).map((collabUserId) => {
-                                  const userObj = allUsers.find(u => u.userId === collabUserId);
-                                  const name = userObj ? userObj.fullName : collabUserId;
-                                  const username = userObj ? userObj.username : collabUserId;
-                                  return (
-                                    <div key={collabUserId} className="flex items-center gap-2">
-                                      <AvatarImg src={getAvatar(userObj)} sizeCls="w-7 h-7" />
-                                      <div>
-                                        <div className="text-xs font-bold text-white leading-none">{name}</div>
-                                        <div className="text-[9px] text-on-surface-variant mt-0.5">@{username}</div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Invite Collaborator Button inside popover */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowCollabPopover(false);
-                              setIsInviteModalOpen(true);
-                            }}
-                            className="w-full py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg text-[10px] font-black text-white uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">person_add</span>
-                            Invite Collaborator
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
                 
                 <div className="flex items-center gap-4 mt-3 text-on-surface-variant font-label-md text-xs font-bold uppercase tracking-wider">
                   <div className="flex flex-col">
@@ -660,9 +579,11 @@ const WorkspaceDetail = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-2 mb-1">
-              {/* Button placeholder removed - moved to collaborations popover */}
-            </div>
+            {isWorkspaceOwner && (
+              <div className="flex items-center gap-2 mb-1">
+                <Button variant="secondary" icon="group_add" onClick={() => setIsInviteModalOpen(true)}>Collaborate</Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1131,21 +1052,44 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Collaborators */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-4 workspace-collaborators-section">
-              <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
-                Collaborators ({collabList.length})
-              </h3>
-              <div className="space-y-4">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 workspace-collaborators-section">
+              <div 
+                className="flex items-center justify-between cursor-pointer md:cursor-default"
+                onClick={toggleCollabCollapse}
+              >
+                <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
+                  Collaborators ({collabList.length})
+                </h3>
+                <span className={`material-symbols-outlined text-sm text-on-surface-variant transition-transform md:hidden ${isCollabCollapsed ? '' : 'rotate-180'}`}>
+                  expand_more
+                </span>
+              </div>
+              
+              <div className={`${isCollabCollapsed ? 'hidden md:block' : 'block'} space-y-4 pt-4`}>
                 {collabList.map((collab) => {
                   const isCurrentUser = collab.userId === userProfile.userId || (collab.isOwner && isWorkspaceOwner);
                   const userObj = allUsers.find(u => u.userId === collab.userId);
                   const name = collab.fullName;
                   const username = collab.username ? `@${collab.username}` : '@user';
 
+                  // Presence checking
+                  const presence = presenceStates && presenceStates[collab.userId];
+                  const presenceStatus = presence ? presence.status : 'offline';
+
+                  let statusColor = 'bg-neutral-500';
+                  if (presenceStatus === 'online') {
+                    statusColor = 'bg-green-500 shadow-[0_0_8px_#22c55e]';
+                  } else if (presenceStatus === 'away') {
+                    statusColor = 'bg-amber-500 shadow-[0_0_8px_#f59e0b]';
+                  }
+
                   return (
-                    <div key={collab.userId} className="flex items-center justify-between gap-3">
+                    <div key={collab.userId} className="flex items-center justify-between gap-3 group/item">
                       <div className="flex items-center gap-3">
-                        <AvatarImg src={getAvatar(isCurrentUser ? userProfile : userObj)} sizeCls="w-8 h-8" iconCls="text-xs" />
+                        <div className="relative">
+                          <AvatarImg src={getAvatar(isCurrentUser ? userProfile : userObj)} sizeCls="w-8 h-8" iconCls="text-xs" />
+                          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-[#111118] ${statusColor}`} title={presenceStatus}></span>
+                        </div>
                         <div>
                           <h4 className="text-xs font-bold text-white leading-none">
                             {name} {isCurrentUser && <span className="text-[8px] text-primary">(You)</span>}
@@ -1153,7 +1097,34 @@ const WorkspaceDetail = () => {
                           <span className="text-[10px] text-on-surface-variant leading-none block mt-1">{username}</span>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[8px] font-black bg-white/5 border border-white/5 text-on-surface-variant uppercase tracking-wider">{collab.role}</span>
+                      
+                      <div className="flex items-center gap-2">
+                        {collab.isOwner ? (
+                          <span className="px-2 py-0.5 rounded text-[8px] font-black bg-primary/20 border border-primary/20 text-primary uppercase tracking-wider">
+                            Owner
+                          </span>
+                        ) : (
+                          <>
+                            <span className="px-2 py-0.5 rounded text-[8px] font-black bg-white/5 border border-white/5 text-on-surface-variant uppercase tracking-wider">
+                              {collab.role}
+                            </span>
+                            {isWorkspaceOwner && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (window.confirm(`Are you sure you want to remove ${name} from this workspace?`)) {
+                                    await removeCollaborator(id, collab.userId);
+                                  }
+                                }}
+                                className="p-1 text-on-surface-variant hover:text-red-400 bg-transparent border-0 cursor-pointer opacity-85 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity"
+                                title="Remove collaborator"
+                              >
+                                <span className="material-symbols-outlined text-xs">close</span>
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

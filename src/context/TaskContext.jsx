@@ -1594,6 +1594,51 @@ export const TaskProvider = ({ children }) => {
     await deleteDoc(doc(db, 'notifications', notifId));
   };
 
+  const removeCollaborator = async (workspaceId, collabUserId) => {
+    if (!currentUser) return;
+    try {
+      // 1. Remove from the workspace document's collaborators array
+      const wsRef = doc(db, 'workspaces', workspaceId);
+      const wsSnap = await getDoc(wsRef);
+      if (wsSnap.exists()) {
+        const wsData = wsSnap.data();
+        const collaboratorsArray = wsData.collaborators || [];
+        const updatedCollaborators = collaboratorsArray.filter(uid => uid !== collabUserId);
+        await updateDoc(wsRef, {
+          collaborators: updatedCollaborators
+        });
+      }
+
+      // 2. Remove from the collaborators collection document's users list
+      const collabRef = doc(db, 'collaborators', workspaceId);
+      const collabSnap = await getDoc(collabRef);
+      if (collabSnap.exists()) {
+        const collabData = collabSnap.data();
+        const usersList = collabData.users || [];
+        const updatedUsers = usersList.filter(u => u.userId !== collabUserId);
+        await updateDoc(collabRef, {
+          users: updatedUsers
+        });
+      }
+
+      // 3. Send a notification to the removed collaborator
+      const removedUser = allUsers.find(u => u.userId === collabUserId);
+      if (removedUser) {
+        const removeNotifId = `notif-remove-${Date.now()}`;
+        await setDoc(doc(db, 'notifications', removeNotifId), {
+          userId: removedUser.uid,
+          text: `You have been removed from the collaboration on workspace: ${wsSnap.exists() ? wsSnap.data().title : 'Workspace'}.`,
+          type: 'Workspace',
+          read: false,
+          timestamp: new Date().toISOString(),
+          meta: { workspaceId }
+        });
+      }
+    } catch (err) {
+      console.error("Error removing collaborator:", err);
+    }
+  };
+
   // ================= NOTIFICATION UTILITIES =================
   const markNotificationRead = async (notifId) => {
     if (!currentUser) return;
@@ -1771,6 +1816,7 @@ export const TaskProvider = ({ children }) => {
         inviteCollaborator,
         acceptCollaborationInvite,
         rejectCollaborationInvite,
+        removeCollaborator,
         markNotificationRead,
         markAllNotificationsRead,
         deleteNotification,
