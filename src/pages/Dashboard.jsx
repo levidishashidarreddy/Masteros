@@ -589,9 +589,9 @@ const Dashboard = () => {
       <main className="flex-1 flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10">
         <Header />
 
-        <div className="w-full px-12 py-10 animate-page-transition space-y-12">
+        <div className="w-full px-12 py-10 animate-page-transition space-y-12 dashboard-content-container">
           {/* Welcome Row */}
-          <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-text-reveal">
+          <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-text-reveal dashboard-welcome-row">
             <div className="space-y-2">
               <h2 className="font-display-lg text-[42px] font-black tracking-tight text-white leading-none">
                 {displayName} 👋

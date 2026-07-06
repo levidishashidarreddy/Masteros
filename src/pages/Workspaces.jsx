@@ -40,7 +40,7 @@ const OTHER_PATH_OPTIONS = [
 
 const Workspaces = () => {
   const navigate = useNavigate();
-  const { workspaces, addWorkspace, userProfile, tasks, loading, addTask } = useContext(TaskContext);
+  const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, userProfile, tasks, loading, addTask } = useContext(TaskContext);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -663,6 +663,11 @@ const Workspaces = () => {
     return ws.category === activeFilter;
   });
 
+  const filteredCollaborated = (collaboratedWorkspaces || []).filter(ws => {
+    if (activeFilter === 'All') return true;
+    return ws.category === activeFilter;
+  });
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-background text-on-surface radial-glow-bg select-none">
@@ -760,6 +765,54 @@ const Workspaces = () => {
               ))
             )}
           </div>
+
+          {/* Collaborated Workspaces Section */}
+          {(collaboratedWorkspaces || []).length > 0 && (
+            <div className="space-y-6 pt-4">
+              <div className="border-t border-white/5 pt-8">
+                <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider mb-2">
+                  Collaborated Workspaces
+                </h3>
+                <p className="text-on-surface-variant text-xs mb-6 font-medium">
+                  Workspaces you have been invited to collaborate on.
+                </p>
+              </div>
+
+              {filteredCollaborated.length === 0 ? (
+                <div className="p-8 bg-[#111118]/45 border border-white/5 rounded-xl text-center space-y-2">
+                  <span className="material-symbols-outlined text-on-surface-variant/30 text-3xl">group</span>
+                  <p className="text-xs text-on-surface-variant italic font-medium">No collaborated workspaces match the active filter.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {filteredCollaborated.map((ws) => {
+                    const ownerObj = allUsers.find(u => u.uid === ws.ownerId);
+                    const ownerName = ownerObj ? ownerObj.fullName : 'Owner';
+                    return (
+                      <div key={ws.id} className="cursor-pointer" onClick={() => navigate(`/workspaces/${ws.id}`)}>
+                        <WorkspaceCard
+                          id={ws.id}
+                          title={ws.title}
+                          description={ws.description}
+                          tag={ws.tag}
+                          progress={ws.progress}
+                          streak={ws.streak}
+                          isPublic={ws.isPublic}
+                          tasksLeft={0}
+                          totalTasks={0}
+                          icon={ws.icon}
+                          bannerImage={ws.bannerImage}
+                          colorTheme={ws.colorTheme}
+                          isCollaborated={true}
+                          ownerName={ownerName}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Recent activity timeline log */}
           <section className="mt-12">

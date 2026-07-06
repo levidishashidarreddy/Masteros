@@ -623,3 +623,212 @@
   --color-tertiary: #F59E0B;
   --color-primary-container: rgba(234, 88, 12, 0.06);
 }
+
+/* ================= MOBILE OVERHAUL MEDIA QUERY ================= */
+@media(max-width: 768px) {
+  /* Global safe area & overflow prevention */
+  html, body {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Touch target sizes & heights for non-icon buttons */
+  button:not(.small-btn):not(.icon-btn),
+  a.btn,
+  .btn,
+  input[type="submit"] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 1. LANDING PAGE MOBILE REDESIGN */
+  .landing-hero-section {
+    padding-top: 100px !important;
+    padding-bottom: 40px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .landing-hero-title {
+    font-size: 32px !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .landing-hero-subtitle {
+    font-size: 14px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .landing-cta-container {
+    flex-direction: column !important;
+    width: 100% !important;
+    padding: 0 16px !important;
+    gap: 12px !important;
+  }
+
+  .landing-cta-container button,
+  .landing-cta-container a,
+  .landing-cta-container .btn,
+  .landing-demo-link {
+    width: 100% !important;
+    display: block !important;
+  }
+
+  .landing-hero-scene {
+    height: 300px !important;
+    margin-top: 24px !important;
+  }
+
+  /* 2. APP HEADER MOBILE REDESIGN */
+  .app-header {
+    flex-direction: column-reverse !important;
+    height: auto !important;
+    padding: 16px !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  .app-header .header-search-container {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .app-header .header-search-wrapper {
+    width: 100% !important;
+  }
+
+  .app-header .header-search-input {
+    width: 100% !important;
+    height: 40px !important;
+  }
+
+  .app-header .header-right-col {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* 3. DASHBOARD MOBILE REDESIGN */
+  .dashboard-content-container {
+    padding: 16px !important;
+    margin: 0 !important;
+  }
+  
+  .dashboard-content-container > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0 !important;
+    margin-top: 24px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .dashboard-welcome-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-welcome-row h2 {
+    font-size: 28px !important;
+  }
+
+  /* Stats cards in 2-column grid on mobile */
+  .stats-cards-grid,
+  section.grid-cols-1.sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* 4. WORKSPACE DETAIL MOBILE REDESIGN */
+  .workspace-hero-banner {
+    height: 180px !important;
+  }
+
+  .workspace-hero-banner h1 {
+    font-size: 20px !important;
+  }
+
+  .workspace-hero-banner .w-16 {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .workspace-hero-banner span.material-symbols-outlined.text-3xl {
+    font-size: 24px !important;
+  }
+
+  /* display: contents reordering technique for WorkspaceDetail components */
+  .workspace-detail-content {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+
+  .workspace-detail-left-col,
+  .workspace-detail-right-col {
+    display: contents !important;
+  }
+
+  .workspace-roadmap-section {
+    order: 1 !important;
+  }
+
+  .workspace-progress-section {
+    order: 2 !important;
+  }
+
+  .workspace-timer-section {
+    order: 3 !important;
+  }
+
+  .workspace-notepad-section {
+    order: 4 !important;
+  }
+
+  .workspace-todo-section {
+    order: 5 !important;
+  }
+
+  .workspace-resources-section {
+    order: 6 !important;
+  }
+
+  .workspace-collaborators-section {
+    order: 7 !important;
+  }
+
+  .workspace-delete-section {
+    order: 8 !important;
+    width: 100% !important;
+  }
+
+  /* 5. SOCIAL WORKSPACE / FRIENDS MOBILE OVERHAUL */
+  .friends-tabs-header {
+    padding: 0 4px !important;
+    gap: 16px !important;
+    scrollbar-width: none !important;
+  }
+  
+  .friends-tabs-header::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .friends-content-container.mobile-chat-active {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+  }
+
+  /* 6. SIDEBAR MOBILE DRAWER DRAWER REDESIGN */
+  aside.fixed {
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.8) !important;
+    background: rgba(13, 13, 20, 0.96) !important;
+    backdrop-filter: blur(28px) !important;
+  }
+}

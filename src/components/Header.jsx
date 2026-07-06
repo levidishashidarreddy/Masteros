@@ -9,21 +9,21 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
   const alerts = getNotifications();
 
   return (
-    <header className={`w-full ${hideSearch ? 'h-14' : 'h-20'} bg-transparent flex justify-between items-center px-8 select-none transition-all duration-300 relative`}>
+    <header className={`w-full ${hideSearch ? 'h-14' : 'h-20'} bg-transparent flex justify-between items-center px-8 select-none transition-all duration-300 relative app-header`}>
       
       {/* LEFT COL (Empty filler to balance flex layouts) */}
       {!hideSearch && <div className="flex-1 flex justify-start"></div>}
 
       {/* CENTER COL: Search bar (Center-aligned, expands on focus) */}
       {!hideSearch && (
-        <div className="flex-1 flex justify-center">
-          <div className="relative flex items-center group">
+        <div className="flex-1 flex justify-center header-search-container">
+          <div className="relative flex items-center group header-search-wrapper">
             <span className="material-symbols-outlined absolute left-3.5 text-on-surface-variant group-focus-within:text-primary transition-colors text-[18px]">
               search
             </span>
             <input
               type="text"
-              className="bg-[#111118]/80 border border-white/5 rounded-full pl-10 pr-4 py-1.5 text-xs focus:ring-4 focus:ring-primary/10 focus:border-primary/50 focus:outline-none w-60 focus:w-[360px] text-on-surface transition-all duration-[250ms] ease-out placeholder:text-on-surface-variant/40 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)]"
+              className="bg-[#111118]/80 border border-white/5 rounded-full pl-10 pr-4 py-1.5 text-xs focus:ring-4 focus:ring-primary/10 focus:border-primary/50 focus:outline-none w-60 focus:w-[360px] text-on-surface transition-all duration-[250ms] ease-out placeholder:text-on-surface-variant/40 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] header-search-input"
               style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
               placeholder="Search workspaces, tasks..."
             />
@@ -32,7 +32,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
       )}
 
       {/* RIGHT COL: Status Badges, Fire Streak, MasterOS Logo */}
-      <div className={`${hideSearch ? 'w-full' : 'flex-1'} flex justify-end items-center gap-6`}>
+      <div className={`${hideSearch ? 'w-full' : 'flex-1'} flex justify-end items-center gap-6 header-right-col`}>
         
         {/* Notifications Icon Button */}
         {!hideNotifications && (

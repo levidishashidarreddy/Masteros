@@ -13,7 +13,9 @@ const WorkspaceCard = ({
   totalTasks = 10,
   icon = 'terminal',
   bannerImage = '',
-  colorTheme = 'primary'
+  colorTheme = 'primary',
+  isCollaborated = false,
+  ownerName = ''
 }) => {
   const getThemeColor = () => {
     switch (colorTheme) {
@@ -76,6 +78,11 @@ const WorkspaceCard = ({
               <span className="bg-[#08080C] text-[9px] px-2 py-0.5 rounded text-on-surface-variant font-bold border border-white/5 uppercase tracking-wider">
                 {isPublic ? 'Public' : 'Private'}
               </span>
+              {isCollaborated && (
+                <span className="bg-primary/20 text-primary border border-primary/20 text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                  Shared with you
+                </span>
+              )}
               {streak > 0 && (
                 <span className={`${theme.lightBg} ${theme.text} text-[9px] px-2 py-0.5 rounded font-bold border ${theme.lightBorder} flex items-center gap-0.5`}>
                   <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -88,13 +95,24 @@ const WorkspaceCard = ({
           </div>
 
           <Link to={`/workspaces/${id}`}>
-            <h3 className="font-headline-md text-base text-white mb-2 group-hover:text-primary transition-colors font-bold leading-snug">
+            <h3 className="font-headline-md text-base text-white mb-2 group-hover:text-primary transition-colors font-bold leading-snug flex items-center gap-1.5">
+              {isCollaborated && (
+                <span className="material-symbols-outlined text-xs text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  groups
+                </span>
+              )}
               {title}
             </h3>
           </Link>
           <p className="text-on-surface-variant text-[13px] mb-4 line-clamp-2 leading-relaxed">
             {description}
           </p>
+          {isCollaborated && ownerName && (
+            <div className="flex items-center gap-1 text-[11px] text-on-surface-variant font-medium mt-1 mb-3">
+              <span className="opacity-60">Owner:</span>
+              <span className="text-white font-bold">{ownerName}</span>
+            </div>
+          )}
         </div>
 
         {/* Progress block */}

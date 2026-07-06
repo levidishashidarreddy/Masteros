@@ -58,20 +58,20 @@ const Landing = () => {
             </span>
           </div>
 
-          <h1 className="font-display-lg text-[44px] leading-[1.1] md:text-[72px] md:leading-[1.05] tracking-tight text-white font-black animate-text-reveal" style={{ animationDelay: '0.2s' }}>
+          <h1 className="font-display-lg text-[44px] leading-[1.1] md:text-[72px] md:leading-[1.05] tracking-tight text-white font-black animate-text-reveal landing-hero-title" style={{ animationDelay: '0.2s' }}>
             Track your learning, projects,<br />
             goals, and growth — <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">all in one place.</span>
           </h1>
 
-          <p className="font-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10 text-base leading-relaxed animate-text-reveal" style={{ animationDelay: '0.3s' }}>
+          <p className="font-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10 text-base leading-relaxed animate-text-reveal landing-hero-subtitle" style={{ animationDelay: '0.3s' }}>
             Outpero-inspired elegant workspace. Transform chaotic inspiration into actionable roadmaps, beautiful milestones, and verifiable proof of progress.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-text-reveal" style={{ animationDelay: '0.4s' }}>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-text-reveal landing-cta-container" style={{ animationDelay: '0.4s' }}>
             <Button variant="primary" className="px-8 py-3.5 text-base" onClick={() => navigate('/auth')}>
               Get Started for Free
             </Button>
-            <a href="#features">
+            <a href="#features" className="landing-demo-link">
               <Button variant="secondary" className="px-8 py-3.5 text-base w-full">
                 Explore Demo
               </Button>
@@ -80,7 +80,7 @@ const Landing = () => {
         </div>
 
         {/* Hero Scene Container */}
-        <div className="relative w-full max-w-[1000px] mx-auto h-[480px] mt-16 rounded-2xl overflow-hidden glass-panel p-[1px] shadow-2xl animate-text-reveal" style={{ animationDelay: '0.5s' }}>
+        <div className="relative w-full max-w-[1000px] mx-auto h-[480px] mt-16 rounded-2xl overflow-hidden glass-panel p-[1px] shadow-2xl animate-text-reveal landing-hero-scene" style={{ animationDelay: '0.5s' }}>
           <div className="absolute inset-0 w-full h-full">
             <ThreeJSAnimation />
           </div>

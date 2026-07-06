@@ -281,6 +281,12 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_workspaces');
     return cached ? JSON.parse(cached) : [];
   });
+  const [collaboratedWorkspaces, setCollaboratedWorkspaces] = useState(() => {
+    const cached = localStorage.getItem('cache_collaborated_workspaces');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [myCreatedTasks, setMyCreatedTasks] = useState([]);
+  const [workspaceTasksMap, setWorkspaceTasksMap] = useState({});
   const [allUsers, setAllUsers] = useState([]);
   const [friends, setFriends] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
@@ -319,6 +325,76 @@ export const TaskProvider = ({ children }) => {
   useEffect(() => {
     if (workspaces.length > 0) localStorage.setItem('cache_workspaces', JSON.stringify(workspaces));
   }, [workspaces]);
+
+  useEffect(() => {
+    if (collaboratedWorkspaces.length > 0) localStorage.setItem('cache_collaborated_workspaces', JSON.stringify(collaboratedWorkspaces));
+  }, [collaboratedWorkspaces]);
+
+  const wsTasksListenersRef = useRef({});
+
+  // Real-time synchronization of tasks for owned and collaborated workspaces
+  useEffect(() => {
+    if (!currentUser) {
+      Object.values(wsTasksListenersRef.current).forEach(unsub => {
+        if (typeof unsub === 'function') unsub();
+      });
+      wsTasksListenersRef.current = {};
+      setWorkspaceTasksMap({});
+      return;
+    }
+
+    const activeWsIds = new Set([
+      ...workspaces.map(w => w.id),
+      ...collaboratedWorkspaces.map(w => w.id)
+    ]);
+
+    // Clean up listeners for workspaces that are no longer active
+    Object.keys(wsTasksListenersRef.current).forEach(wsId => {
+      if (!activeWsIds.has(wsId)) {
+        if (typeof wsTasksListenersRef.current[wsId] === 'function') {
+          wsTasksListenersRef.current[wsId]();
+        }
+        delete wsTasksListenersRef.current[wsId];
+        setWorkspaceTasksMap(prev => {
+          const copy = { ...prev };
+          delete copy[wsId];
+          return copy;
+        });
+      }
+    });
+
+    // Start listeners for new active workspaces
+    activeWsIds.forEach(wsId => {
+      if (!wsTasksListenersRef.current[wsId]) {
+        const q = query(collection(db, 'tasks'), where('workspaceId', '==', wsId));
+        wsTasksListenersRef.current[wsId] = onSnapshot(q, (snapshot) => {
+          const list = [];
+          snapshot.forEach(docSnap => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setWorkspaceTasksMap(prev => ({
+            ...prev,
+            [wsId]: list
+          }));
+        }, (err) => {
+          console.error(`Error listening to tasks for workspace ${wsId}:`, err);
+        });
+      }
+    });
+  }, [currentUser, workspaces, collaboratedWorkspaces]);
+
+  // Merge myCreatedTasks and workspaceTasksMap into single tasks state
+  useEffect(() => {
+    const allMerged = [...myCreatedTasks];
+    Object.values(workspaceTasksMap).forEach(wsTasksList => {
+      wsTasksList.forEach(t => {
+        if (!allMerged.some(existing => existing.id === t.id)) {
+          allMerged.push(t);
+        }
+      });
+    });
+    setTasks(allMerged);
+  }, [myCreatedTasks, workspaceTasksMap]);
 
   const getYesterdayStr = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -609,7 +685,7 @@ export const TaskProvider = ({ children }) => {
       snapshot.forEach((docSnap) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
-      setTasks(list);
+      setMyCreatedTasks(list);
     });
 
     // C. Listen to exams
@@ -641,6 +717,24 @@ export const TaskProvider = ({ children }) => {
       });
       setWorkspaces(list);
     });
+
+    // E2. Listen to collaborated workspaces
+    let unsubscribeCollabWs = () => {};
+    if (userProfile && userProfile.userId) {
+      const collabWsQuery = query(
+        collection(db, 'workspaces'),
+        where('collaborators', 'array-contains', userProfile.userId)
+      );
+      unsubscribeCollabWs = onSnapshot(collabWsQuery, (snapshot) => {
+        const list = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        setCollaboratedWorkspaces(list);
+      }, (err) => {
+        console.error("Error listening to collaborated workspaces:", err);
+      });
+    }
 
     // F. Listen to notifications
     const notifQuery = query(collection(db, 'notifications'), where('userId', '==', uid));
@@ -749,6 +843,7 @@ export const TaskProvider = ({ children }) => {
       unsubscribeExams();
       unsubscribeAssign();
       unsubscribeWs();
+      unsubscribeCollabWs();
       unsubscribeNotif();
       unsubscribeFriends();
       unsubscribeSentReqs();
@@ -758,6 +853,11 @@ export const TaskProvider = ({ children }) => {
       // Clean up message listeners
       Object.values(msgListenersRef.current).forEach((unsub) => unsub());
       msgListenersRef.current = {};
+      // Clean up workspace tasks listeners
+      Object.values(wsTasksListenersRef.current).forEach(unsub => {
+        if (typeof unsub === 'function') unsub();
+      });
+      wsTasksListenersRef.current = {};
     };
   }, [currentUser, userProfile]);
 
@@ -1070,7 +1170,8 @@ export const TaskProvider = ({ children }) => {
       notes: workspace.notes || '### Workspace Notes',
       resources: workspace.resources || [],
       projects: workspace.projects || [],
-      milestones: workspace.milestones || []
+      milestones: workspace.milestones || [],
+      collaborators: workspace.collaborators || []
     };
     await setDoc(doc(db, 'workspaces', wsId), newWorkspace);
 
@@ -1087,14 +1188,38 @@ export const TaskProvider = ({ children }) => {
 
   const deleteWorkspace = async (wsId) => {
     if (!currentUser || !userProfile) return;
-    await deleteDoc(doc(db, 'workspaces', wsId));
-    
+
+    const batch = writeBatch(db);
+
+    // 1. Delete workspace doc
+    batch.delete(doc(db, 'workspaces', wsId));
+
+    // 2. Remove from user featured workspaces
     if (userProfile.featuredWorkspaces) {
       const featured = userProfile.featuredWorkspaces.filter(id => id !== wsId);
-      await updateDoc(doc(db, 'users', currentUser.uid), {
+      batch.update(doc(db, 'users', currentUser.uid), {
         featuredWorkspaces: featured
       });
     }
+
+    // 3. Delete tasks associated with workspace
+    const tasksQuery = query(collection(db, 'tasks'), where('workspaceId', '==', wsId));
+    const tasksSnap = await getDocs(tasksQuery);
+    tasksSnap.forEach((taskDoc) => {
+      batch.delete(taskDoc.ref);
+    });
+
+    // 4. Delete collaboration links (collaborators collection doc)
+    batch.delete(doc(db, 'collaborators', wsId));
+
+    // 5. Delete invites / notifications
+    const notifsQuery = query(collection(db, 'notifications'), where('meta.workspaceId', '==', wsId));
+    const notifsSnap = await getDocs(notifsQuery);
+    notifsSnap.forEach((notifDoc) => {
+      batch.delete(notifDoc.ref);
+    });
+
+    await batch.commit();
   };
 
   const toggleSubtopic = async (wsId, roadmapId, topicId, subtopicId) => {
@@ -1440,6 +1565,19 @@ export const TaskProvider = ({ children }) => {
       }, { merge: true });
     }
 
+    // Add collaborator userId to the workspace document itself
+    const wsRef = doc(db, 'workspaces', wsId);
+    const wsSnap = await getDoc(wsRef);
+    if (wsSnap.exists()) {
+      const wsData = wsSnap.data();
+      const currentCollabs = wsData.collaborators || [];
+      if (!currentCollabs.includes(userProfile.userId)) {
+        await updateDoc(wsRef, {
+          collaborators: [...currentCollabs, userProfile.userId]
+        });
+      }
+    }
+
     const joinNotifId = `notif-joined-${Date.now()}`;
     await setDoc(doc(db, 'notifications', joinNotifId), {
       userId: currentUser.uid,
@@ -1600,6 +1738,7 @@ export const TaskProvider = ({ children }) => {
         sentRequests,
         chats,
         collaborators,
+        collaboratedWorkspaces,
         presenceStates,
         typingStates,
         setMyTypingStatus,

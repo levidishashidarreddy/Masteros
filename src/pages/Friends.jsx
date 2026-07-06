@@ -352,8 +352,8 @@ const Friends = () => {
           <Header hideSearch={true} hideStreak={true} hideLogo={true} />
         </div>
 
-        <div className={`w-full flex flex-col min-h-0 flex-1 animate-page-transition overflow-hidden ${
-          activeChatFriendId ? 'px-0 pt-0 pb-0 gap-0 md:px-8 md:pt-4 md:pb-4 md:gap-4' : 'px-8 pt-4 pb-4 gap-4'
+        <div className={`w-full flex flex-col min-h-0 flex-1 animate-page-transition overflow-hidden friends-content-container ${
+          activeChatFriendId ? 'px-0 pt-0 pb-0 gap-0 md:px-8 md:pt-4 md:pb-4 md:gap-4 mobile-chat-active' : 'px-8 pt-4 pb-4 gap-4'
         }`}>
           
           {/* Header titles — hidden on mobile when chat is open */}
@@ -441,7 +441,7 @@ const Friends = () => {
           )}
 
           {/* Tabs header — hidden on mobile when a chat thread is open */}
-          <div className={`flex border-b border-white/5 gap-6 shrink-0 ${
+          <div className={`flex border-b border-white/5 gap-6 shrink-0 overflow-x-auto no-scrollbar whitespace-nowrap friends-tabs-header ${
             activeTab === 'Chats' && activeChatFriendId ? 'hidden md:flex' : 'flex'
           }`}>
             {['Leaderboards', 'Chats', 'Add Friends', 'Requests'].map((tab) => (

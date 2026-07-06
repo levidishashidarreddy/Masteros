@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Button from '../components/Button';
@@ -15,10 +15,14 @@ import { AvatarImg, getAvatar } from '../components/Avatar';
 
 const WorkspaceDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   
   const { 
     workspaces, 
+    collaboratedWorkspaces,
+    currentUser,
     updateWorkspace, 
+    deleteWorkspace,
     toggleSubtopic,
     tasks, 
     addTask, 
@@ -35,7 +39,7 @@ const WorkspaceDetail = () => {
     loading: contextLoading
   } = useContext(TaskContext);
 
-  const ws = workspaces.find(w => w.id === id);
+  const ws = (workspaces || []).find(w => w.id === id) || (collaboratedWorkspaces || []).find(w => w.id === id);
 
   // Pomodoro Study Timer states
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -136,6 +140,11 @@ const WorkspaceDetail = () => {
   const [editTopicRoadmapId, setEditTopicRoadmapId] = useState('');
   const [editTopicTitle, setEditTopicTitle] = useState('');
 
+  // Overhaul states
+  const [showCollabPopover, setShowCollabPopover] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(0);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
   // Subtopic inline state
   const [activeTopicForSubtopic, setActiveTopicForSubtopic] = useState(null);
   const [newSubtopicText, setNewSubtopicText] = useState('');
@@ -175,7 +184,26 @@ const WorkspaceDetail = () => {
   const myName = userProfile?.fullName || 'User';
   const myUsername = userProfile?.username || '@user';
   const myAvatar = userProfile?.profilePicture || 'tech';
-  const collabList = collaborators[id] || [{ userId: 'me', role: 'Owner' }];
+  
+  const isWorkspaceOwner = ws.ownerId === currentUser?.uid;
+  const ownerUser = allUsers.find(u => u.uid === ws.ownerId);
+  const ownerName = ownerUser ? (ownerUser.fullName || ownerUser.username) : 'Owner';
+  const ownerUsername = ownerUser ? ownerUser.username : 'owner';
+
+  // Construct collabList from ws.collaborators array
+  const collabList = [
+    { userId: ownerUser?.userId || 'owner', role: 'Owner', fullName: ownerName, username: ownerUser?.username || 'owner', isOwner: true },
+    ...(ws.collaborators || []).map(collabUserId => {
+      const u = allUsers.find(user => user.userId === collabUserId);
+      return {
+        userId: collabUserId,
+        role: 'Collaborator',
+        fullName: u ? u.fullName : collabUserId,
+        username: u ? u.username : collabUserId,
+        isOwner: false
+      };
+    })
+  ];
 
   const workspaceTasks = tasks.filter(t => t.workspaceId === id);
   
@@ -532,6 +560,86 @@ const WorkspaceDetail = () => {
                 <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight leading-tight">
                   {ws.title}
                 </h1>
+
+                {/* Overhauled Collaboration and Invite button in Header */}
+                <div className="flex items-center flex-wrap gap-2 mt-2 relative">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowCollabPopover(!showCollabPopover)}
+                      className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full text-xs font-bold text-white hover:bg-white/10 transition-all cursor-pointer shadow-md"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">groups</span>
+                      <span>Collaborators ({collabList.length})</span>
+                    </button>
+
+                    {showCollabPopover && (
+                      <div className="absolute left-0 mt-2 w-64 bg-[#0D0D14]/95 border border-white/10 rounded-xl p-4 shadow-2xl z-50 backdrop-blur-xl animate-fade-in text-left">
+                        <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
+                          <span className="text-[9px] font-black uppercase text-primary tracking-widest">Workspace Team</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setShowCollabPopover(false)} 
+                            className="text-[12px] text-on-surface-variant hover:text-white bg-transparent border-0 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="space-y-4">
+                          {/* Owner */}
+                          <div className="space-y-1">
+                            <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest block">Owner</span>
+                            <div className="flex items-center gap-2">
+                              <AvatarImg src={getAvatar(ownerUser)} sizeCls="w-7 h-7" />
+                              <div>
+                                <div className="text-xs font-bold text-white leading-none">{ownerName}</div>
+                                <div className="text-[9px] text-on-surface-variant mt-0.5">@{ownerUsername}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Collaborators */}
+                          <div className="space-y-1.5">
+                            <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest block">Collaborators</span>
+                            {(ws.collaborators || []).length === 0 ? (
+                              <div className="text-[10px] text-on-surface-variant italic">No collaborators in this workspace yet.</div>
+                            ) : (
+                              <div className="space-y-2.5 max-h-40 overflow-y-auto no-scrollbar">
+                                {(ws.collaborators || []).map((collabUserId) => {
+                                  const userObj = allUsers.find(u => u.userId === collabUserId);
+                                  const name = userObj ? userObj.fullName : collabUserId;
+                                  const username = userObj ? userObj.username : collabUserId;
+                                  return (
+                                    <div key={collabUserId} className="flex items-center gap-2">
+                                      <AvatarImg src={getAvatar(userObj)} sizeCls="w-7 h-7" />
+                                      <div>
+                                        <div className="text-xs font-bold text-white leading-none">{name}</div>
+                                        <div className="text-[9px] text-on-surface-variant mt-0.5">@{username}</div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Invite Collaborator Button inside popover */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCollabPopover(false);
+                              setIsInviteModalOpen(true);
+                            }}
+                            className="w-full py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg text-[10px] font-black text-white uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">person_add</span>
+                            Invite Collaborator
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 
                 <div className="flex items-center gap-4 mt-3 text-on-surface-variant font-label-md text-xs font-bold uppercase tracking-wider">
                   <div className="flex flex-col">
@@ -553,19 +661,19 @@ const WorkspaceDetail = () => {
             </div>
             
             <div className="flex items-center gap-2 mb-1">
-              <Button variant="secondary" icon="group_add" onClick={() => setIsInviteModalOpen(true)}>Collaborate</Button>
+              {/* Button placeholder removed - moved to collaborations popover */}
             </div>
           </div>
         </div>
 
         {/* Content Layout Grid */}
-        <div className="px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full flex-grow min-h-0">
+        <div className="px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full flex-grow min-h-0 workspace-detail-content">
           
           {/* Column 1: Left Milestones / Roadmap */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-8 space-y-8 workspace-detail-left-col">
             
             {/* Multi-Roadmaps Section */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6 workspace-roadmap-section">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Roadmap Progress</h3>
@@ -734,7 +842,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Workspace Notepad Card */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5 workspace-notepad-section">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Workspace Notepad</h3>
@@ -775,7 +883,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Task Management Section */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6 workspace-todo-section">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Workspace Todo List</h3>
@@ -852,10 +960,10 @@ const WorkspaceDetail = () => {
           </div>
 
           {/* Column 2: Right Sidebar */}
-          <div className="lg:col-span-4 space-y-8">
+          <div className="lg:col-span-4 space-y-8 workspace-detail-right-col">
             
             {/* Progress Rings */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 workspace-progress-section">
               <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant mb-6 text-[10px] font-bold">
                 Overall Progress
               </h3>
@@ -865,7 +973,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Study Session Pomodoro Timer */}
-            <section className="bg-[#111118]/80 border border-white/5 backdrop-blur-xl rounded-2xl p-6 space-y-6 relative overflow-hidden">
+            <section className="bg-[#111118]/80 border border-white/5 backdrop-blur-xl rounded-2xl p-6 space-y-6 relative overflow-hidden workspace-timer-section">
               <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
                 <div>
@@ -963,7 +1071,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Links Resources Manager */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5 workspace-resources-section">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
                 <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
                   Resources ({(ws.resources || []).length})
@@ -1023,23 +1131,25 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Collaborators */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-4">
+            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-4 workspace-collaborators-section">
               <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
                 Collaborators ({collabList.length})
               </h3>
               <div className="space-y-4">
                 {collabList.map((collab) => {
-                  const isMe = collab.userId === 'me';
-                  const userObj = isMe ? null : allUsers.find(u => u.userId === collab.userId);
-                  const name = isMe ? myName : (userObj ? userObj.fullName : collab.userId);
-                  const username = isMe ? myUsername : (userObj ? userObj.username : '@friend');
+                  const isCurrentUser = collab.userId === userProfile.userId || (collab.isOwner && isWorkspaceOwner);
+                  const userObj = allUsers.find(u => u.userId === collab.userId);
+                  const name = collab.fullName;
+                  const username = collab.username ? `@${collab.username}` : '@user';
 
                   return (
                     <div key={collab.userId} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <AvatarImg src={getAvatar(isMe ? userProfile : userObj)} sizeCls="w-8 h-8" iconCls="text-xs" />
+                        <AvatarImg src={getAvatar(isCurrentUser ? userProfile : userObj)} sizeCls="w-8 h-8" iconCls="text-xs" />
                         <div>
-                          <h4 className="text-xs font-bold text-white leading-none">{name}</h4>
+                          <h4 className="text-xs font-bold text-white leading-none">
+                            {name} {isCurrentUser && <span className="text-[8px] text-primary">(You)</span>}
+                          </h4>
                           <span className="text-[10px] text-on-surface-variant leading-none block mt-1">{username}</span>
                         </div>
                       </div>
@@ -1049,6 +1159,23 @@ const WorkspaceDetail = () => {
                 })}
               </div>
             </section>
+
+            {/* Delete Workspace Button (Owner Only) */}
+            {isWorkspaceOwner && (
+              <div className="pt-4 flex justify-end workspace-delete-section">
+                <Button 
+                  variant="ghost" 
+                  className="bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-white px-5 py-2.5 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 w-full justify-center"
+                  onClick={() => {
+                    setDeleteStep(1);
+                    setDeleteConfirmText('');
+                  }}
+                  icon="delete"
+                >
+                  Delete Workspace
+                </Button>
+              </div>
+            )}
 
           </div>
 
@@ -1268,6 +1395,74 @@ const WorkspaceDetail = () => {
             <Button type="submit" variant="primary">Rename Topic</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Workspace - Step 1: Warning and Name Match */}
+      <Modal 
+        isOpen={deleteStep === 1} 
+        onClose={() => setDeleteStep(0)} 
+        title="Delete Workspace"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-red-950/20 border border-red-500/20 rounded-xl text-red-400 text-xs font-semibold leading-relaxed">
+            ⚠️ <strong>Warning:</strong> This action is permanent and cannot be undone. All tasks, roadmaps, and files associated with this workspace will be deleted forever.
+          </div>
+          <p className="text-xs text-on-surface-variant leading-relaxed text-left">
+            To confirm deletion, please type the workspace name exactly as shown below:
+          </p>
+          <div className="py-2 px-3 bg-white/5 border border-white/5 rounded-lg text-xs font-mono font-bold text-white text-center select-all">
+            {ws.title}
+          </div>
+          <InputField
+            id="delete-workspace-confirm-input"
+            label="Type workspace name to confirm"
+            placeholder="Type name here..."
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+          />
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                if (deleteConfirmText === ws.title) {
+                  setDeleteStep(2);
+                }
+              }}
+              disabled={deleteConfirmText !== ws.title}
+              className="bg-red-600 border border-red-600 text-white hover:bg-red-700"
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Workspace - Step 2: Final Confirmation */}
+      <Modal 
+        isOpen={deleteStep === 2} 
+        onClose={() => setDeleteStep(0)} 
+        title="Are you absolutely sure?"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-on-surface-variant leading-relaxed text-left">
+            You are about to delete <strong>{ws.title}</strong> permanently. This will delete all task records, timeline logs, and active invitations.
+          </p>
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
+            <Button 
+              variant="primary" 
+              onClick={async () => {
+                setDeleteStep(0);
+                await deleteWorkspace(id);
+                navigate('/workspaces');
+              }}
+              className="bg-red-600 border border-red-600 text-white hover:bg-red-700"
+            >
+              Delete permanently
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
