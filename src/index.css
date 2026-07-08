@@ -570,8 +570,8 @@
 
   /* Landing Page adjustments */
   .fixed.top-0.w-full.z-50.backdrop-blur-xl {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     height: 64px !important;
   }
   .font-display-lg.text-\[68px\].font-black,
@@ -645,8 +645,51 @@
   }
 
   /* 1. LANDING PAGE MOBILE REDESIGN */
+  .landing-navbar {
+    height: 64px !important;
+  }
+
+  .landing-nav-signin {
+    display: inline-flex !important;
+    background: transparent !important;
+    color: var(--color-on-surface-variant) !important;
+    border: none !important;
+    font-size: 13px !important;
+    font-family: var(--font-family-body-md) !important;
+    font-weight: 500 !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    white-space: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .landing-nav-signin:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+  }
+
+  .landing-nav-signup {
+    display: inline-flex !important;
+    background: linear-gradient(to right, var(--color-primary), var(--color-secondary)) !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-family: var(--font-family-body-md) !important;
+    font-weight: 700 !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    white-space: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2) !important;
+  }
+
   .landing-hero-section {
-    padding-top: 100px !important;
+    padding-top: 80px !important;
     padding-bottom: 40px !important;
     padding-left: 16px !important;
     padding-right: 16px !important;
@@ -666,7 +709,7 @@
   .landing-cta-container {
     flex-direction: column !important;
     width: 100% !important;
-    padding: 0 16px !important;
+    padding: 0 !important;
     gap: 12px !important;
   }
 

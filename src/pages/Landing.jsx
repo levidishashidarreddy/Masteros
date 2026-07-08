@@ -10,8 +10,8 @@ const Landing = () => {
   return (
     <div className="relative min-h-screen text-on-surface flex flex-col justify-between selection:bg-primary/30 radial-glow-bg">
       {/* Top Navbar */}
-      <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-background/60 border-b border-white/5 shadow-2xl">
-        <div className="max-w-[1200px] mx-auto px-margin-desktop h-20 flex justify-between items-center">
+      <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-background/60 border-b border-white/5 shadow-2xl landing-navbar">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-margin-desktop h-16 md:h-20 flex justify-between items-center">
           <div className="flex items-center gap-12">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center text-primary shadow-[0_0_15px_rgba(139,92,246,0.25)] border border-primary/20">
@@ -29,14 +29,14 @@ const Landing = () => {
               <a className="text-on-surface-variant font-medium font-body-md text-sm hover:text-white transition-colors" href="#social">Proof of Work</a>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button 
               onClick={() => navigate('/auth')}
-              className="hidden md:block text-on-surface-variant font-medium font-body-md text-sm px-4 py-2 hover:text-white transition-colors active:scale-95 cursor-pointer"
+              className="text-on-surface-variant font-medium font-body-md text-sm px-4 py-2 hover:text-white transition-colors active:scale-95 cursor-pointer landing-nav-signin small-btn"
             >
               Sign In
             </button>
-            <Button variant="primary" onClick={() => navigate('/auth')}>
+            <Button variant="primary" onClick={() => navigate('/auth')} className="landing-nav-signup small-btn">
               Get Started
             </Button>
           </div>
@@ -44,7 +44,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-margin-mobile md:px-0">
+      <section className="landing-hero-section relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-margin-mobile md:px-0">
         <ShaderBackground type="landing" />
 
         {/* Ambient radial blur top glow */}
@@ -59,7 +59,7 @@ const Landing = () => {
           </div>
 
           <h1 className="font-display-lg text-[44px] leading-[1.1] md:text-[72px] md:leading-[1.05] tracking-tight text-white font-black animate-text-reveal landing-hero-title" style={{ animationDelay: '0.2s' }}>
-            Track your learning, projects,<br />
+            Track your learning, projects,<br className="hidden md:inline" />
             goals, and growth — <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">all in one place.</span>
           </h1>
 
@@ -190,7 +190,7 @@ const Landing = () => {
 
       {/* How It Works Section */}
       <section id="how-it-works" className="py-28 relative overflow-hidden bg-[#0D0D14]/30 border-y border-white/5">
-        <div className="max-w-[1200px] mx-auto px-margin-desktop relative z-10">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-margin-desktop relative z-10">
           <h2 className="font-display-lg text-[36px] md:text-[48px] text-center mb-24 text-white font-bold">
             Your Path to Mastery
           </h2>
@@ -238,7 +238,7 @@ const Landing = () => {
 
       {/* Proof of work / Social features */}
       <section id="social" className="py-28 relative">
-        <div className="max-w-[1200px] mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div>
             <h2 className="font-display-lg text-[36px] md:text-[48px] leading-[1.1] mb-6 text-white font-bold">
               Built for Private Focus &amp;<br />
@@ -319,7 +319,7 @@ const Landing = () => {
 
       {/* Footer */}
       <footer className="py-12 border-t border-white/5 relative z-10 bg-background/50">
-        <div className="max-w-[1200px] mx-auto px-margin-desktop flex flex-col sm:flex-row justify-between items-center text-on-surface-variant text-[12px] gap-4">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-margin-desktop flex flex-col sm:flex-row justify-between items-center text-on-surface-variant text-[12px] gap-4">
           <span>© 2024 MasterOS. Inspired by Outpero.</span>
           <div className="flex gap-6">
             <a className="hover:text-white transition-colors" href="#features">Privacy</a>
