@@ -440,7 +440,7 @@ const Workspaces = () => {
 
     const newRoadmap = {
       id: `${path.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-      title: path,
+      title: template.title || path,
       topics: template.topics.map(t => ({
         id: t.id || `topic-${Math.random()}`,
         title: t.title,

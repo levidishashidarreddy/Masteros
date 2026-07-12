@@ -28,8 +28,386 @@ const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 // ROADMAP GENERATOR HELPER
 
 export const getDefaultRoadmapForCategory = (cat) => {
+  if (cat === 'JavaScript' || cat === 'JavaScript Complete Mindmap') {
+    return {
+      id: `javascript-${Date.now()}`,
+      title: 'JavaScript Complete Mindmap',
+      topics: [
+        {
+          id: 'js-basics',
+          title: '1️⃣ Basics (Foundation)',
+          expanded: true,
+          subtopics: [
+            { id: 'js-basics-1', title: 'What is JavaScript?', done: false },
+            { id: 'js-basics-2', title: 'How JS works in browser', done: false },
+            { id: 'js-basics-3', title: 'Internal vs External JS', done: false },
+            { id: 'js-basics-4', title: 'console.log()', done: false },
+            { id: 'js-basics-5', title: 'Comments', done: false },
+            { id: 'js-basics-6', title: 'Variables', done: false },
+            { id: 'js-basics-7', title: 'var', done: false },
+            { id: 'js-basics-8', title: 'let', done: false },
+            { id: 'js-basics-9', title: 'const', done: false },
+            { id: 'js-basics-10', title: 'Data Types', done: false },
+            { id: 'js-basics-11', title: 'String', done: false },
+            { id: 'js-basics-12', title: 'Number', done: false },
+            { id: 'js-basics-13', title: 'Boolean', done: false },
+            { id: 'js-basics-14', title: 'Null', done: false },
+            { id: 'js-basics-15', title: 'Undefined', done: false },
+            { id: 'js-basics-16', title: 'BigInt', done: false },
+            { id: 'js-basics-17', title: 'Symbol', done: false },
+            { id: 'js-basics-18', title: 'Type Conversion', done: false },
+            { id: 'js-basics-19', title: 'Operators', done: false },
+            { id: 'js-basics-20', title: 'Arithmetic', done: false },
+            { id: 'js-basics-21', title: 'Comparison', done: false },
+            { id: 'js-basics-22', title: 'Logical', done: false },
+            { id: 'js-basics-23', title: 'Assignment', done: false },
+            { id: 'js-basics-24', title: 'Ternary', done: false }
+          ]
+        },
+        {
+          id: 'js-control',
+          title: '2️⃣ Control Flow',
+          expanded: false,
+          subtopics: [
+            { id: 'js-control-1', title: 'if', done: false },
+            { id: 'js-control-2', title: 'if else', done: false },
+            { id: 'js-control-3', title: 'else if', done: false },
+            { id: 'js-control-4', title: 'Nested if', done: false },
+            { id: 'js-control-5', title: 'switch', done: false },
+            { id: 'js-control-6', title: 'Ternary operator', done: false }
+          ]
+        },
+        {
+          id: 'js-loops',
+          title: '3️⃣ Loops',
+          expanded: false,
+          subtopics: [
+            { id: 'js-loops-1', title: 'for', done: false },
+            { id: 'js-loops-2', title: 'while', done: false },
+            { id: 'js-loops-3', title: 'do while', done: false },
+            { id: 'js-loops-4', title: 'Nested loops', done: false },
+            { id: 'js-loops-5', title: 'break', done: false },
+            { id: 'js-loops-6', title: 'continue', done: false }
+          ]
+        },
+        {
+          id: 'js-funcs',
+          title: '4️⃣ Functions',
+          expanded: false,
+          subtopics: [
+            { id: 'js-funcs-1', title: 'Function declaration', done: false },
+            { id: 'js-funcs-2', title: 'Function expression', done: false },
+            { id: 'js-funcs-3', title: 'Parameters', done: false },
+            { id: 'js-funcs-4', title: 'Return statement', done: false },
+            { id: 'js-funcs-5', title: 'Arrow functions (=>)', done: false },
+            { id: 'js-funcs-6', title: 'Default parameters', done: false },
+            { id: 'js-funcs-7', title: 'Rest parameters (...)', done: false },
+            { id: 'js-funcs-8', title: 'Callback functions', done: false },
+            { id: 'js-funcs-9', title: 'Higher order functions', done: false }
+          ]
+        },
+        {
+          id: 'js-strings',
+          title: '5️⃣ Strings',
+          expanded: false,
+          subtopics: [
+            { id: 'js-strings-1', title: 'String methods', done: false },
+            { id: 'js-strings-2', title: 'length', done: false },
+            { id: 'js-strings-3', title: 'slice()', done: false },
+            { id: 'js-strings-4', title: 'substring()', done: false },
+            { id: 'js-strings-5', title: 'replace()', done: false },
+            { id: 'js-strings-6', title: 'split()', done: false },
+            { id: 'js-strings-7', title: 'trim()', done: false },
+            { id: 'js-strings-8', title: 'toUpperCase()', done: false },
+            { id: 'js-strings-9', title: 'toLowerCase()', done: false },
+            { id: 'js-strings-10', title: 'includes()', done: false }
+          ]
+        },
+        {
+          id: 'js-arrays',
+          title: '6️⃣ Arrays',
+          expanded: false,
+          subtopics: [
+            { id: 'js-arrays-1', title: 'Creating arrays', done: false },
+            { id: 'js-arrays-2', title: 'Accessing elements', done: false },
+            { id: 'js-arrays-3', title: 'Array methods', done: false },
+            { id: 'js-arrays-4', title: 'push()', done: false },
+            { id: 'js-arrays-5', title: 'pop()', done: false },
+            { id: 'js-arrays-6', title: 'shift()', done: false },
+            { id: 'js-arrays-7', title: 'unshift()', done: false },
+            { id: 'js-arrays-8', title: 'splice()', done: false },
+            { id: 'js-arrays-9', title: 'slice()', done: false },
+            { id: 'js-arrays-10', title: 'concat()', done: false },
+            { id: 'js-arrays-11', title: 'join()', done: false },
+            { id: 'js-arrays-12', title: 'Iteration', done: false },
+            { id: 'js-arrays-13', title: 'for', done: false },
+            { id: 'js-arrays-14', title: 'for...of', done: false },
+            { id: 'js-arrays-15', title: 'forEach()', done: false }
+          ]
+        },
+        {
+          id: 'js-arradv',
+          title: '7️⃣ Array Advanced Methods ⭐',
+          expanded: false,
+          subtopics: [
+            { id: 'js-arradv-1', title: 'map()', done: false },
+            { id: 'js-arradv-2', title: 'filter()', done: false },
+            { id: 'js-arradv-3', title: 'reduce()', done: false },
+            { id: 'js-arradv-4', title: 'find()', done: false },
+            { id: 'js-arradv-5', title: 'findIndex()', done: false },
+            { id: 'js-arradv-6', title: 'some()', done: false },
+            { id: 'js-arradv-7', title: 'every()', done: false },
+            { id: 'js-arradv-8', title: 'sort()', done: false },
+            { id: 'js-arradv-9', title: 'includes()', done: false }
+          ]
+        },
+        {
+          id: 'js-objs',
+          title: '8️⃣ Objects',
+          expanded: false,
+          subtopics: [
+            { id: 'js-objs-1', title: 'Creating objects', done: false },
+            { id: 'js-objs-2', title: 'Access properties', done: false },
+            { id: 'js-objs-3', title: 'Modify properties', done: false },
+            { id: 'js-objs-4', title: 'Nested objects', done: false },
+            { id: 'js-objs-5', title: 'Object methods', done: false },
+            { id: 'js-objs-6', title: 'this keyword', done: false },
+            { id: 'js-objs-7', title: 'Object destructuring', done: false },
+            { id: 'js-objs-8', title: 'Spread operator (...)', done: false },
+            { id: 'js-objs-9', title: 'Object methods', done: false },
+            { id: 'js-objs-10', title: 'keys()', done: false },
+            { id: 'js-objs-11', title: 'values()', done: false },
+            { id: 'js-objs-12', title: 'entries()', done: false }
+          ]
+        },
+        {
+          id: 'js-scope',
+          title: '9️⃣ Scope & Execution',
+          expanded: false,
+          subtopics: [
+            { id: 'js-scope-1', title: 'Global scope', done: false },
+            { id: 'js-scope-2', title: 'Local scope', done: false },
+            { id: 'js-scope-3', title: 'Block scope', done: false },
+            { id: 'js-scope-4', title: 'Lexical scope', done: false },
+            { id: 'js-scope-5', title: 'Hoisting', done: false },
+            { id: 'js-scope-6', title: 'Temporal Dead Zone (TDZ)', done: false }
+          ]
+        },
+        {
+          id: 'js-dom',
+          title: '🔟 DOM Manipulation ⭐⭐⭐',
+          expanded: false,
+          subtopics: [
+            { id: 'js-dom-1', title: 'What is DOM?', done: false },
+            { id: 'js-dom-2', title: 'Selecting elements', done: false },
+            { id: 'js-dom-3', title: 'getElementById()', done: false },
+            { id: 'js-dom-4', title: 'querySelector()', done: false },
+            { id: 'js-dom-5', title: 'querySelectorAll()', done: false },
+            { id: 'js-dom-6', title: 'Changing content', done: false },
+            { id: 'js-dom-7', title: 'innerHTML', done: false },
+            { id: 'js-dom-8', title: 'textContent', done: false },
+            { id: 'js-dom-9', title: 'CSS manipulation', done: false },
+            { id: 'js-dom-10', title: 'Attributes', done: false },
+            { id: 'js-dom-11', title: 'Create elements', done: false },
+            { id: 'js-dom-12', title: 'Remove elements', done: false },
+            { id: 'js-dom-13', title: 'Append elements', done: false }
+          ]
+        },
+        {
+          id: 'js-events',
+          title: '1️⃣1️⃣ Events',
+          expanded: false,
+          subtopics: [
+            { id: 'js-events-1', title: 'onclick', done: false },
+            { id: 'js-events-2', title: 'addEventListener()', done: false },
+            { id: 'js-events-3', title: 'Mouse events', done: false },
+            { id: 'js-events-4', title: 'Keyboard events', done: false },
+            { id: 'js-events-5', title: 'Form events', done: false },
+            { id: 'js-events-6', title: 'Event bubbling', done: false },
+            { id: 'js-events-7', title: 'Event capturing', done: false },
+            { id: 'js-events-8', title: 'Event delegation', done: false }
+          ]
+        },
+        {
+          id: 'js-timing',
+          title: '1️⃣2️⃣ Timing Functions',
+          expanded: false,
+          subtopics: [
+            { id: 'js-timing-1', title: 'setTimeout()', done: false },
+            { id: 'js-timing-2', title: 'setInterval()', done: false },
+            { id: 'js-timing-3', title: 'clearTimeout()', done: false },
+            { id: 'js-timing-4', title: 'clearInterval()', done: false }
+          ]
+        },
+        {
+          id: 'js-errors',
+          title: '1️⃣3️⃣ Error Handling',
+          expanded: false,
+          subtopics: [
+            { id: 'js-errors-1', title: 'try', done: false },
+            { id: 'js-errors-2', title: 'catch', done: false },
+            { id: 'js-errors-3', title: 'finally', done: false },
+            { id: 'js-errors-4', title: 'throw', done: false },
+            { id: 'js-errors-5', title: 'Custom errors', done: false }
+          ]
+        },
+        {
+          id: 'js-advf',
+          title: '1️⃣4️⃣ Advanced Functions',
+          expanded: false,
+          subtopics: [
+            { id: 'js-advf-1', title: 'Closures ⭐', done: false },
+            { id: 'js-advf-2', title: 'Callback Hell', done: false },
+            { id: 'js-advf-3', title: 'Function currying', done: false },
+            { id: 'js-advf-4', title: 'IIFE', done: false },
+            { id: 'js-advf-5', title: 'Bind', done: false },
+            { id: 'js-advf-6', title: 'Call', done: false },
+            { id: 'js-advf-7', title: 'Apply', done: false }
+          ]
+        },
+        {
+          id: 'js-es6',
+          title: '1️⃣5️⃣ ES6+ Features ⭐⭐⭐',
+          expanded: false,
+          subtopics: [
+            { id: 'js-es6-1', title: 'Template literals', done: false },
+            { id: 'js-es6-2', title: 'Destructuring', done: false },
+            { id: 'js-es6-3', title: 'Spread operator', done: false },
+            { id: 'js-es6-4', title: 'Rest operator', done: false },
+            { id: 'js-es6-5', title: 'Arrow functions', done: false },
+            { id: 'js-es6-6', title: 'Optional chaining', done: false },
+            { id: 'js-es6-7', title: 'Nullish coalescing', done: false },
+            { id: 'js-es6-8', title: 'Modules', done: false },
+            { id: 'js-es6-9', title: 'export', done: false },
+            { id: 'js-es6-10', title: 'import', done: false }
+          ]
+        },
+        {
+          id: 'js-oop',
+          title: '1️⃣6️⃣ OOP in JavaScript',
+          expanded: false,
+          subtopics: [
+            { id: 'js-oop-1', title: 'Objects', done: false },
+            { id: 'js-oop-2', title: 'Constructor functions', done: false },
+            { id: 'js-oop-3', title: 'Prototypes', done: false },
+            { id: 'js-oop-4', title: 'Classes', done: false },
+            { id: 'js-oop-5', title: 'Inheritance', done: false },
+            { id: 'js-oop-6', title: 'Encapsulation', done: false },
+            { id: 'js-oop-7', title: 'Polymorphism', done: false },
+            { id: 'js-oop-8', title: 'Static methods', done: false }
+          ]
+        },
+        {
+          id: 'js-async',
+          title: '1️⃣7️⃣ Asynchronous JavaScript ⭐⭐⭐',
+          expanded: false,
+          subtopics: [
+            { id: 'js-async-1', title: 'Synchronous vs Asynchronous', done: false },
+            { id: 'js-async-2', title: 'Callback functions', done: false },
+            { id: 'js-async-3', title: 'Promises', done: false },
+            { id: 'js-async-4', title: 'Promise methods', done: false },
+            { id: 'js-async-5', title: 'Async/Await', done: false },
+            { id: 'js-async-6', title: 'Event Loop', done: false },
+            { id: 'js-async-7', title: 'Call Stack', done: false },
+            { id: 'js-async-8', title: 'Microtask Queue', done: false }
+          ]
+        },
+        {
+          id: 'js-api',
+          title: '1️⃣8️⃣ Fetch API & APIs',
+          expanded: false,
+          subtopics: [
+            { id: 'js-api-1', title: 'What is API?', done: false },
+            { id: 'js-api-2', title: 'JSON', done: false },
+            { id: 'js-api-3', title: 'fetch()', done: false },
+            { id: 'js-api-4', title: 'GET requests', done: false },
+            { id: 'js-api-5', title: 'POST requests', done: false },
+            { id: 'js-api-6', title: 'Error handling', done: false },
+            { id: 'js-api-7', title: 'API projects', done: false }
+          ]
+        },
+        {
+          id: 'js-storage',
+          title: '1️⃣9️⃣ Browser Storage',
+          expanded: false,
+          subtopics: [
+            { id: 'js-storage-1', title: 'Local Storage', done: false },
+            { id: 'js-storage-2', title: 'Session Storage', done: false },
+            { id: 'js-storage-3', title: 'Cookies', done: false }
+          ]
+        },
+        {
+          id: 'js-advc',
+          title: '2️⃣0️⃣ Advanced Concepts',
+          expanded: false,
+          subtopics: [
+            { id: 'js-advc-1', title: 'Execution Context', done: false },
+            { id: 'js-advc-2', title: 'Scope Chain', done: false },
+            { id: 'js-advc-3', title: 'Closure', done: false },
+            { id: 'js-advc-4', title: 'Prototype Chain', done: false },
+            { id: 'js-advc-5', title: 'Garbage Collection', done: false },
+            { id: 'js-advc-6', title: 'Event Loop', done: false },
+            { id: 'js-advc-7', title: 'Debouncing', done: false },
+            { id: 'js-advc-8', title: 'Throttling', done: false }
+          ]
+        },
+        {
+          id: 'js-modules',
+          title: '2️⃣1️⃣ Modules',
+          expanded: false,
+          subtopics: [
+            { id: 'js-modules-1', title: 'Export', done: false },
+            { id: 'js-modules-2', title: 'Import', done: false },
+            { id: 'js-modules-3', title: 'Named exports', done: false },
+            { id: 'js-modules-4', title: 'Default exports', done: false }
+          ]
+        },
+        {
+          id: 'js-regex',
+          title: '2️⃣2️⃣ Regular Expressions (Regex)',
+          expanded: false,
+          subtopics: [
+            { id: 'js-regex-1', title: 'Patterns', done: false },
+            { id: 'js-regex-2', title: 'Match', done: false },
+            { id: 'js-regex-3', title: 'Replace', done: false },
+            { id: 'js-regex-4', title: 'Test', done: false }
+          ]
+        },
+        {
+          id: 'js-bom',
+          title: '2️⃣3️⃣ BOM (Browser Object Model)',
+          expanded: false,
+          subtopics: [
+            { id: 'js-bom-1', title: 'window', done: false },
+            { id: 'js-bom-2', title: 'navigator', done: false },
+            { id: 'js-bom-3', title: 'location', done: false },
+            { id: 'js-bom-4', title: 'history', done: false },
+            { id: 'js-bom-5', title: 'screen', done: false }
+          ]
+        },
+        {
+          id: 'js-proj',
+          title: '2️⃣4️⃣ Practice Projects ⭐⭐⭐',
+          expanded: false,
+          subtopics: [
+            { id: 'js-proj-1', title: 'Calculator', done: false },
+            { id: 'js-proj-2', title: 'To-do app', done: false },
+            { id: 'js-proj-3', title: 'Stopwatch', done: false },
+            { id: 'js-proj-4', title: 'Counter app', done: false },
+            { id: 'js-proj-5', title: 'Weather app (API)', done: false },
+            { id: 'js-proj-6', title: 'Quiz app', done: false },
+            { id: 'js-proj-7', title: 'Expense tracker', done: false },
+            { id: 'js-proj-8', title: 'Notes app', done: false },
+            { id: 'js-proj-9', title: 'Movie search app', done: false },
+            { id: 'js-proj-10', title: 'Portfolio website update and push into github', done: false }
+          ]
+        }
+      ]
+    };
+  }
+
   const isLanguageOrTech = [
-    'JavaScript', 'Python', 'Java', 'C++', 'C', 'TypeScript', 'Go', 'Rust', 'Kotlin', 'SQL', 'React', 'NodeJS', 'Node.js'
+    'Python', 'Java', 'C++', 'C', 'TypeScript', 'Go', 'Rust', 'Kotlin', 'SQL', 'React', 'NodeJS', 'Node.js'
   ].includes(cat);
 
   if (isLanguageOrTech) {

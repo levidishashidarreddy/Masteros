@@ -1,32 +1,350 @@
 {
   "JavaScript": {
-    "title": "JavaScript",
+    "title": "JavaScript Complete Mindmap",
     "topics": [
       {
-        "id": "basics",
-        "title": "Basics",
+        "id": "js-basics",
+        "title": "1️⃣ Basics (Foundation)",
         "subtopics": [
-          { "id": "js-b-1", "title": "Variables" },
-          { "id": "js-b-2", "title": "Data Types" },
-          { "id": "js-b-3", "title": "Functions" }
+          { "id": "js-basics-1", "title": "What is JavaScript?" },
+          { "id": "js-basics-2", "title": "How JS works in browser" },
+          { "id": "js-basics-3", "title": "Internal vs External JS" },
+          { "id": "js-basics-4", "title": "console.log()" },
+          { "id": "js-basics-5", "title": "Comments" },
+          { "id": "js-basics-6", "title": "Variables" },
+          { "id": "js-basics-7", "title": "var" },
+          { "id": "js-basics-8", "title": "let" },
+          { "id": "js-basics-9", "title": "const" },
+          { "id": "js-basics-10", "title": "Data Types" },
+          { "id": "js-basics-11", "title": "String" },
+          { "id": "js-basics-12", "title": "Number" },
+          { "id": "js-basics-13", "title": "Boolean" },
+          { "id": "js-basics-14", "title": "Null" },
+          { "id": "js-basics-15", "title": "Undefined" },
+          { "id": "js-basics-16", "title": "BigInt" },
+          { "id": "js-basics-17", "title": "Symbol" },
+          { "id": "js-basics-18", "title": "Type Conversion" },
+          { "id": "js-basics-19", "title": "Operators" },
+          { "id": "js-basics-20", "title": "Arithmetic" },
+          { "id": "js-basics-21", "title": "Comparison" },
+          { "id": "js-basics-22", "title": "Logical" },
+          { "id": "js-basics-23", "title": "Assignment" },
+          { "id": "js-basics-24", "title": "Ternary" }
         ]
       },
       {
-        "id": "intermediate",
-        "title": "Intermediate",
+        "id": "js-control",
+        "title": "2️⃣ Control Flow",
         "subtopics": [
-          { "id": "js-i-1", "title": "Arrays" },
-          { "id": "js-i-2", "title": "Objects" },
-          { "id": "js-i-3", "title": "DOM" }
+          { "id": "js-control-1", "title": "if" },
+          { "id": "js-control-2", "title": "if else" },
+          { "id": "js-control-3", "title": "else if" },
+          { "id": "js-control-4", "title": "Nested if" },
+          { "id": "js-control-5", "title": "switch" },
+          { "id": "js-control-6", "title": "Ternary operator" }
         ]
       },
       {
-        "id": "advanced",
-        "title": "Advanced",
+        "id": "js-loops",
+        "title": "3️⃣ Loops",
         "subtopics": [
-          { "id": "js-a-1", "title": "Async JS" },
-          { "id": "js-a-2", "title": "Fetch API" },
-          { "id": "js-a-3", "title": "Projects" }
+          { "id": "js-loops-1", "title": "for" },
+          { "id": "js-loops-2", "title": "while" },
+          { "id": "js-loops-3", "title": "do while" },
+          { "id": "js-loops-4", "title": "Nested loops" },
+          { "id": "js-loops-5", "title": "break" },
+          { "id": "js-loops-6", "title": "continue" }
+        ]
+      },
+      {
+        "id": "js-funcs",
+        "title": "4️⃣ Functions",
+        "subtopics": [
+          { "id": "js-funcs-1", "title": "Function declaration" },
+          { "id": "js-funcs-2", "title": "Function expression" },
+          { "id": "js-funcs-3", "title": "Parameters" },
+          { "id": "js-funcs-4", "title": "Return statement" },
+          { "id": "js-funcs-5", "title": "Arrow functions (=>)" },
+          { "id": "js-funcs-6", "title": "Default parameters" },
+          { "id": "js-funcs-7", "title": "Rest parameters (...)" },
+          { "id": "js-funcs-8", "title": "Callback functions" },
+          { "id": "js-funcs-9", "title": "Higher order functions" }
+        ]
+      },
+      {
+        "id": "js-strings",
+        "title": "5️⃣ Strings",
+        "subtopics": [
+          { "id": "js-strings-1", "title": "String methods" },
+          { "id": "js-strings-2", "title": "length" },
+          { "id": "js-strings-3", "title": "slice()" },
+          { "id": "js-strings-4", "title": "substring()" },
+          { "id": "js-strings-5", "title": "replace()" },
+          { "id": "js-strings-6", "title": "split()" },
+          { "id": "js-strings-7", "title": "trim()" },
+          { "id": "js-strings-8", "title": "toUpperCase()" },
+          { "id": "js-strings-9", "title": "toLowerCase()" },
+          { "id": "js-strings-10", "title": "includes()" }
+        ]
+      },
+      {
+        "id": "js-arrays",
+        "title": "6️⃣ Arrays",
+        "subtopics": [
+          { "id": "js-arrays-1", "title": "Creating arrays" },
+          { "id": "js-arrays-2", "title": "Accessing elements" },
+          { "id": "js-arrays-3", "title": "Array methods" },
+          { "id": "js-arrays-4", "title": "push()" },
+          { "id": "js-arrays-5", "title": "pop()" },
+          { "id": "js-arrays-6", "title": "shift()" },
+          { "id": "js-arrays-7", "title": "unshift()" },
+          { "id": "js-arrays-8", "title": "splice()" },
+          { "id": "js-arrays-9", "title": "slice()" },
+          { "id": "js-arrays-10", "title": "concat()" },
+          { "id": "js-arrays-11", "title": "join()" },
+          { "id": "js-arrays-12", "title": "Iteration" },
+          { "id": "js-arrays-13", "title": "for" },
+          { "id": "js-arrays-14", "title": "for...of" },
+          { "id": "js-arrays-15", "title": "forEach()" }
+        ]
+      },
+      {
+        "id": "js-arradv",
+        "title": "7️⃣ Array Advanced Methods ⭐",
+        "subtopics": [
+          { "id": "js-arradv-1", "title": "map()" },
+          { "id": "js-arradv-2", "title": "filter()" },
+          { "id": "js-arradv-3", "title": "reduce()" },
+          { "id": "js-arradv-4", "title": "find()" },
+          { "id": "js-arradv-5", "title": "findIndex()" },
+          { "id": "js-arradv-6", "title": "some()" },
+          { "id": "js-arradv-7", "title": "every()" },
+          { "id": "js-arradv-8", "title": "sort()" },
+          { "id": "js-arradv-9", "title": "includes()" }
+        ]
+      },
+      {
+        "id": "js-objs",
+        "title": "8️⃣ Objects",
+        "subtopics": [
+          { "id": "js-objs-1", "title": "Creating objects" },
+          { "id": "js-objs-2", "title": "Access properties" },
+          { "id": "js-objs-3", "title": "Modify properties" },
+          { "id": "js-objs-4", "title": "Nested objects" },
+          { "id": "js-objs-5", "title": "Object methods" },
+          { "id": "js-objs-6", "title": "this keyword" },
+          { "id": "js-objs-7", "title": "Object destructuring" },
+          { "id": "js-objs-8", "title": "Spread operator (...)" },
+          { "id": "js-objs-9", "title": "Object methods" },
+          { "id": "js-objs-10", "title": "keys()" },
+          { "id": "js-objs-11", "title": "values()" },
+          { "id": "js-objs-12", "title": "entries()" }
+        ]
+      },
+      {
+        "id": "js-scope",
+        "title": "9️⃣ Scope & Execution",
+        "subtopics": [
+          { "id": "js-scope-1", "title": "Global scope" },
+          { "id": "js-scope-2", "title": "Local scope" },
+          { "id": "js-scope-3", "title": "Block scope" },
+          { "id": "js-scope-4", "title": "Lexical scope" },
+          { "id": "js-scope-5", "title": "Hoisting" },
+          { "id": "js-scope-6", "title": "Temporal Dead Zone (TDZ)" }
+        ]
+      },
+      {
+        "id": "js-dom",
+        "title": "🔟 DOM Manipulation ⭐⭐⭐",
+        "subtopics": [
+          { "id": "js-dom-1", "title": "What is DOM?" },
+          { "id": "js-dom-2", "title": "Selecting elements" },
+          { "id": "js-dom-3", "title": "getElementById()" },
+          { "id": "js-dom-4", "title": "querySelector()" },
+          { "id": "js-dom-5", "title": "querySelectorAll()" },
+          { "id": "js-dom-6", "title": "Changing content" },
+          { "id": "js-dom-7", "title": "innerHTML" },
+          { "id": "js-dom-8", "title": "textContent" },
+          { "id": "js-dom-9", "title": "CSS manipulation" },
+          { "id": "js-dom-10", "title": "Attributes" },
+          { "id": "js-dom-11", "title": "Create elements" },
+          { "id": "js-dom-12", "title": "Remove elements" },
+          { "id": "js-dom-13", "title": "Append elements" }
+        ]
+      },
+      {
+        "id": "js-events",
+        "title": "1️⃣1️⃣ Events",
+        "subtopics": [
+          { "id": "js-events-1", "title": "onclick" },
+          { "id": "js-events-2", "title": "addEventListener()" },
+          { "id": "js-events-3", "title": "Mouse events" },
+          { "id": "js-events-4", "title": "Keyboard events" },
+          { "id": "js-events-5", "title": "Form events" },
+          { "id": "js-events-6", "title": "Event bubbling" },
+          { "id": "js-events-7", "title": "Event capturing" },
+          { "id": "js-events-8", "title": "Event delegation" }
+        ]
+      },
+      {
+        "id": "js-timing",
+        "title": "1️⃣2️⃣ Timing Functions",
+        "subtopics": [
+          { "id": "js-timing-1", "title": "setTimeout()" },
+          { "id": "js-timing-2", "title": "setInterval()" },
+          { "id": "js-timing-3", "title": "clearTimeout()" },
+          { "id": "js-timing-4", "title": "clearInterval()" }
+        ]
+      },
+      {
+        "id": "js-errors",
+        "title": "1️⃣3️⃣ Error Handling",
+        "subtopics": [
+          { "id": "js-errors-1", "title": "try" },
+          { "id": "js-errors-2", "title": "catch" },
+          { "id": "js-errors-3", "title": "finally" },
+          { "id": "js-errors-4", "title": "throw" },
+          { "id": "js-errors-5", "title": "Custom errors" }
+        ]
+      },
+      {
+        "id": "js-advf",
+        "title": "1️⃣4️⃣ Advanced Functions",
+        "subtopics": [
+          { "id": "js-advf-1", "title": "Closures ⭐" },
+          { "id": "js-advf-2", "title": "Callback Hell" },
+          { "id": "js-advf-3", "title": "Function currying" },
+          { "id": "js-advf-4", "title": "IIFE" },
+          { "id": "js-advf-5", "title": "Bind" },
+          { "id": "js-advf-6", "title": "Call" },
+          { "id": "js-advf-7", "title": "Apply" }
+        ]
+      },
+      {
+        "id": "js-es6",
+        "title": "1️⃣5️⃣ ES6+ Features ⭐⭐⭐",
+        "subtopics": [
+          { "id": "js-es6-1", "title": "Template literals" },
+          { "id": "js-es6-2", "title": "Destructuring" },
+          { "id": "js-es6-3", "title": "Spread operator" },
+          { "id": "js-es6-4", "title": "Rest operator" },
+          { "id": "js-es6-5", "title": "Arrow functions" },
+          { "id": "js-es6-6", "title": "Optional chaining" },
+          { "id": "js-es6-7", "title": "Nullish coalescing" },
+          { "id": "js-es6-8", "title": "Modules" },
+          { "id": "js-es6-9", "title": "export" },
+          { "id": "js-es6-10", "title": "import" }
+        ]
+      },
+      {
+        "id": "js-oop",
+        "title": "1️⃣6️⃣ OOP in JavaScript",
+        "subtopics": [
+          { "id": "js-oop-1", "title": "Objects" },
+          { "id": "js-oop-2", "title": "Constructor functions" },
+          { "id": "js-oop-3", "title": "Prototypes" },
+          { "id": "js-oop-4", "title": "Classes" },
+          { "id": "js-oop-5", "title": "Inheritance" },
+          { "id": "js-oop-6", "title": "Encapsulation" },
+          { "id": "js-oop-7", "title": "Polymorphism" },
+          { "id": "js-oop-8", "title": "Static methods" }
+        ]
+      },
+      {
+        "id": "js-async",
+        "title": "1️⃣7️⃣ Asynchronous JavaScript ⭐⭐⭐",
+        "subtopics": [
+          { "id": "js-async-1", "title": "Synchronous vs Asynchronous" },
+          { "id": "js-async-2", "title": "Callback functions" },
+          { "id": "js-async-3", "title": "Promises" },
+          { "id": "js-async-4", "title": "Promise methods" },
+          { "id": "js-async-5", "title": "Async/Await" },
+          { "id": "js-async-6", "title": "Event Loop" },
+          { "id": "js-async-7", "title": "Call Stack" },
+          { "id": "js-async-8", "title": "Microtask Queue" }
+        ]
+      },
+      {
+        "id": "js-api",
+        "title": "1️⃣8️⃣ Fetch API & APIs",
+        "subtopics": [
+          { "id": "js-api-1", "title": "What is API?" },
+          { "id": "js-api-2", "title": "JSON" },
+          { "id": "js-api-3", "title": "fetch()" },
+          { "id": "js-api-4", "title": "GET requests" },
+          { "id": "js-api-5", "title": "POST requests" },
+          { "id": "js-api-6", "title": "Error handling" },
+          { "id": "js-api-7", "title": "API projects" }
+        ]
+      },
+      {
+        "id": "js-storage",
+        "title": "1️⃣9️⃣ Browser Storage",
+        "subtopics": [
+          { "id": "js-storage-1", "title": "Local Storage" },
+          { "id": "js-storage-2", "title": "Session Storage" },
+          { "id": "js-storage-3", "title": "Cookies" }
+        ]
+      },
+      {
+        "id": "js-advc",
+        "title": "2️⃣0️⃣ Advanced Concepts",
+        "subtopics": [
+          { "id": "js-advc-1", "title": "Execution Context" },
+          { "id": "js-advc-2", "title": "Scope Chain" },
+          { "id": "js-advc-3", "title": "Closure" },
+          { "id": "js-advc-4", "title": "Prototype Chain" },
+          { "id": "js-advc-5", "title": "Garbage Collection" },
+          { "id": "js-advc-6", "title": "Event Loop" },
+          { "id": "js-advc-7", "title": "Debouncing" },
+          { "id": "js-advc-8", "title": "Throttling" }
+        ]
+      },
+      {
+        "id": "js-modules",
+        "title": "2️⃣1️⃣ Modules",
+        "subtopics": [
+          { "id": "js-modules-1", "title": "Export" },
+          { "id": "js-modules-2", "title": "Import" },
+          { "id": "js-modules-3", "title": "Named exports" },
+          { "id": "js-modules-4", "title": "Default exports" }
+        ]
+      },
+      {
+        "id": "js-regex",
+        "title": "2️⃣2️⃣ Regular Expressions (Regex)",
+        "subtopics": [
+          { "id": "js-regex-1", "title": "Patterns" },
+          { "id": "js-regex-2", "title": "Match" },
+          { "id": "js-regex-3", "title": "Replace" },
+          { "id": "js-regex-4", "title": "Test" }
+        ]
+      },
+      {
+        "id": "js-bom",
+        "title": "2️⃣3️⃣ BOM (Browser Object Model)",
+        "subtopics": [
+          { "id": "js-bom-1", "title": "window" },
+          { "id": "js-bom-2", "title": "navigator" },
+          { "id": "js-bom-3", "title": "location" },
+          { "id": "js-bom-4", "title": "history" },
+          { "id": "js-bom-5", "title": "screen" }
+        ]
+      },
+      {
+        "id": "js-proj",
+        "title": "2️⃣4️⃣ Practice Projects ⭐⭐⭐",
+        "subtopics": [
+          { "id": "js-proj-1", "title": "Calculator" },
+          { "id": "js-proj-2", "title": "To-do app" },
+          { "id": "js-proj-3", "title": "Stopwatch" },
+          { "id": "js-proj-4", "title": "Counter app" },
+          { "id": "js-proj-5", "title": "Weather app (API)" },
+          { "id": "js-proj-6", "title": "Quiz app" },
+          { "id": "js-proj-7", "title": "Expense tracker" },
+          { "id": "js-proj-8", "title": "Notes app" },
+          { "id": "js-proj-9", "title": "Movie search app" },
+          { "id": "js-proj-10", "title": "Portfolio website update and push into github" }
         ]
       }
     ]
