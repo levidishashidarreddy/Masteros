@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { TaskContext } from '../context/TaskContext';
 import { AvatarImg, getAvatar, DEFAULT_AVATARS } from '../components/Avatar';
+import Modal from '../components/Modal';
 
 // ─── Social links config ──────────────────────────────────────────────────────
 const SOCIAL_ICONS = [
@@ -75,7 +76,16 @@ function SaveBtn({ onClick, loading, label = 'Save' }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 const Settings = () => {
   const navigate = useNavigate();
-  const { userProfile, setUserProfile, currentUser, userId, logout } = useContext(TaskContext);
+  const { userProfile, setUserProfile, currentUser, userId, logout, submitDeveloperReport } = useContext(TaskContext);
+
+  // ── Contact Developer state ───────────────────────────────────────────────
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState('Bug / Error');
+  const [reportSubject, setReportSubject] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportPage, setReportPage] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportSuccessId, setReportSuccessId] = useState(null);
 
   // ── Profile fields ─────────────────────────────────────────────────────────
   const [displayName, setDisplayName] = useState('');
@@ -97,6 +107,31 @@ const Settings = () => {
   const [savingSocial,  setSavingSocial]  = useState(false);
   const [toast, setToast] = useState(null);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+
+  const handleSendReport = async (e) => {
+    e.preventDefault();
+    if (!reportSubject.trim() || !reportDescription.trim()) return;
+
+    setSubmittingReport(true);
+    try {
+      const reportId = await submitDeveloperReport({
+        category: reportCategory,
+        subject: reportSubject,
+        description: reportDescription,
+        pageFeature: reportPage || window.location.pathname
+      });
+      setReportSuccessId(reportId);
+      showToast('success', `Report submitted! ID: ${reportId}`);
+      setReportSubject('');
+      setReportDescription('');
+      setReportPage('');
+    } catch (err) {
+      console.error('Report submit error:', err);
+      showToast('error', 'Failed to submit report. Please try again.');
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   // ── Sync from Firestore on load ────────────────────────────────────────────
   useEffect(() => {
@@ -418,6 +453,122 @@ const Settings = () => {
               ))}
             </div>
           </Section>
+
+          {/* ══════════════════ D) CONTACT DEVELOPER ═════════════════════════ */}
+          <Section title="Contact Developer" icon="support_agent">
+            <div className="space-y-4">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Found a bug, broken link, UI issue, or have a feature request? Contact the MasterOS development team directly.
+              </p>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+              >
+                <span className="material-symbols-outlined text-base">bug_report</span>
+                Report an Issue / Contact Developer
+              </button>
+            </div>
+          </Section>
+
+          {/* Contact Developer / Report Issue Modal */}
+          <Modal isOpen={isReportModalOpen} onClose={() => { setIsReportModalOpen(false); setReportSuccessId(null); }} title="Contact Developer / Report Issue">
+            {reportSuccessId ? (
+              <div className="space-y-4 py-3 animate-fade-in text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+                  <span className="material-symbols-outlined text-2xl">check_circle</span>
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white mb-1">Report Submitted Successfully</h4>
+                  <p className="text-xs text-on-surface-variant">Thank you! Our engineering team has received your report.</p>
+                </div>
+                <div className="p-3 bg-[#0D0D14] border border-white/5 rounded-xl inline-block">
+                  <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Report ID</p>
+                  <p className="text-sm font-mono font-bold text-primary">{reportSuccessId}</p>
+                </div>
+                <div className="pt-3 border-t border-white/5 flex justify-center">
+                  <button
+                    onClick={() => { setIsReportModalOpen(false); setReportSuccessId(null); }}
+                    className="px-6 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSendReport} className="space-y-4 py-2">
+                <div>
+                  <FieldLabel>Account Email</FieldLabel>
+                  <TextInput
+                    value={currentUser?.email || userProfile?.email || ''}
+                    disabled={true}
+                    placeholder="User email"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel>Issue Category</FieldLabel>
+                    <select
+                      value={reportCategory}
+                      onChange={(e) => setReportCategory(e.target.value)}
+                      className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3 py-2.5 text-xs text-on-surface focus:outline-none focus:border-primary"
+                    >
+                      <option value="Bug / Error">Bug / Error</option>
+                      <option value="Broken Link">Broken Link</option>
+                      <option value="Account / Login">Account / Login</option>
+                      <option value="Workspace Issue">Workspace Issue</option>
+                      <option value="UI / Design">UI / Design</option>
+                      <option value="Feature Request">Feature Request</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <FieldLabel>Page / Feature (Optional)</FieldLabel>
+                    <TextInput
+                      value={reportPage}
+                      onChange={(e) => setReportPage(e.target.value)}
+                      placeholder="e.g. Workspace Detail, Tasks"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Subject</FieldLabel>
+                  <TextInput
+                    value={reportSubject}
+                    onChange={(e) => setReportSubject(e.target.value)}
+                    placeholder="Brief summary of the issue..."
+                    maxLength={100}
+                    id="report-subject"
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>Description</FieldLabel>
+                  <textarea
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="Please describe what happened, steps to reproduce, or your suggestion..."
+                    rows={4}
+                    required
+                    className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary transition-colors resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setIsReportModalOpen(false)}
+                    className="px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <SaveBtn onClick={handleSendReport} loading={submittingReport} label="Send Report" />
+                </div>
+              </form>
+            )}
+          </Modal>
 
           {/* ══════════════════ D) DANGER ZONE ══════════════════════════════ */}
           <Section title="Danger Zone" icon="warning">

@@ -180,7 +180,8 @@ const Notifications = () => {
                 return (
                   <div
                     key={notif.id}
-                    className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border bg-[#111118] hover:border-primary/20 transition-all duration-200 group ${
+                    onClick={() => { if (!notif.read) markNotificationRead(notif.id); }}
+                    className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border bg-[#111118] hover:border-primary/20 transition-all duration-200 group cursor-pointer ${
                       notif.read ? 'opacity-55 border-white/5' : 'border-primary/25 shadow-[0_0_12px_rgba(139,92,246,0.03)]'
                     }`}
                   >

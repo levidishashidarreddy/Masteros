@@ -673,6 +673,22 @@ export const TaskProvider = ({ children }) => {
   const [friends, setFriends] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('masteros_read_notifs');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (_) {
+      return new Set();
+    }
+  });
+  const [deletedNotifIds, setDeletedNotifIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('masteros_deleted_notifs');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (_) {
+      return new Set();
+    }
+  });
   const [chats, setChats] = useState({});
   const [collaborators, setCollaborators] = useState({});
   const [presenceStates, setPresenceStates] = useState({});
@@ -688,10 +704,18 @@ export const TaskProvider = ({ children }) => {
   const msgListenersRef = useRef({});
   const unsubscribeProfileRef = useRef(null);
 
-  // Caching updates to localStorage
   useEffect(() => {
     if (userProfile) localStorage.setItem('cache_userProfile', JSON.stringify(userProfile));
   }, [userProfile]);
+
+  useEffect(() => {
+    if (userProfile?.readNotificationIds && Array.isArray(userProfile.readNotificationIds)) {
+      setReadNotifIds(prev => new Set([...prev, ...userProfile.readNotificationIds]));
+    }
+    if (userProfile?.deletedNotificationIds && Array.isArray(userProfile.deletedNotificationIds)) {
+      setDeletedNotifIds(prev => new Set([...prev, ...userProfile.deletedNotificationIds]));
+    }
+  }, [userProfile?.readNotificationIds, userProfile?.deletedNotificationIds]);
 
   useEffect(() => {
     if (tasks.length > 0) localStorage.setItem('cache_tasks', JSON.stringify(tasks));
@@ -2435,35 +2459,100 @@ export const TaskProvider = ({ children }) => {
 
   // ================= NOTIFICATION UTILITIES =================
   const markNotificationRead = async (notifId) => {
-    if (!currentUser) return;
-    await updateDoc(doc(db, 'notifications', notifId), { read: true });
+    if (!notifId) return;
+    const newRead = new Set(readNotifIds);
+    newRead.add(notifId);
+    setReadNotifIds(newRead);
+
+    try {
+      localStorage.setItem('masteros_read_notifs', JSON.stringify(Array.from(newRead)));
+    } catch (_) {}
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          readNotificationIds: Array.from(newRead)
+        });
+      } catch (_) {}
+
+      if (!notifId.startsWith('alert-')) {
+        try {
+          await updateDoc(doc(db, 'notifications', notifId), { read: true });
+        } catch (_) {}
+      }
+    }
   };
 
   const markAllNotificationsRead = async () => {
-    if (!currentUser) return;
-    const batch = writeBatch(db);
-    notifications.forEach((n) => {
-      if (!n.read) {
-        batch.update(doc(db, 'notifications', n.id), { read: true });
+    const currentAll = getNotifications();
+    const unreadIds = currentAll.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
+
+    const newRead = new Set([...readNotifIds, ...unreadIds]);
+    setReadNotifIds(newRead);
+
+    try {
+      localStorage.setItem('masteros_read_notifs', JSON.stringify(Array.from(newRead)));
+    } catch (_) {}
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          readNotificationIds: Array.from(newRead)
+        });
+      } catch (_) {}
+
+      const batch = writeBatch(db);
+      let hasBatch = false;
+      notifications.forEach((n) => {
+        if (!n.read) {
+          batch.update(doc(db, 'notifications', n.id), { read: true });
+          hasBatch = true;
+        }
+      });
+      if (hasBatch) {
+        try {
+          await batch.commit();
+        } catch (_) {}
       }
-    });
-    await batch.commit();
+    }
   };
 
   const deleteNotification = async (notifId) => {
-    if (!currentUser) return;
-    await deleteDoc(doc(db, 'notifications', notifId));
+    if (!notifId) return;
+    const newDel = new Set(deletedNotifIds);
+    newDel.add(notifId);
+    setDeletedNotifIds(newDel);
+
+    try {
+      localStorage.setItem('masteros_deleted_notifs', JSON.stringify(Array.from(newDel)));
+    } catch (_) {}
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          deletedNotificationIds: Array.from(newDel)
+        });
+      } catch (_) {}
+
+      if (!notifId.startsWith('alert-')) {
+        try {
+          await deleteDoc(doc(db, 'notifications', notifId));
+        } catch (_) {}
+      }
+    }
   };
 
   // ================= NOTIFICATION ENGINE COMBINED GETTER =================
   const getNotifications = () => {
-    const list = [...notifications];
+    const rawList = [...notifications];
 
     exams.forEach((exam) => {
       if (exam.status !== 'Completed' && exam.date === tomorrowStr) {
-        if (!list.some((n) => n.id === `alert-exam-${exam.id}`)) {
-          list.push({
-            id: `alert-exam-${exam.id}`,
+        const id = `alert-exam-${exam.id}`;
+        if (!rawList.some((n) => n.id === id)) {
+          rawList.push({
+            id,
             text: `${exam.name} starts tomorrow.`,
             type: 'Exams',
             read: false,
@@ -2476,9 +2565,10 @@ export const TaskProvider = ({ children }) => {
 
     assignments.forEach((assign) => {
       if (assign.status !== 'Submitted' && assign.dueDate === tomorrowStr) {
-        if (!list.some((n) => n.id === `alert-assign-${assign.id}`)) {
-          list.push({
-            id: `alert-assign-${assign.id}`,
+        const id = `alert-assign-${assign.id}`;
+        if (!rawList.some((n) => n.id === id)) {
+          rawList.push({
+            id,
             text: `${assign.name} due in 12 hours.`,
             type: 'Assignments',
             read: false,
@@ -2491,9 +2581,10 @@ export const TaskProvider = ({ children }) => {
 
     tasks.forEach((task) => {
       if (!task.done && !task.workspaceId && task.dueDate && task.dueDate < todayStr) {
-        if (!list.some((n) => n.id === `alert-task-od-${task.id}`)) {
-          list.push({
-            id: `alert-task-od-${task.id}`,
+        const id = `alert-task-od-${task.id}`;
+        if (!rawList.some((n) => n.id === id)) {
+          rawList.push({
+            id,
             text: `Focus task "${task.text}" is overdue.`,
             type: 'Tasks',
             read: false,
@@ -2506,9 +2597,10 @@ export const TaskProvider = ({ children }) => {
 
     tasks.forEach((task) => {
       if (!task.done && task.workspaceId && task.dueDate && task.dueDate < todayStr) {
-        if (!list.some((n) => n.id === `alert-ws-task-od-${task.id}`)) {
-          list.push({
-            id: `alert-ws-task-od-${task.id}`,
+        const id = `alert-ws-task-od-${task.id}`;
+        if (!rawList.some((n) => n.id === id)) {
+          rawList.push({
+            id,
             text: `Workspace task "${task.text}" deadline is approaching.`,
             type: 'Workspace',
             read: false,
@@ -2519,7 +2611,36 @@ export const TaskProvider = ({ children }) => {
       }
     });
 
-    return list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const filtered = rawList
+      .filter((item) => !deletedNotifIds.has(item.id))
+      .map((item) => ({
+        ...item,
+        read: Boolean(item.read || readNotifIds.has(item.id))
+      }));
+
+    return filtered.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  };
+
+  // ================= DEVELOPER REPORT SUBMISSION =================
+  const submitDeveloperReport = async ({ category, subject, description, pageFeature }) => {
+    if (!currentUser) throw new Error("User must be logged in to submit a report.");
+    
+    const reportId = `RPT-${Math.floor(100000 + Math.random() * 900000)}`;
+    const reportData = {
+      reportId,
+      uid: currentUser.uid,
+      userEmail: currentUser.email || userProfile?.email || 'unknown@masteros.app',
+      userName: userProfile?.fullName || userProfile?.username || 'User',
+      category: category || 'Other',
+      subject: subject?.trim() || 'No Subject',
+      description: description?.trim() || '',
+      pageFeature: pageFeature || window.location.pathname,
+      createdAt: new Date().toISOString(),
+      status: 'Open'
+    };
+
+    await addDoc(collection(db, 'developer_reports'), reportData);
+    return reportId;
   };
 
   const initializeUserCollections = async (selectedPresetIds, customWorkspaceNames, profileData) => {
@@ -2623,6 +2744,7 @@ export const TaskProvider = ({ children }) => {
         markAllNotificationsRead,
         deleteNotification,
         getNotifications,
+        submitDeveloperReport,
         logProductiveActivity
       }}
     >
