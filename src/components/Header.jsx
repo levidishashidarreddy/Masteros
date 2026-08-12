@@ -39,7 +39,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
   return (
     <>
       {/* MOBILE STABLE HEADER */}
-      <div className="md:hidden w-full h-[56px] bg-[#0D0D14]/90 border-b border-white/5 flex items-center justify-between px-4 sticky top-0 z-40 backdrop-blur-md safe-area-inset-top shrink-0 select-none">
+      <div className="md:hidden w-full h-[56px] bg-[#0D0D14]/90 border-b border-white/5 flex items-center justify-between px-4 sticky top-0 z-40 backdrop-blur-md safe-area-inset-top shrink-0 select-none relative">
         {/* Left: Hamburger menu trigger */}
         <button
           onClick={handleHamburgerClick}
@@ -49,7 +49,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
         </button>
 
         {/* Center: Title / Breadcrumb */}
-        <span className="text-[10px] font-black tracking-widest text-zinc-300 font-mono text-center max-w-[200px] truncate">
+        <span className="absolute left-1/2 -translate-x-1/2 text-[10px] font-black tracking-widest text-zinc-300 font-mono text-center max-w-[calc(100vw-110px)] truncate pointer-events-none">
           {mobileTitleText}
         </span>
 

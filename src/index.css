@@ -424,7 +424,7 @@
   }
 
   main {
-    padding: 16px !important;
+    padding: 0 !important;
   }
   
   /* Stack header column-reverse (Logo row top, Search row bottom) */
@@ -464,13 +464,16 @@
     gap: 8px !important;
   }
 
-  /* Main content padding-top adjustments to avoid floating hamburger overlap */
   .w-full.px-12.py-10,
   main > div.w-full {
     padding-left: 16px !important;
     padding-right: 16px !important;
     padding-top: 48px !important;
     padding-bottom: 24px !important;
+  }
+
+  .workspace-banner-container {
+    padding: 0 !important;
   }
 
   /* Centering empty state cards */

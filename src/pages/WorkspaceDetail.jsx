@@ -729,7 +729,7 @@ const WorkspaceDetail = () => {
         </div>
 
         {/* Workspace Banner — Language-Themed Hero */}
-        <div className="relative w-full h-[220px] md:h-[280px] overflow-hidden shrink-0">
+        <div className="relative w-full h-[220px] md:h-[280px] overflow-hidden shrink-0 workspace-banner-container">
           {/* Base gradient tinted by detected language */}
           <div
             className="absolute inset-0"
