@@ -6,7 +6,7 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import { SkeletonBlock } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { AvatarImg, getAvatar } from '../components/Avatar';
+import { AvatarImg, getAvatar, AVATAR_PRESETS } from '../components/Avatar';
 
 // Thin wrapper so existing renderAvatar(src, sizeCls, iconCls) call-sites keep working
 const renderAvatar = (src, sizeCls = 'w-10 h-10', iconCls = 'text-sm') =>
@@ -1034,7 +1034,7 @@ const Friends = () => {
                           )}
 
                           {/* Chat Input Bar */}
-                          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-[#0D0D14]/25 flex items-center gap-3 shrink-0 relative">
+                          <form onSubmit={handleSendMessage} className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5 bg-[#0D0D14]/25 flex items-center gap-2 md:gap-3 shrink-0 relative">
                             
                             {/* Inline Emoji Picker Popover */}
                             {showEmojiPicker && (
@@ -1055,15 +1055,15 @@ const Friends = () => {
                               </div>
                             )}
 
-                            {/* Attachments buttons (Disabled for V2) */}
-                            <div className="flex gap-1">
+                            {/* Attachments buttons */}
+                            <div className="flex gap-0.5 md:gap-1 shrink-0">
                               <div className="relative group/tooltip">
                                 <button 
                                   type="button"
                                   disabled
-                                  className="p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
+                                  className="p-1.5 md:p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
                                 >
-                                  <span className="material-symbols-outlined text-[18px]">image</span>
+                                  <span className="material-symbols-outlined text-[16px] md:text-[18px]">image</span>
                                 </button>
                                 <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#111118] border border-white/10 text-[10px] text-primary font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 translate-y-1 group-hover/tooltip:translate-y-0 whitespace-nowrap z-30">
                                   Image sharing coming in V2
@@ -1074,9 +1074,9 @@ const Friends = () => {
                                 <button 
                                   type="button"
                                   disabled
-                                  className="p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
+                                  className="p-1.5 md:p-2 rounded text-on-surface-variant/30 cursor-not-allowed transition-colors"
                                 >
-                                  <span className="material-symbols-outlined text-[18px]">attach_file</span>
+                                  <span className="material-symbols-outlined text-[16px] md:text-[18px]">attach_file</span>
                                 </button>
                                 <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#111118] border border-white/10 text-[10px] text-primary font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 translate-y-1 group-hover/tooltip:translate-y-0 whitespace-nowrap z-30">
                                   File attachments coming in V2
@@ -1086,12 +1086,12 @@ const Friends = () => {
                               <button
                                 type="button"
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className={`p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
+                                className={`p-1.5 md:p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
                                   showEmojiPicker ? 'text-primary' : 'text-on-surface-variant hover:text-white'
                                 }`}
                                 title="Pick Emoji"
                               >
-                                <span className="material-symbols-outlined text-[18px]">mood</span>
+                                <span className="material-symbols-outlined text-[16px] md:text-[18px]">mood</span>
                               </button>
                             </div>
 
@@ -1100,15 +1100,15 @@ const Friends = () => {
                               value={chatMessageText}
                               onChange={handleInputChange}
                               onKeyDown={handleKeyDown}
-                              placeholder="Write a message... (Enter to send, Shift+Enter for new line)"
+                              placeholder="Message..."
                               rows="1"
-                              className="flex-grow bg-[#111118] border border-white/5 rounded-xl px-4 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary resize-none min-h-[38px] max-h-[120px] no-scrollbar"
+                              className="flex-grow bg-[#111118] border border-white/5 rounded-xl px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary resize-none min-h-[36px] max-h-[120px] no-scrollbar"
                             />
                             
                             <button
                               type="submit"
                               disabled={(!chatMessageText.trim() && !pendingAttachment) || isSending}
-                              className="p-2.5 rounded-xl bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center cursor-pointer disabled:opacity-40"
+                              className="p-2 md:p-2.5 rounded-xl bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center cursor-pointer disabled:opacity-40 shrink-0"
                             >
                               {isSending ? (
                                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>

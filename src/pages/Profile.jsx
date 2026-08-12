@@ -310,6 +310,42 @@ const Profile = () => {
             </div>
           </div>
 
+          {/* Shared Workspaces Section */}
+          <div className="bg-[#111118] border border-white/5 p-8 rounded-2xl space-y-6">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-white/5 pb-4">
+              Shared Workspaces
+            </h3>
+            {workspaces && workspaces.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {workspaces.map((ws) => (
+                  <div key={ws.id} className="bg-background/40 border border-white/5 hover:border-primary/20 p-5 rounded-xl transition-all duration-300 relative group flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h4 className="font-bold text-white text-sm truncate">{ws.title}</h4>
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${
+                          ws.isShared 
+                            ? 'bg-primary/10 border-primary/20 text-primary' 
+                            : 'bg-white/5 border-white/5 text-on-surface-variant'
+                        }`}>
+                          {ws.isShared ? '🔗 Shared' : '🔒 Protected'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant line-clamp-2 min-h-[2rem]">
+                        {ws.description || 'No description available.'}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Overall Progress</span>
+                      <span className="text-xs text-primary font-extrabold">{ws.progress || 0}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-on-surface-variant italic">No workspaces created yet.</p>
+            )}
+          </div>
+
         </div>
       </main>
 

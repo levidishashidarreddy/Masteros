@@ -1783,13 +1783,126 @@ export const TaskProvider = ({ children }) => {
     });
   };
 
+  const syncSharedWorkspace = async (wsId, wsData) => {
+    if (wsData.isShared && wsData.shareId) {
+      try {
+        const sharedRef = doc(db, 'sharedWorkspaces', wsData.shareId);
+        
+        // Calculate track-level progress and construct track objects (roadmaps)
+        const tracks = (wsData.roadmaps || []).map(rm => {
+          let totalSt = 0;
+          let completedSt = 0;
+          (rm.topics || []).forEach(t => {
+            (t.subtopics || []).forEach(st => {
+              totalSt++;
+              if (st.done) completedSt++;
+            });
+          });
+          const prog = totalSt > 0 ? Math.round((completedSt / totalSt) * 100) : 0;
+          
+          return {
+            id: rm.id,
+            title: rm.title,
+            progress: prog,
+            topics: (rm.topics || []).map(t => ({
+              title: t.title,
+              subtopics: (t.subtopics || []).map(st => ({
+                title: st.title
+              }))
+            }))
+          };
+        });
+
+        await setDoc(sharedRef, {
+          workspaceId: wsId,
+          shareId: wsData.shareId,
+          ownerId: wsData.ownerId || currentUser.uid,
+          ownerUsername: userProfile?.username || '',
+          title: wsData.title,
+          description: wsData.description || '',
+          progress: wsData.progress || 0,
+          password: wsData.sharePassword || wsData.sharePin || '',
+          tracks: tracks
+        });
+      } catch (err) {
+        console.error("Error syncing shared workspace snapshot:", err);
+      }
+    }
+  };
+
+  const verifySharedWorkspace = async (shareId, password) => {
+    const q = query(
+      collection(db, 'sharedWorkspaces'),
+      where('shareId', '==', shareId),
+      where('password', '==', password)
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      throw new Error("Invalid Share ID or Password.");
+    }
+    return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  };
+
+  const requestCollaboration = async (workspaceId, ownerId) => {
+    if (!currentUser || !userProfile) return;
+
+    try {
+      const wsRef = doc(db, 'workspaces', workspaceId);
+      const wsSnap = await getDoc(wsRef);
+      const wsTitle = wsSnap.exists() ? wsSnap.data().title : 'Workspace';
+
+      // Send a notification request to the owner
+      await addDoc(collection(db, 'notifications'), {
+        userId: ownerId, // Firebase UID of owner
+        text: `${userProfile.fullName} (@${userProfile.username}) has requested to collaborate on your workspace: ${wsTitle}.`,
+        type: 'Workspace',
+        read: false,
+        timestamp: new Date().toISOString(),
+        meta: { 
+          workspaceId, 
+          role: 'Editor', 
+          senderName: userProfile.fullName, 
+          isCollabRequest: true,
+          requesterUserId: userProfile.userId // store requester's username/ID
+        }
+      });
+      alert('✉️ Collaboration request sent to the workspace owner!');
+    } catch (err) {
+      console.error("Error requesting collaboration:", err);
+      alert('Failed to send request: ' + err.message);
+    }
+  };
+
   const updateWorkspace = async (wsId, updatedFields) => {
     if (!currentUser) return;
     await updateDoc(doc(db, 'workspaces', wsId), updatedFields);
+
+    const wsObj = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
+    if (wsObj) {
+      const mergedWs = { ...wsObj, ...updatedFields };
+      if (mergedWs.isShared && mergedWs.shareId) {
+        await syncSharedWorkspace(wsId, mergedWs);
+      } else if (!mergedWs.isShared && wsObj.shareId) {
+        try {
+          await deleteDoc(doc(db, 'sharedWorkspaces', wsObj.shareId));
+        } catch (err) {
+          console.error("Error deleting shared snapshot:", err);
+        }
+      }
+    }
   };
 
   const deleteWorkspace = async (wsId) => {
     if (!currentUser || !userProfile) return;
+
+    const wsObj = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
+    if (wsObj && wsObj.shareId) {
+      try {
+        await deleteDoc(doc(db, 'sharedWorkspaces', wsObj.shareId));
+      } catch (err) {
+        console.error("Error deleting shared snapshot during deletion:", err);
+      }
+    }
 
     const batch = writeBatch(db);
 
@@ -1931,6 +2044,11 @@ export const TaskProvider = ({ children }) => {
         roadmaps: updatedRoadmaps,
         progress: overallProgress
       });
+
+      if (localWs.isShared && localWs.shareId) {
+        const mergedWs = { ...localWs, roadmaps: updatedRoadmaps, progress: overallProgress };
+        await syncSharedWorkspace(wsId, mergedWs);
+      }
 
       if (isNowDone) {
         await logProductiveActivity('subtopic');
@@ -2207,7 +2325,11 @@ export const TaskProvider = ({ children }) => {
     const notif = notifications.find(n => n.id === notifId);
     if (!notif) return;
     const wsId = notif.meta.workspaceId;
-    const role = notif.meta.role;
+    const role = notif.meta.role || 'Editor';
+
+    // If it's a request, the person joining is the requester (meta.requesterUserId)
+    // Otherwise, the person joining is the receiver of the invite (userProfile.userId)
+    const targetUserId = notif.meta.requesterUserId || userProfile.userId;
 
     await deleteDoc(doc(db, 'notifications', notifId));
 
@@ -2215,10 +2337,10 @@ export const TaskProvider = ({ children }) => {
     const collabSnap = await getDoc(collabRef);
     const list = collabSnap.exists() ? (collabSnap.data().users || []) : [];
     
-    if (!list.some(c => c.userId === userProfile.userId)) {
+    if (!list.some(c => c.userId === targetUserId)) {
       await setDoc(collabRef, {
         workspaceId: wsId,
-        users: [...list, { userId: userProfile.userId, role }]
+        users: [...list, { userId: targetUserId, role }]
       }, { merge: true });
     }
 
@@ -2228,22 +2350,37 @@ export const TaskProvider = ({ children }) => {
     if (wsSnap.exists()) {
       const wsData = wsSnap.data();
       const currentCollabs = wsData.collaborators || [];
-      if (!currentCollabs.includes(userProfile.userId)) {
+      if (!currentCollabs.includes(targetUserId)) {
         await updateDoc(wsRef, {
-          collaborators: [...currentCollabs, userProfile.userId]
+          collaborators: [...currentCollabs, targetUserId]
         });
       }
     }
 
-    const joinNotifId = `notif-joined-${Date.now()}`;
-    await setDoc(doc(db, 'notifications', joinNotifId), {
-      userId: currentUser.uid,
-      text: 'You joined a workspace collaboration successfully.',
-      type: 'Workspace',
-      read: false,
-      timestamp: new Date().toISOString(),
-      meta: {}
-    });
+    // Add notification for the user who requested/received access
+    if (notif.meta.requesterUserId) {
+      const requesterUser = allUsers.find(u => u.userId === targetUserId);
+      if (requesterUser) {
+        await addDoc(collection(db, 'notifications'), {
+          userId: requesterUser.uid,
+          text: `Your collaboration request for workspace "${wsSnap.exists() ? wsSnap.data().title : 'Workspace'}" was accepted.`,
+          type: 'Workspace',
+          read: false,
+          timestamp: new Date().toISOString(),
+          meta: {}
+        });
+      }
+    } else {
+      const joinNotifId = `notif-joined-${Date.now()}`;
+      await setDoc(doc(db, 'notifications', joinNotifId), {
+        userId: currentUser.uid,
+        text: 'You joined a workspace collaboration successfully.',
+        type: 'Workspace',
+        read: false,
+        timestamp: new Date().toISOString(),
+        meta: {}
+      });
+    }
   };
 
   const rejectCollaborationInvite = async (notifId) => {
@@ -2464,6 +2601,9 @@ export const TaskProvider = ({ children }) => {
         updateWorkspace,
         deleteWorkspace,
         toggleSubtopic,
+        syncSharedWorkspace,
+        verifySharedWorkspace,
+        requestCollaboration,
         journeys,
         addJourney,
         updateJourney,

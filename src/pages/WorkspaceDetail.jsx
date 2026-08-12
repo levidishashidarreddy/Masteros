@@ -12,6 +12,100 @@ import ErrorState from '../components/ErrorState';
 
 import { AvatarImg, getAvatar } from '../components/Avatar';
 
+// ─── Language Visual Identity System ────────────────────────────────────────
+const LANG_THEMES = {
+  cpp:        { gradientFrom: '#00243A', accent: '#00C8FF', iconSlug: 'cplusplus',   iconColor: '00C8FF', label: 'C++ DEVELOPMENT' },
+  c:          { gradientFrom: '#0D1E33', accent: '#5C9CD5', iconSlug: 'c',           iconColor: '5C9CD5', label: 'C LANGUAGE' },
+  python:     { gradientFrom: '#0A1A30', accent: '#4B8BBE', iconSlug: 'python',      iconColor: '4B8BBE', label: 'PYTHON DEVELOPMENT' },
+  java:       { gradientFrom: '#1E0E00', accent: '#ED8B00', iconSlug: 'openjdk',     iconColor: 'ED8B00', label: 'JAVA DEVELOPMENT' },
+  javascript: { gradientFrom: '#141200', accent: '#F7DF1E', iconSlug: 'javascript',  iconColor: 'F7DF1E', label: 'JAVASCRIPT DEVELOPMENT' },
+  typescript: { gradientFrom: '#050F1F', accent: '#3178C6', iconSlug: 'typescript',  iconColor: '3178C6', label: 'TYPESCRIPT DEVELOPMENT' },
+  react:      { gradientFrom: '#001525', accent: '#61DAFB', iconSlug: 'react',       iconColor: '61DAFB', label: 'REACT DEVELOPMENT' },
+  node:       { gradientFrom: '#051005', accent: '#68A063', iconSlug: 'nodedotjs',   iconColor: '68A063', label: 'NODE.JS DEVELOPMENT' },
+  html:       { gradientFrom: '#1A0400', accent: '#E34F26', iconSlug: 'html5',       iconColor: 'E34F26', label: 'HTML5 DEVELOPMENT' },
+  css:        { gradientFrom: '#00031A', accent: '#264DE4', iconSlug: 'css3',        iconColor: '264DE4', label: 'CSS3 DEVELOPMENT' },
+  sql:        { gradientFrom: '#00101A', accent: '#00758F', iconSlug: 'mysql',       iconColor: '00758F', label: 'SQL / DATABASE' },
+  aws:        { gradientFrom: '#100900', accent: '#FF9900', iconSlug: 'amazonaws',   iconColor: 'FF9900', label: 'AWS CLOUD' },
+  docker:     { gradientFrom: '#000D1E', accent: '#2496ED', iconSlug: 'docker',      iconColor: '2496ED', label: 'DOCKER / CONTAINERS' },
+  git:        { gradientFrom: '#150200', accent: '#F05032', iconSlug: 'git',         iconColor: 'F05032', label: 'GIT / VERSION CONTROL' },
+  flutter:    { gradientFrom: '#001020', accent: '#54C5F8', iconSlug: 'flutter',     iconColor: '54C5F8', label: 'FLUTTER DEVELOPMENT' },
+  kotlin:     { gradientFrom: '#08001A', accent: '#7F52FF', iconSlug: 'kotlin',      iconColor: '7F52FF', label: 'KOTLIN DEVELOPMENT' },
+  swift:      { gradientFrom: '#180600', accent: '#F05138', iconSlug: 'swift',       iconColor: 'F05138', label: 'SWIFT DEVELOPMENT' },
+  rust:       { gradientFrom: '#140400', accent: '#CE422B', iconSlug: 'rust',        iconColor: 'CE422B', label: 'RUST DEVELOPMENT' },
+  go:         { gradientFrom: '#000E18', accent: '#00ACD7', iconSlug: 'go',          iconColor: '00ACD7', label: 'GO DEVELOPMENT' },
+  default:    { gradientFrom: '#0D0822', accent: '#8B5CF6', iconSlug: null,          iconColor: '8B5CF6', label: 'WORKSPACE' },
+};
+
+const detectLangTheme = (ws) => {
+  if (!ws) return LANG_THEMES.default;
+  const txt = `${ws.title || ''} ${ws.category || ''} ${ws.tag || ''}`.toLowerCase();
+  if (txt.includes('c++') || txt.includes('cpp'))                         return LANG_THEMES.cpp;
+  if (txt.includes('typescript') || /\bts\b/.test(txt))                   return LANG_THEMES.typescript;
+  if (txt.includes('javascript') || /\bjs\b/.test(txt))                   return LANG_THEMES.javascript;
+  if (txt.includes('react'))                                               return LANG_THEMES.react;
+  if (txt.includes('node'))                                                return LANG_THEMES.node;
+  if (txt.includes('python'))                                              return LANG_THEMES.python;
+  if (txt.includes('html'))                                                return LANG_THEMES.html;
+  if (txt.includes('css') && !txt.includes('success'))                    return LANG_THEMES.css;
+  if (txt.includes('java') && !txt.includes('javascript'))                 return LANG_THEMES.java;
+  if (txt.includes('sql') || txt.includes('mysql') || txt.includes('postgres') || txt.includes('database')) return LANG_THEMES.sql;
+  if (txt.includes('aws') || txt.includes('amazon web'))                  return LANG_THEMES.aws;
+  if (txt.includes('docker') || txt.includes('container'))                return LANG_THEMES.docker;
+  if (txt.includes('flutter'))                                             return LANG_THEMES.flutter;
+  if (txt.includes('kotlin'))                                              return LANG_THEMES.kotlin;
+  if (txt.includes('swift'))                                               return LANG_THEMES.swift;
+  if (txt.includes('rust'))                                                return LANG_THEMES.rust;
+  if (txt.includes('golang') || /\bgo\b/.test(txt))                       return LANG_THEMES.go;
+  if (txt.includes('git'))                                                 return LANG_THEMES.git;
+  if (/\bc\b/.test(txt) || txt.includes('c language'))                    return LANG_THEMES.c;
+  return LANG_THEMES.default;
+};
+
+// ─── Resource Service Branding System ───────────────────────────────────────
+const RESOURCE_SERVICES = [
+  { match: ['youtube.com', 'youtu.be'],            slug: 'youtube',        color: 'FF0000', label: 'YouTube' },
+  { match: ['github.com'],                          slug: 'github',         color: 'ffffff', label: 'GitHub' },
+  { match: ['drive.google.com'],                    slug: 'googledrive',    color: '4285F4', label: 'Google Drive' },
+  { match: ['docs.google.com'],                     slug: 'googledocs',     color: '4285F4', label: 'Google Docs' },
+  { match: ['notion.so', 'notion.com'],             slug: 'notion',         color: 'ffffff', label: 'Notion' },
+  { match: ['linkedin.com'],                        slug: 'linkedin',       color: '0A66C2', label: 'LinkedIn' },
+  { match: ['figma.com'],                           slug: 'figma',          color: 'F24E1E', label: 'Figma' },
+  { match: ['stackoverflow.com'],                   slug: 'stackoverflow',  color: 'F58025', label: 'Stack Overflow' },
+  { match: ['developer.mozilla.org', 'mdn.io'],     slug: 'mdnwebdocs',     color: 'ffffff', label: 'MDN Web Docs' },
+  { match: ['leetcode.com'],                        slug: 'leetcode',       color: 'FFA116', label: 'LeetCode' },
+  { match: ['codechef.com'],                        slug: 'codechef',       color: 'B92B27', label: 'CodeChef' },
+  { match: ['coursera.org'],                        slug: 'coursera',       color: '0056D2', label: 'Coursera' },
+  { match: ['udemy.com'],                           slug: 'udemy',          color: 'A435F0', label: 'Udemy' },
+  { match: ['npmjs.com'],                           slug: 'npm',            color: 'CB3837', label: 'npm' },
+  { match: ['medium.com'],                          slug: 'medium',         color: 'ffffff', label: 'Medium' },
+  { match: ['dev.to'],                              slug: 'devdotto',       color: 'ffffff', label: 'DEV Community' },
+  { match: ['twitter.com', 'x.com'],               slug: 'x',              color: 'ffffff', label: 'X / Twitter' },
+  { match: ['hackerrank.com'],                      slug: 'hackerrank',     color: '00EA64', label: 'HackerRank' },
+  { match: ['codeforces.com'],                      slug: 'codeforces',     color: '1F8ACB', label: 'Codeforces' },
+  { match: ['geeksforgeeks.org'],                   slug: 'geeksforgeeks',  color: '2F8D46', label: 'GeeksforGeeks' },
+  { match: ['freecodecamp.org'],                    slug: 'freecodecamp',   color: '0A0A23', label: 'freeCodeCamp' },
+  { match: ['replit.com'],                          slug: 'replit',         color: 'F26207', label: 'Replit' },
+  { match: ['codepen.io'],                          slug: 'codepen',        color: 'ffffff', label: 'CodePen' },
+];
+
+const CATEGORY_SLUG_MAP = {
+  'YouTube':      { slug: 'youtube',      color: 'FF0000' },
+  'GitHub':       { slug: 'github',       color: 'ffffff' },
+  'Google Drive': { slug: 'googledrive',  color: '4285F4' },
+  'Documentation':{ slug: 'readthedocs', color: '8CA1AF' },
+  'PDF':          { slug: 'adobeacrobatreader', color: 'EC1C24' },
+};
+
+const getResourceMeta = (link, category) => {
+  let domain = '';
+  try { if (link) domain = new URL(link).hostname.replace('www.', ''); } catch (_) {}
+  const matched = RESOURCE_SERVICES.find(s => s.match.some(m => domain.includes(m)));
+  if (matched) return { iconUrl: `https://cdn.simpleicons.org/${matched.slug}/${matched.color}`, label: matched.label, domain: domain || category };
+  const catMatch = CATEGORY_SLUG_MAP[category];
+  if (catMatch) return { iconUrl: `https://cdn.simpleicons.org/${catMatch.slug}/${catMatch.color}`, label: category, domain: domain || category };
+  return { iconUrl: null, label: category || 'Resource', domain: domain || category };
+};
+
 const WorkspaceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -185,6 +279,10 @@ const WorkspaceDetail = () => {
     }
   }, [ws]);
 
+  // Sharing PIN visibility state
+  const [showPin, setShowPin] = useState(false);
+  const [activeTopicMenu, setActiveTopicMenu] = useState(null);
+
   if (!ws) {
     return (
       <div className="flex min-h-screen bg-background text-on-surface select-none">
@@ -210,6 +308,7 @@ const WorkspaceDetail = () => {
   const isWorkspaceOwner = ws.ownerId === currentUser?.uid;
   const ownerUser = allUsers.find(u => u.uid === ws.ownerId);
   const ownerName = ownerUser ? (ownerUser.fullName || ownerUser.username) : 'Owner';
+  const langTheme = detectLangTheme(ws);
 
   // Construct collabList from ws.collaborators array
   const collabList = [
@@ -260,6 +359,41 @@ const WorkspaceDetail = () => {
       };
     });
     updateWorkspace(id, { roadmaps: updatedRoadmaps });
+  };
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    alert(`📋 ${label} copied to clipboard!`);
+  };
+
+  const handleToggleSharing = async () => {
+    const isShared = !ws.isShared;
+    if (isShared) {
+      const shareId = ws.shareId || ('MOS-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+      const sharePassword = ws.sharePassword || Math.random().toString(36).substring(2, 10).toUpperCase();
+      await updateWorkspace(ws.id, {
+        isShared: true,
+        shareId,
+        sharePassword
+      });
+    } else {
+      await updateWorkspace(ws.id, {
+        isShared: false
+      });
+    }
+  };
+
+  const handleRegenerateShareId = async () => {
+    const shareId = 'MOS-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    await updateWorkspace(ws.id, { shareId });
+  };
+
+  const handleRegeneratePassword = async () => {
+    if (window.confirm("Regenerate workspace password?\n\nThis will invalidate the current sharing password.")) {
+      const sharePassword = Math.random().toString(36).substring(2, 10).toUpperCase();
+      await updateWorkspace(ws.id, { sharePassword });
+      alert(`🔑 New Workspace Password generated: ${sharePassword}`);
+    }
   };
 
   const handleAddTopicSubmit = (e) => {
@@ -519,7 +653,7 @@ const WorkspaceDetail = () => {
       <div className="flex min-h-screen bg-background text-on-surface select-none">
         <Sidebar />
         <main className="flex-1 flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10">
-          <Header hideSearch={true} hideStreak={true} hideLogo={true} />
+          <Header hideSearch={true} hideStreak={true} hideLogo={true} workspaceTitle={ws?.title || 'Workspace'} />
           <div className="p-8 space-y-8">
             <WorkspaceDetailSkeleton />
           </div>
@@ -530,6 +664,40 @@ const WorkspaceDetail = () => {
 
   return (
     <div className="flex min-h-screen bg-background text-on-surface radial-glow-bg select-none relative">
+      <style>{`
+        @keyframes glow-pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.3);
+            border-color: rgba(0, 240, 255, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 15px 8px rgba(0, 240, 255, 0);
+            border-color: rgba(0, 240, 255, 0.1);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(0, 240, 255, 0);
+            border-color: rgba(255, 255, 255, 0.08);
+          }
+        }
+        .completed-track-card {
+          border-color: rgba(255, 255, 255, 0.08) !important;
+          background: rgba(255, 255, 255, 0.015) !important;
+          box-shadow: 0 0 20px rgba(0, 240, 255, 0.02) !important;
+          animation: glow-pulse 0.7s ease-out;
+          transition: all 0.2s ease-in-out;
+        }
+        .completed-track-card:hover {
+          background: rgba(255, 255, 255, 0.035) !important;
+          box-shadow: 0 4px 20px rgba(0, 240, 255, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+          transform: translateY(-1px);
+        }
+        .completed-track-card-active {
+          border-color: rgba(255, 255, 255, 0.08) !important;
+          background: rgba(255, 255, 255, 0.025) !important;
+          box-shadow: 0 0 25px rgba(0, 240, 255, 0.03) !important;
+          animation: glow-pulse 0.7s ease-out;
+        }
+      `}</style>
       <Sidebar />
 
       {/* Gym Workspace Disabled Overlay Banner */}
@@ -547,10 +715,10 @@ const WorkspaceDetail = () => {
       )}
 
       <main className="flex-grow flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10 animate-page-transition">
-        <Header hideSearch={true} hideStreak={true} hideLogo={true} />
+        <Header hideSearch={true} hideStreak={true} hideLogo={true} workspaceTitle={ws?.title || 'Workspace'} />
 
         {/* Top Breadcrumb Navigation */}
-        <div className="bg-background/60 backdrop-blur-xl border-b border-white/5 px-8 py-4 flex items-center justify-between shrink-0">
+        <div className="hidden md:flex bg-background/60 backdrop-blur-xl border-b border-white/5 px-8 py-4 items-center justify-between shrink-0">
           <nav className="flex gap-2 items-center font-label-md text-xs font-bold uppercase tracking-wider">
             <Link to="/workspaces" className="text-on-surface-variant hover:text-white transition-colors flex items-center gap-1">
               Workspaces 
@@ -560,63 +728,115 @@ const WorkspaceDetail = () => {
           </nav>
         </div>
 
-        {/* Workspace Banner */}
-        <div className="relative w-full h-[280px] overflow-hidden shrink-0">
-          <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ 
-              backgroundImage: `url('${ws.bannerImage || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}')`
-            }}
+        {/* Workspace Banner — Language-Themed Hero */}
+        <div className="relative w-full h-[220px] md:h-[280px] overflow-hidden shrink-0">
+          {/* Base gradient tinted by detected language */}
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(135deg, ${langTheme.gradientFrom} 0%, #0D0D14 65%)` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
-          
-          <div className="absolute bottom-0 left-0 w-full px-8 pb-6 flex flex-col md:flex-row items-end justify-between gap-6 z-10">
-            <div className="flex items-start gap-6">
-              <div className="w-16 h-16 rounded-xl bg-[#111118]/90 border border-white/5 flex items-center justify-center text-white shrink-0 shadow-2xl">
-                <span className="material-symbols-outlined text-3xl">{ws.icon || 'folder'}</span>
+          {/* Accent radial glow top-right */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: `radial-gradient(ellipse at 78% 25%, ${langTheme.accent}1C 0%, transparent 58%)` }}
+          />
+          {/* Subtle dot-grid texture overlay */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ opacity: 0.04 }}
+            preserveAspectRatio="xMidYMid slice"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern id="ws-dot-grid" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+                <circle cx="1.5" cy="1.5" r="1" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#ws-dot-grid)" />
+          </svg>
+          {/* Thin accent line at bottom of hero */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+            style={{ background: `linear-gradient(90deg, transparent, ${langTheme.accent}30, transparent)` }}
+          />
+          {/* Dark gradient to merge hero into page content below */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+
+          {/* Hero Content: left info + right actions */}
+          <div className="absolute bottom-0 left-0 w-full px-4 pb-4 md:px-8 md:pb-6 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-6 z-10">
+            <div className="flex items-start gap-4 md:gap-6">
+              {/* Language Icon Box */}
+              <div
+                className="w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center shrink-0 shadow-2xl border overflow-hidden"
+                style={{
+                  background: `${langTheme.accent}12`,
+                  borderColor: `${langTheme.accent}35`,
+                  boxShadow: `0 0 20px ${langTheme.accent}18`,
+                }}
+              >
+                {langTheme.iconSlug ? (
+                  <img
+                    src={`https://cdn.simpleicons.org/${langTheme.iconSlug}/${langTheme.iconColor}`}
+                    alt={langTheme.label}
+                    className="w-6 h-6 md:w-8 md:h-8 object-contain select-none"
+                    draggable={false}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-2xl md:text-3xl" style={{ color: langTheme.accent }}>
+                    {ws.icon || 'code'}
+                  </span>
+                )}
               </div>
+
               <div>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="bg-white/5 text-on-surface-variant px-2.5 py-0.5 rounded-full font-mono text-[9px] uppercase tracking-wider border border-white/5">
-                    {ws.category}
+                {/* Language wordmark + tag badges */}
+                <div className="flex flex-wrap items-center gap-1.5 mb-1 md:mb-2">
+                  <span
+                    className="px-2 py-0.5 rounded-full font-mono text-[8px] md:text-[9px] uppercase tracking-wider border font-bold"
+                    style={{ color: langTheme.accent, background: `${langTheme.accent}10`, borderColor: `${langTheme.accent}30` }}
+                  >
+                    {langTheme.label}
                   </span>
-                  <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-mono text-[9px] uppercase tracking-wider border border-primary/20 shadow-sm">
-                    {ws.tag || 'JS · TS'}
-                  </span>
+                  {ws.tag && (
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full font-mono text-[8px] md:text-[9px] uppercase tracking-wider border border-primary/20 shadow-sm">
+                      {ws.tag}
+                    </span>
+                  )}
                 </div>
-                <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight leading-tight">
+                <h1 className="font-display-lg text-lg md:text-2xl font-bold text-white tracking-tight leading-tight">
                   {ws.title}
                 </h1>
-                
-                <div className="flex items-center gap-4 mt-3 text-on-surface-variant font-label-md text-xs font-bold uppercase tracking-wider">
+
+                <div className="flex items-center gap-4 mt-2.5 text-on-surface-variant font-label-md text-xs font-bold uppercase tracking-wider">
                   <div className="flex flex-col">
-                    <span className="text-primary font-bold text-sm">{ws.progress}%</span>
-                    <span className="opacity-60 text-[8px] mt-0.5">Workspace</span>
+                    <span className="text-primary font-bold text-xs md:text-sm">{ws.progress}%</span>
+                    <span className="opacity-60 text-[7px] md:text-[8px] mt-0.5">Workspace</span>
                   </div>
-                  <div className="w-px h-5 bg-white/10"></div>
+                  <div className="w-px h-4 md:h-5 bg-white/10"></div>
                   <div className="flex flex-col">
-                    <span className="text-white font-bold text-sm">{ws.streak} Days</span>
-                    <span className="opacity-60 text-[8px] mt-0.5">Streak</span>
+                    <span className="text-white font-bold text-xs md:text-sm">{ws.streak} Days</span>
+                    <span className="opacity-60 text-[7px] md:text-[8px] mt-0.5">Streak</span>
                   </div>
-                  <div className="w-px h-5 bg-white/10"></div>
+                  <div className="w-px h-4 md:h-5 bg-white/10"></div>
                   <div className="flex flex-col">
-                    <span className="text-white font-bold text-sm">{workspaceTasks.length}</span>
-                    <span className="opacity-60 text-[8px] mt-0.5">Tasks Left</span>
+                    <span className="text-white font-bold text-xs md:text-sm">{workspaceTasks.length}</span>
+                    <span className="opacity-60 text-[7px] md:text-[8px] mt-0.5">Tasks Left</span>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {isWorkspaceOwner && (
-              <div className="flex items-center gap-2 mb-1">
-                <Button variant="secondary" icon="group_add" onClick={() => setIsInviteModalOpen(true)}>Collaborate</Button>
+              <div className="flex items-center gap-2 mb-1 w-full md:w-auto">
+                <Button variant="secondary" className="w-full md:w-auto text-xs justify-center py-2 px-4" icon="group_add" onClick={() => setIsInviteModalOpen(true)}>Collaborate</Button>
               </div>
             )}
           </div>
         </div>
 
         {/* Content Layout Grid */}
-        <div className="px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full flex-grow min-h-0 workspace-detail-content">
+        <div className="px-4 py-6 md:px-8 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 w-full flex-grow min-h-0 workspace-detail-content">
           
           {/* Column 1: Left Milestones / Roadmap */}
           <div className="lg:col-span-8 space-y-8 workspace-detail-left-col">
@@ -638,19 +858,40 @@ const WorkspaceDetail = () => {
                       <div key={rm.id} className="space-y-6 bg-[#0B0B10] border border-white/5 p-6 rounded-xl animate-fade-in shadow-lg shadow-black/10">
                         
                         {/* Roadmap Header */}
-                        <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                          <h4 className="font-extrabold font-display-lg text-xs tracking-widest text-zinc-150 uppercase flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            {rm.title}
-                          </h4>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-primary font-bold">{rmProg}% Done</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+                          <div className="space-y-1">
+                            <h4 className="font-extrabold font-display-lg text-xs tracking-widest text-zinc-150 uppercase flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                              {rm.title}
+                            </h4>
+                            <div className="sm:hidden mt-0.5">
+                              {rmProg === 100 ? (
+                                <span className="text-[10px] text-[#FFB800] font-extrabold flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[11px] font-bold">emoji_events</span>
+                                  100% MASTERED
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-primary font-bold">{rmProg}% Done</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                            <div className="hidden sm:block">
+                              {rmProg === 100 ? (
+                                <span className="text-xs text-[#FFB800] font-extrabold flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,184,0,0.15)] bg-[#FFB800]/5 px-2.5 py-0.5 border border-[#FFB800]/20 rounded-full">
+                                  <span className="material-symbols-outlined text-[13px] font-bold">emoji_events</span>
+                                  100% MASTERED
+                                </span>
+                              ) : (
+                                <span className="text-xs text-primary font-bold">{rmProg}% Done</span>
+                              )}
+                            </div>
                             <button
                               onClick={() => {
                                 setActiveRoadmapForTopic(rm.id);
                                 setIsTopicModalOpen(true);
                               }}
-                              className="px-2.5 py-1 bg-white/5 border border-white/5 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
+                              className="w-full sm:w-auto text-center justify-center px-3 py-1.5 sm:px-2.5 sm:py-1 bg-white/5 border border-white/5 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
                             >
                               + Add Topic
                             </button>
@@ -664,42 +905,58 @@ const WorkspaceDetail = () => {
                             const totalSubtopics = (topic.subtopics || []).length;
                             const progressPercent = totalSubtopics > 0 ? Math.round((doneSubtopics / totalSubtopics) * 100) : 0;
                             const isExpanded = !!expandedTopics[`${rm.id}-${topic.id}`];
+                            const isFullyCompleted = totalSubtopics > 0 && doneSubtopics === totalSubtopics;
                             
                             return (
                               <div 
                                 key={topic.id} 
-                                className={`border rounded-xl backdrop-blur-md overflow-hidden transition-all duration-300 shadow-lg ${
-                                  isExpanded 
-                                    ? 'border-primary/45 bg-[#0e0e16]/80 shadow-[0_0_20px_rgba(139,92,246,0.12)] relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary scale-[1.002]' 
-                                    : 'border-white/5 bg-[#0D0D14]/20 hover:border-white/12 shadow-black/20 hover:scale-[1.002]'
+                                className={`border rounded-xl backdrop-blur-md overflow-hidden transition-all duration-200 shadow-lg ${
+                                  isFullyCompleted
+                                    ? (isExpanded ? 'completed-track-card-active relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00F0FF]/60 scale-[1.002]' : 'completed-track-card')
+                                    : (isExpanded ? 'border-primary/45 bg-[#0e0e16]/80 shadow-[0_0_20px_rgba(139,92,246,0.12)] relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary scale-[1.002]' : 'border-white/[0.08] bg-[#0D0D14]/20 hover:bg-white/[0.035] hover:border-white/12 shadow-black/20 hover:-translate-y-[1px]')
                                 }`}
                               >
                                 
                                 {/* Topic Header */}
                                 <div className="flex items-center justify-between px-4 py-3.5 bg-zinc-900/10 hover:bg-zinc-900/35 transition-all duration-300 cursor-pointer select-none border-b border-white/5">
                                   <div className="flex items-center gap-3 min-w-0 flex-grow" onClick={() => handleToggleTopicExpand(rm.id, topic.id)}>
-                                    <span className={`material-symbols-outlined text-zinc-400 text-base transition-transform duration-200 ${isExpanded ? 'rotate-90 text-primary' : ''}`}>
-                                      chevron_right
-                                    </span>
+                                    {isFullyCompleted ? (
+                                      <div className="w-5 h-5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] flex items-center justify-center shrink-0 shadow-[0_0_6px_rgba(0,240,255,0.25)] transition-all duration-300 scale-100 animate-fade-in">
+                                        <span className="material-symbols-outlined text-xs font-bold">check</span>
+                                      </div>
+                                    ) : (
+                                      <span className={`material-symbols-outlined text-zinc-400 text-base transition-transform duration-200 ${isExpanded ? 'rotate-90 text-primary' : ''}`}>
+                                        chevron_right
+                                      </span>
+                                    )}
                                     <div className="flex flex-col min-w-0 flex-grow">
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-zinc-150 text-[13px] tracking-wide truncate">{topic.title}</span>
-                                        <span className="text-[9px] text-zinc-400 font-bold bg-white/3 px-2.5 py-0.5 rounded-full border border-white/5 shrink-0">
+                                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                        <span className={`font-semibold text-zinc-150 text-[13px] tracking-wide truncate ${isFullyCompleted ? 'text-zinc-100 font-bold' : ''}`}>{topic.title}</span>
+                                        <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${isFullyCompleted ? 'text-[#00F0FF] bg-[#00F0FF]/[0.07] border-[#00F0FF]/20' : 'text-zinc-400 bg-white/3 border-white/5'}`}>
                                           {doneSubtopics}/{totalSubtopics}
                                         </span>
+                                        {isFullyCompleted && (
+                                          <span className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF] bg-[#00F0FF]/[0.07] px-2.5 py-0.5 border border-[#00F0FF]/20 rounded-md animate-fade-in">
+                                            MASTERED
+                                          </span>
+                                        )}
                                       </div>
                                       {/* Micro progress bar for each topic */}
                                       <div className="w-full max-w-[200px] bg-[#09090D] h-[4px] rounded-full overflow-hidden mt-2 relative border border-white/3">
                                         <div 
-                                          className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(139,92,246,0.45)]" 
-                                          style={{ width: `${progressPercent}%` }}
+                                          className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                            isFullyCompleted
+                                              ? 'shadow-[0_0_6px_rgba(0,240,255,0.4)]'
+                                              : progressPercent > 0 ? 'bg-gradient-to-r from-primary to-secondary shadow-[0_0_6px_rgba(139,92,246,0.35)]' : 'bg-white/10'
+                                          }`}
+                                          style={{ width: `${progressPercent}%`, ...(isFullyCompleted ? { background: 'linear-gradient(90deg, #00C8E0, #00F0FF)' } : {}) }}
                                         />
                                       </div>
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-1.5 shrink-0 ml-4">
-                                    {/* Edit Topic Title */}
+                                  {/* Desktop Actions (hidden on mobile) */}
+                                  <div className="hidden md:flex items-center gap-1.5 shrink-0 ml-4">
                                     <button 
                                       onClick={() => handleOpenEditTopic(rm.id, topic)}
                                       className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
@@ -707,8 +964,6 @@ const WorkspaceDetail = () => {
                                     >
                                       <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
-
-                                    {/* Inline Add Subtopic */}
                                     <button
                                       onClick={() => {
                                         setActiveTopicForSubtopic(topic.id);
@@ -719,8 +974,6 @@ const WorkspaceDetail = () => {
                                     >
                                       <span className="material-symbols-outlined text-sm">add_circle</span>
                                     </button>
-
-                                    {/* Reordering */}
                                     <button 
                                       onClick={() => handleReorderTopic(rm.id, topic.id, 'up')}
                                       className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
@@ -733,14 +986,96 @@ const WorkspaceDetail = () => {
                                     >
                                       <span className="material-symbols-outlined text-sm">arrow_downward</span>
                                     </button>
-
-                                    {/* Remove Topic */}
                                     <button 
                                       onClick={() => handleRemoveTopic(rm.id, topic.id)}
                                       className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 cursor-pointer"
                                     >
                                       <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
+                                  </div>
+
+                                  {/* Mobile More Actions Button & Dropdown */}
+                                  <div className="relative md:hidden shrink-0 ml-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveTopicMenu(activeTopicMenu === topic.id ? null : topic.id);
+                                      }}
+                                      className="p-2 rounded-lg bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">more_horiz</span>
+                                    </button>
+                                    {activeTopicMenu === topic.id && (
+                                      <>
+                                        {/* Backdrop to close menu */}
+                                        <div 
+                                          className="fixed inset-0 z-20 bg-transparent" 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveTopicMenu(null);
+                                          }}
+                                        />
+                                        <div className="absolute right-0 top-9 w-40 bg-[#111118] border border-white/10 rounded-xl shadow-2xl z-30 py-1.5 animate-scale-in">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveTopicMenu(null);
+                                              handleOpenEditTopic(rm.id, topic);
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">edit</span>
+                                            Edit Topic
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveTopicMenu(null);
+                                              setActiveTopicForSubtopic(topic.id);
+                                              setNewSubtopicText('');
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">add_circle</span>
+                                            Add Subtopic
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveTopicMenu(null);
+                                              handleReorderTopic(rm.id, topic.id, 'up');
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">arrow_upward</span>
+                                            Move Up
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveTopicMenu(null);
+                                              handleReorderTopic(rm.id, topic.id, 'down');
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">arrow_downward</span>
+                                            Move Down
+                                          </button>
+                                          <div className="border-t border-white/5 my-1" />
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveTopicMenu(null);
+                                              handleRemoveTopic(rm.id, topic.id);
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">delete</span>
+                                            Delete Topic
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
 
@@ -772,8 +1107,8 @@ const WorkspaceDetail = () => {
                                       (topic.subtopics || []).map((st) => (
                                         <div 
                                           key={st.id} 
-                                          className={`flex items-center justify-between gap-3 group px-2 py-1.5 rounded-lg transition-all ${
-                                            st.done ? 'opacity-65' : ''
+                                          className={`flex items-center justify-between gap-3 group px-2 py-2.5 md:py-1.5 rounded-lg transition-all ${
+                                            st.done ? 'bg-[#00F0FF]/[0.025] border border-[#00F0FF]/[0.07]' : 'hover:bg-white/[0.025] border border-transparent'
                                           }`}
                                         >
                                           <div 
@@ -791,22 +1126,22 @@ const WorkspaceDetail = () => {
                                             tabIndex={0}
                                             role="checkbox"
                                             aria-checked={st.done}
-                                            className="flex items-center gap-3 cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-md px-1 py-0.5"
+                                            className="flex items-center gap-3 cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-md px-1 py-0.5 min-h-[44px] md:min-h-0"
                                           >
                                             <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 relative ${
                                               st.done 
-                                                ? 'bg-emerald-950/20 border-emerald-500/40 shadow-emerald-950/20 scale-100' 
+                                                ? 'bg-[#00F0FF]/[0.08] border-[#00F0FF]/30 shadow-[0_0_6px_rgba(0,240,255,0.15)] scale-100 text-[#00F0FF]' 
                                                 : 'bg-zinc-900/30 border-white/10 group-hover:border-primary/45 group-hover:bg-zinc-900/60 scale-100 hover:scale-105'
                                             }`}>
                                               {st.done && (
-                                                <span className="material-symbols-outlined text-[12px] text-emerald-400 font-bold scale-100">
+                                                <span className="material-symbols-outlined text-[12px] text-[#00F0FF] font-bold scale-100">
                                                   check
                                                 </span>
                                               )}
                                             </div>
                                             <span className={`text-[12.5px] font-medium tracking-wide transition-all duration-300 ${
                                               st.done 
-                                                ? 'line-through text-zinc-500 decoration-zinc-650/30 font-normal' 
+                                                ? 'line-through text-zinc-500/70 decoration-[#00F0FF]/15 font-normal' 
                                                 : 'text-zinc-200 group-hover:text-white'
                                             }`}>
                                               {st.title}
@@ -1084,47 +1419,66 @@ const WorkspaceDetail = () => {
                 </button>
               </div>
 
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 no-scrollbar animate-fade-in">
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1 no-scrollbar animate-fade-in">
                 {(ws.resources || []).length === 0 ? (
-                  <p className="text-[11px] text-on-surface-variant italic">No study resource links attached.</p>
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <span className="material-symbols-outlined text-2xl text-on-surface-variant/40">link</span>
+                    <p className="text-[11px] text-on-surface-variant/60 italic">No study resource links attached.</p>
+                  </div>
                 ) : (
-                  (ws.resources || []).map((res) => (
-                    <div key={res.id} className="p-3 bg-[#0D0D14]/80 border border-white/5 rounded-xl flex items-center justify-between gap-3 group">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img 
-                          src={res.thumbnail} 
-                          alt={res.title}
-                          className="w-11 h-11 object-cover rounded-lg border border-white/5 shrink-0" 
-                        />
-                        <div className="min-w-0">
-                          <a 
-                            href={res.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs font-bold text-white hover:text-primary hover:underline truncate block"
+                  (ws.resources || []).map((res) => {
+                    const meta = getResourceMeta(res.link, res.category);
+                    return (
+                      <div key={res.id} className="p-3 bg-[#0D0D14]/80 border border-white/[0.06] rounded-xl flex items-center justify-between gap-3 group hover:bg-white/[0.025] hover:border-white/10 transition-all duration-150">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Auto-detected service logo */}
+                          <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0 overflow-hidden">
+                            {meta.iconUrl ? (
+                              <img
+                                src={meta.iconUrl}
+                                alt={meta.label}
+                                className="w-[18px] h-[18px] object-contain select-none"
+                                draggable={false}
+                                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
+                              />
+                            ) : null}
+                            <span
+                              className="material-symbols-outlined text-[17px] text-on-surface-variant/60"
+                              style={{ display: meta.iconUrl ? 'none' : 'block' }}
+                            >
+                              language
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <a
+                              href={res.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[12px] font-semibold text-white hover:text-primary transition-colors truncate block leading-snug"
+                            >
+                              {res.title}
+                            </a>
+                            <span className="text-[9px] text-on-surface-variant/60 block mt-0.5 truncate">{meta.domain}</span>
+                          </div>
+                        </div>
+
+                        <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity shrink-0">
+                          <button
+                            onClick={() => handleOpenEditResource(res)}
+                            className="p-1.5 text-on-surface-variant hover:text-white rounded-md hover:bg-white/5 transition-colors"
                           >
-                            {res.title}
-                          </a>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant block mt-0.5">{res.category}</span>
+                            <span className="material-symbols-outlined text-xs">edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteResource(res.id)}
+                            className="p-1.5 text-on-surface-variant hover:text-red-400 rounded-md hover:bg-red-500/5 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-xs">delete</span>
+                          </button>
                         </div>
                       </div>
-
-                      <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity shrink-0">
-                        <button 
-                          onClick={() => handleOpenEditResource(res)}
-                          className="p-1 text-on-surface-variant hover:text-white"
-                        >
-                          <span className="material-symbols-outlined text-xs">edit</span>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteResource(res.id)}
-                          className="p-1 text-on-surface-variant hover:text-red-400"
-                        >
-                          <span className="material-symbols-outlined text-xs">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </section>
@@ -1208,6 +1562,106 @@ const WorkspaceDetail = () => {
                 })}
               </div>
             </section>
+
+            {/* Sharing Settings Card (Owner Only) */}
+            {isWorkspaceOwner && (
+              <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-5 workspace-sharing-section shadow-lg shadow-black/10">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
+                    Workspace Sharing
+                  </h3>
+                  <span className="material-symbols-outlined text-primary text-base">
+                    share
+                  </span>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-on-surface-variant">Enable Workspace Sharing</span>
+                    <button
+                      onClick={handleToggleSharing}
+                      className={`w-10 h-6 rounded-full transition-colors duration-200 relative ${
+                        ws.isShared ? 'bg-primary' : 'bg-zinc-800'
+                      }`}
+                    >
+                      <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                        ws.isShared ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+
+                  {ws.isShared && (
+                    <div className="space-y-3 pt-2 animate-fade-in">
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-on-surface-variant font-bold">Workspace ID</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={ws.shareId || ''}
+                            className="flex-grow bg-[#0D0D14] border border-white/5 rounded px-2.5 py-1.5 text-xs text-white select-all font-mono"
+                          />
+                          <button
+                            onClick={() => copyToClipboard(ws.shareId, 'Workspace ID')}
+                            className="px-3 py-1 bg-white/5 border border-white/5 hover:bg-white/10 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-on-surface-variant font-bold">Workspace Password</label>
+                        <div className="flex gap-2">
+                          <input
+                            type={showPin ? 'text' : 'password'}
+                            readOnly
+                            value={ws.sharePassword || ws.sharePin || ''}
+                            className="flex-grow bg-[#0D0D14] border border-white/5 rounded px-2.5 py-1.5 text-xs text-white select-all font-mono tracking-widest"
+                          />
+                          <button
+                            onClick={() => setShowPin(!showPin)}
+                            className="px-2 py-1 bg-white/5 border border-white/5 hover:bg-white/10 rounded text-[10px] flex items-center justify-center"
+                          >
+                            <span className="material-symbols-outlined text-xs">
+                              {showPin ? 'visibility_off' : 'visibility'}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => copyToClipboard(ws.sharePassword || ws.sharePin, 'Workspace Password')}
+                            className="px-3 py-1 bg-white/5 border border-white/5 hover:bg-white/10 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2">
+                        <button
+                          onClick={handleRegenerateShareId}
+                          className="py-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded text-[9px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
+                        >
+                          Regenerate ID
+                        </button>
+                        <button
+                          onClick={handleRegeneratePassword}
+                          className="py-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 hover:bg-[#8B5CF6]/20 rounded text-[9px] uppercase font-bold text-primary transition-all cursor-pointer text-center"
+                        >
+                          Regenerate Password
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-on-surface-variant/70 leading-normal">
+                    {ws.isShared 
+                      ? "Anyone with the Workspace ID and Password can view this workspace's tracks and overall progress."
+                      : "Sharing is disabled. Enable to share a read-only snapshot of this workspace's track structure and overall progress."
+                    }
+                  </p>
+                </div>
+              </section>
+            )}
 
             {/* Delete Workspace Button (Owner Only) */}
             {isWorkspaceOwner && (
@@ -1360,6 +1814,35 @@ const WorkspaceDetail = () => {
       {/* Add / Edit Resource Modal */}
       <Modal isOpen={isResourceModalOpen} onClose={() => setIsResourceModalOpen(false)} title={editingResource ? 'Edit Resource' : 'Add Resource'}>
         <form onSubmit={handleResourceSubmit} className="space-y-5">
+          {/* URL field first — drives service detection preview */}
+          <div className="space-y-2">
+            <InputField
+              id="res-link"
+              label="Link URL"
+              placeholder="https://youtube.com/watch?v=..."
+              value={resourceLink}
+              onChange={(e) => setResourceLink(e.target.value)}
+              required
+            />
+            {/* Live service preview */}
+            {resourceLink && (() => {
+              const preview = getResourceMeta(resourceLink, resourceCategory);
+              return (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.07]">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    {preview.iconUrl ? (
+                      <img src={preview.iconUrl} alt={preview.label} className="w-4 h-4 object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                    ) : (
+                      <span className="material-symbols-outlined text-[15px] text-on-surface-variant">language</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant">{preview.label}</span>
+                  {preview.domain && <span className="text-[10px] text-on-surface-variant/50 ml-auto truncate">{preview.domain}</span>}
+                </div>
+              );
+            })()}
+          </div>
+
           <InputField
             id="res-title"
             label="Resource Title"
@@ -1369,39 +1852,24 @@ const WorkspaceDetail = () => {
             required
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-xs font-semibold">Category</label>
-              <select
-                value={resourceCategory}
-                onChange={(e) => setResourceCategory(e.target.value)}
-                className="w-full bg-[#111118] border border-white/5 rounded-lg p-3 text-on-surface focus:outline-none focus:border-primary text-xs"
-              >
-                <option value="YouTube">YouTube Video</option>
-                <option value="Google Drive">Google Drive folder</option>
-                <option value="Article">Article / Paper</option>
-                <option value="PDF">PDF eBook</option>
-                <option value="Documentation">Documentation Docs</option>
-                <option value="GitHub">GitHub Repository</option>
-              </select>
-            </div>
-            <InputField
-              id="res-thumb"
-              label="Thumbnail URL"
-              placeholder="https://..."
-              value={resourceThumbnail}
-              onChange={(e) => setResourceThumbnail(e.target.value)}
-            />
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-xs font-semibold">Category <span className="text-on-surface-variant/50 normal-case tracking-normal">(auto-detected from URL)</span></label>
+            <select
+              value={resourceCategory}
+              onChange={(e) => setResourceCategory(e.target.value)}
+              className="w-full bg-[#111118] border border-white/5 rounded-lg p-3 text-on-surface focus:outline-none focus:border-primary text-xs"
+            >
+              <option value="YouTube">YouTube Video</option>
+              <option value="GitHub">GitHub Repository</option>
+              <option value="Google Drive">Google Drive</option>
+              <option value="Documentation">Documentation</option>
+              <option value="Article">Article / Blog Post</option>
+              <option value="PDF">PDF / eBook</option>
+              <option value="Course">Online Course</option>
+              <option value="Tool">Tool / App</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
-
-          <InputField
-            id="res-link"
-            label="Link URL"
-            placeholder="https://..."
-            value={resourceLink}
-            onChange={(e) => setResourceLink(e.target.value)}
-            required
-          />
 
           <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
             <Button variant="ghost" onClick={() => setIsResourceModalOpen(false)}>Cancel</Button>

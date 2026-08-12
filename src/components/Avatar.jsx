@@ -12,7 +12,7 @@ export const DEFAULT_AVATARS = [
 
 // ─── Legacy preset IDs kept for backward-compat ───────────────────────────────
 const PRESET_IDS = new Set(['tech', 'startup', 'design', 'ai', 'flow', 'fitness']);
-const AVATAR_PRESETS = [
+export const AVATAR_PRESETS = [
   { id: 'tech',    icon: 'developer_mode', bg: 'from-blue-500 to-indigo-600'   },
   { id: 'startup', icon: 'rocket_launch',  bg: 'from-amber-400 to-orange-600'  },
   { id: 'design',  icon: 'palette',        bg: 'from-pink-500 to-rose-600'     },

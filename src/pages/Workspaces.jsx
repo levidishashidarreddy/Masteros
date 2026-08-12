@@ -40,7 +40,7 @@ const OTHER_PATH_OPTIONS = [
 
 const Workspaces = () => {
   const navigate = useNavigate();
-  const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, userProfile, tasks, loading, addTask } = useContext(TaskContext);
+  const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, updateWorkspace, verifySharedWorkspace, requestCollaboration, userProfile, tasks, loading, addTask } = useContext(TaskContext);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,6 +51,199 @@ const Workspaces = () => {
   }, [loading]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsAddMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Shared Workspace viewer states
+  const [isJoinSharedModalOpen, setIsJoinSharedModalOpen] = useState(false);
+  const [shareIdInput, setShareIdInput] = useState('');
+  const [sharePinInput, setSharePinInput] = useState('');
+  const [showJoinPassword, setShowJoinPassword] = useState(false);
+  const [sharedWorkspaceData, setSharedWorkspaceData] = useState(null);
+  const [sharedViewStep, setSharedViewStep] = useState('verify'); // 'verify', 'view', 'copy'
+  const [selectedTracksToCopy, setSelectedTracksToCopy] = useState([]);
+  const [targetWorkspaceIdToCopy, setTargetWorkspaceIdToCopy] = useState('');
+  const [newWorkspaceNameToCopy, setNewWorkspaceNameToCopy] = useState('');
+  const [isSharedWorkspaceLoading, setIsSharedWorkspaceLoading] = useState(false);
+  const [sharedWorkspaceError, setSharedWorkspaceError] = useState('');
+
+  const resetJoinSharedModal = () => {
+    setIsJoinSharedModalOpen(false);
+    setShareIdInput('');
+    setSharePinInput('');
+    setShowJoinPassword(false);
+    setSharedWorkspaceData(null);
+    setSharedViewStep('verify');
+    setSelectedTracksToCopy([]);
+    setTargetWorkspaceIdToCopy('');
+    setNewWorkspaceNameToCopy('');
+    setSharedWorkspaceError('');
+    setIsSharedWorkspaceLoading(false);
+  };
+
+  const handleVerifyShare = async (e) => {
+    if (e) e.preventDefault();
+    if (!shareIdInput.trim() || !sharePinInput.trim()) {
+      setSharedWorkspaceError('Please enter both Share ID and PIN.');
+      return;
+    }
+    setSharedWorkspaceError('');
+    setIsSharedWorkspaceLoading(true);
+
+    try {
+      const data = await verifySharedWorkspace(shareIdInput.trim(), sharePinInput.trim());
+      setSharedWorkspaceData(data);
+      // Pre-select all tracks by default
+      if (data.tracks && data.tracks.length > 0) {
+        setSelectedTracksToCopy(data.tracks.map(t => t.id));
+      }
+      setSharedViewStep('view');
+    } catch (err) {
+      console.error(err);
+      setSharedWorkspaceError(err.message || 'Invalid Share ID or PIN.');
+    } finally {
+      setIsSharedWorkspaceLoading(false);
+    }
+  };
+
+  const handleCopySharedTracks = async (e) => {
+    if (e) e.preventDefault();
+    if (selectedTracksToCopy.length === 0) {
+      alert('Please select at least one track to copy.');
+      return;
+    }
+
+    let targetWsId = targetWorkspaceIdToCopy;
+
+    try {
+      if (targetWsId === 'new') {
+        if (!newWorkspaceNameToCopy.trim()) {
+          alert('Please enter a name for the new workspace.');
+          return;
+        }
+        // Create new workspace first
+        const newWsId = `ws-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+        await addWorkspace(newWsId, {
+          title: newWorkspaceNameToCopy.trim(),
+          description: `Copied tracks from shared workspace "${sharedWorkspaceData.title}"`,
+          category: 'Learning',
+          roadmaps: []
+        });
+        targetWsId = newWsId;
+      }
+
+      // Now copy tracks
+      const targetWorkspace = (workspaces || []).find(w => w.id === targetWsId);
+      if (!targetWorkspace) {
+        alert('Target workspace not found.');
+        return;
+      }
+
+      // Recreate selected tracks
+      const tracksToCopyObj = sharedWorkspaceData.tracks.filter(t => selectedTracksToCopy.includes(t.id));
+      
+      const newRoadmaps = [
+        ...(targetWorkspace.roadmaps || []),
+        ...tracksToCopyObj.map(track => ({
+          id: `rm-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+          title: track.title,
+          topics: (track.topics || []).map(t => ({
+            id: `topic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+            title: t.title,
+            expanded: false,
+            subtopics: (t.subtopics || []).map(st => ({
+              id: `subtopic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+              title: st.title,
+              done: false
+            }))
+          }))
+        }))
+      ];
+
+      // Update workspace roadmaps
+      const { doc, db, updateDoc } = await import('firebase/firestore');
+      const wsRef = doc(db, 'workspaces', targetWsId);
+      
+      // Calculate overall progress index of new roadmaps array
+      let totalSub = 0;
+      let completedSub = 0;
+      newRoadmaps.forEach(rm => {
+        (rm.topics || []).forEach(t => {
+          (t.subtopics || []).forEach(st => {
+            totalSub++;
+            if (st.done) completedSub++;
+          });
+        });
+      });
+      const newProg = totalSub > 0 ? Math.round((completedSub / totalSub) * 100) : 0;
+
+      await updateDoc(wsRef, {
+        roadmaps: newRoadmaps,
+        progress: newProg
+      });
+
+      alert('🎉 Selected tracks successfully copied to your workspace!');
+      resetJoinSharedModal();
+    } catch (err) {
+      console.error(err);
+      alert('Error copying tracks: ' + err.message);
+    }
+  };
+
+  const handleCopyWorkspaceDirect = async () => {
+    if (!sharedWorkspaceData) return;
+    if (window.confirm("Copy this workspace?\n\nCreate your own editable copy of this workspace and its tracks.")) {
+      try {
+        const newWsId = `ws-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+        
+        // Recreate all tracks
+        const newRoadmaps = (sharedWorkspaceData.tracks || []).map(track => ({
+          id: `rm-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+          title: track.title,
+          topics: (track.topics || []).map(t => ({
+            id: `topic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+            title: t.title,
+            expanded: false,
+            subtopics: (t.subtopics || []).map(st => ({
+              id: `subtopic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+              title: st.title,
+              done: false
+            }))
+          }))
+        }));
+
+        await addWorkspace(newWsId, {
+          title: `${sharedWorkspaceData.title} (Copy)`,
+          description: sharedWorkspaceData.description || `Copied from shared workspace of @${sharedWorkspaceData.ownerUsername}`,
+          category: 'Learning',
+          roadmaps: newRoadmaps
+        });
+
+        alert("🎉 Workspace successfully copied to your workspaces!");
+        resetJoinSharedModal();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to copy workspace: " + err.message);
+      }
+    }
+  };
+
+  const handleRequestCollabDirect = async () => {
+    if (!sharedWorkspaceData) return;
+    if (window.confirm(`Request to collaborate with @${sharedWorkspaceData.ownerUsername || 'owner'}?`)) {
+      await requestCollaboration(sharedWorkspaceData.workspaceId, sharedWorkspaceData.ownerId);
+    }
+  };
+
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCategory, setNewCategory] = useState('Learning');
@@ -684,6 +877,32 @@ const Workspaces = () => {
 
   return (
     <div className="flex min-h-screen bg-background text-on-surface radial-glow-bg select-none">
+      <style>{`
+        .add-workspace-popover {
+          animation: popover-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .add-workspace-bottom-sheet {
+          animation: bottom-sheet-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes popover-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes bottom-sheet-slide-in {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <Sidebar />
 
       <main className="flex-1 flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10">
@@ -691,13 +910,143 @@ const Workspaces = () => {
 
         <div className="w-full px-8 pt-4 pb-8 animate-page-transition space-y-8">
           {/* Page Header */}
-          <div className="mb-8 animate-text-reveal">
-            <h2 className="font-display-lg text-[32px] text-white font-bold tracking-tight mb-2">
-              My Workspaces
-            </h2>
-            <p className="text-on-surface-variant text-sm font-medium">
-              Combine topic roadmaps, log study diaries, and track completion progress rollups.
-            </p>
+          <div className="mb-8 animate-text-reveal flex items-center justify-between gap-4">
+            <div className="space-y-1 text-left">
+              <h2 className="font-display-lg text-2xl md:text-[32px] text-white font-bold tracking-tight leading-tight">
+                My Workspaces
+              </h2>
+              <p className="text-on-surface-variant text-xs md:text-sm font-medium">
+                Combine topic roadmaps, log study diaries, and track completion progress rollups.
+              </p>
+            </div>
+            
+            {/* Compact Rounded Button on the right */}
+            <div className="relative shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAddMenuOpen(!isAddMenuOpen);
+                }}
+                className="group flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer border border-[#8B5CF6]/30 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/50 shadow-[0_0_14px_rgba(139,92,246,0.1)] hover:shadow-[0_0_22px_rgba(139,92,246,0.25)] transition-all shrink-0 select-none text-violet-200 font-label-md"
+                title="Add workspace"
+              >
+                <span className="material-symbols-outlined text-[16px] md:text-[18px] font-bold">add</span>
+                <span className="hidden md:inline">Add Workspace</span>
+              </button>
+              
+              {/* TWO-OPTION PANEL/POPOVER (Desktop version) */}
+              {isAddMenuOpen && (
+                <>
+                  {/* Backdrop for outside click closing */}
+                  <div 
+                    className="fixed inset-0 z-45 bg-transparent" 
+                    onClick={() => setIsAddMenuOpen(false)}
+                  />
+                  <div className="hidden md:block absolute right-0 top-12 w-72 bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] z-50 p-4 space-y-3 add-workspace-popover text-left">
+                    <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none">
+                      Add Workspace
+                    </div>
+                    
+                    {/* Option 1: Create Workspace */}
+                    <button
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/45 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover/opt:scale-105 group-hover/opt:border-primary transition-all shrink-0">
+                        <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-primary transition-colors">Create Workspace</div>
+                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Start a new learning roadmap</div>
+                      </div>
+                    </button>
+                    
+                    {/* Option 2: Join / View Shared */}
+                    <button
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setIsJoinSharedModalOpen(true);
+                      }}
+                      className="w-full text-left p-3.5 rounded-xl border border-white/5 bg-[#0D0D14]/40 hover:bg-white/[0.04] hover:border-white/12 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] group-hover/opt:scale-105 group-hover/opt:border-[#8B5CF6] transition-all shrink-0">
+                        <span className="material-symbols-outlined text-[18px]">hub</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-[#8B5CF6] transition-colors">Join / View Shared</div>
+                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Open a workspace shared with you</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Bottom Sheet for Mobile */}
+              {isAddMenuOpen && (
+                <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center">
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 bg-[#0D0D14]/75 backdrop-blur-sm transition-opacity duration-300"
+                    onClick={() => setIsAddMenuOpen(false)}
+                  />
+                  
+                  {/* Content Container (Bottom Sheet) */}
+                  <div className="relative w-full max-w-md bg-[#111118] border-t border-white/10 rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] space-y-4 shadow-2xl z-50 transform translate-y-0 transition-transform duration-300 add-workspace-bottom-sheet text-left">
+                    {/* Pull Bar */}
+                    <div className="w-12 h-1 bg-white/15 rounded-full mx-auto mb-2" />
+                    
+                    <div className="text-xs uppercase tracking-widest font-black text-on-surface-variant text-center pb-2 border-b border-white/5 select-none">
+                      Add Workspace
+                    </div>
+                    
+                    {/* Option 1: Create Workspace */}
+                    <button
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full text-left p-4 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 transition-all flex items-start gap-4 cursor-pointer text-white border-0 bg-transparent"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">create_new_folder</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-black uppercase tracking-wider text-white">Create Workspace</div>
+                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Start something new</div>
+                      </div>
+                    </button>
+                    
+                    {/* Option 2: Join / View Shared */}
+                    <button
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setIsJoinSharedModalOpen(true);
+                      }}
+                      className="w-full text-left p-4 rounded-xl border border-white/5 bg-[#0D0D14]/40 hover:bg-white/[0.04] transition-all flex items-start gap-4 cursor-pointer text-white border-0 bg-transparent"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">hub</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-black uppercase tracking-wider text-white">Join / View Shared</div>
+                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Enter shared credentials</div>
+                      </div>
+                    </button>
+                    
+                    {/* Cancel Button */}
+                    <button
+                      onClick={() => setIsAddMenuOpen(false)}
+                      className="w-full py-3 rounded-xl bg-white/5 border border-white/5 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-white transition-colors cursor-pointer text-center"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Filter buttons */}
@@ -718,30 +1067,31 @@ const Workspaces = () => {
 
           {/* Workspaces Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {/* Create new workspace card */}
-            <div
-              onClick={() => setIsModalOpen(true)}
-              className="h-[280px] rounded-xl border border-dashed border-white/10 bg-[#111118]/40 flex flex-col items-center justify-center gap-4 hover:border-primary/50 hover:bg-primary-container/10 cursor-pointer transition-all group"
-            >
-              <div className="w-12 h-12 rounded-full bg-[#111118] border border-white/5 flex items-center justify-center text-on-surface-variant group-hover:scale-105 group-hover:border-primary/30 group-hover:text-primary transition-all">
-                <span className="material-symbols-outlined">add</span>
-              </div>
-              <span className="font-label-md text-on-surface-variant group-hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider">
-                Create New Workspace
-              </span>
-            </div>
-
             {/* Render workspaces list */}
             {filteredWorkspaces.length === 0 ? (
-              <div className="col-span-1 md:col-span-1 lg:col-span-2 flex items-center justify-center">
-                <div className="w-full">
-                  <EmptyState
-                    icon="layers"
-                    title="Create your first workspace"
-                    description="Create your first workspace to start learning and building."
-                    actionLabel="Create Workspace"
-                    onAction={() => setIsModalOpen(true)}
-                  />
+              <div className="col-span-full flex justify-center py-10 w-full animate-fade-in px-4">
+                <div className="w-full max-w-[580px] bg-white/[0.018] border border-white/[0.07] rounded-[20px] p-8 md:p-12 flex flex-col items-center text-center space-y-6 shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_25px_rgba(139,92,246,0.025)]">
+                  {/* Icon Box */}
+                  <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/8 border border-[#8B5CF6]/18 flex items-center justify-center text-primary shadow-[0_0_12px_rgba(139,92,246,0.1)]">
+                    <span className="material-symbols-outlined text-[32px]">layers</span>
+                  </div>
+                  
+                  {/* Text Details */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-bold text-white tracking-tight">No workspaces yet</h3>
+                    <p className="text-on-surface-variant text-xs md:text-sm font-medium leading-relaxed max-w-xs mx-auto">
+                      Create your first workspace to start learning, building and tracking your progress.
+                    </p>
+                  </div>
+                  
+                  {/* CTA Button */}
+                  <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer shadow-lg shadow-primary/25 hover:bg-primary/90 hover:scale-105 hover:shadow-primary/35 transition-all duration-200"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    Create Workspace
+                  </button>
                 </div>
               </div>
             ) : (
@@ -779,8 +1129,8 @@ const Workspaces = () => {
               </div>
 
               {filteredCollaborated.length === 0 ? (
-                <div className="p-8 bg-[#111118]/45 border border-white/5 rounded-xl text-center space-y-2">
-                  <span className="material-symbols-outlined text-on-surface-variant/30 text-3xl">group</span>
+                <div className="p-8 bg-white/[0.018] border border-white/[0.07] rounded-xl text-center space-y-2.5">
+                  <span className="material-symbols-outlined text-on-surface-variant/40 text-3xl">group</span>
                   <p className="text-xs text-on-surface-variant italic font-medium">No collaborated workspaces match the active filter.</p>
                 </div>
               ) : (
@@ -814,40 +1164,6 @@ const Workspaces = () => {
             </div>
           )}
 
-          {/* Recent activity timeline log */}
-          <section className="mt-12">
-            <h3 className="font-display-lg text-lg font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-primary text-xl">history</span>
-              Workspace Logs
-            </h3>
-            {workspaceLogs.length === 0 ? (
-              <div className="p-8 bg-[#111118]/45 border border-white/5 rounded-xl text-center space-y-2">
-                <span className="material-symbols-outlined text-on-surface-variant/30 text-3xl">history_toggle_off</span>
-                <p className="text-xs text-on-surface-variant italic">No workspace activity logged yet.</p>
-              </div>
-            ) : (
-              <div className="bg-[#111118] border border-white/5 rounded-xl divide-y divide-white/5">
-                {workspaceLogs.slice(0, 5).map((log) => (
-                  <div
-                    key={log.id}
-                    className="p-5 flex items-center gap-4 hover:bg-white/[0.01] transition-colors cursor-pointer"
-                    onClick={() => navigate(`/workspaces/${log.wsId}`)}
-                  >
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center ${log.colorClass}`}>
-                      <span className="material-symbols-outlined text-lg">{log.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium text-sm">
-                        Completed task <span className="font-bold text-primary">"{log.taskText}"</span> in {log.wsTitle}
-                      </p>
-                      <p className="text-on-surface-variant text-[11px] mt-0.5 font-medium">{log.timeAgo}</p>
-                    </div>
-                    <span className="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
       </main>
 
@@ -1610,6 +1926,209 @@ const Workspaces = () => {
             )}
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={isJoinSharedModalOpen} onClose={resetJoinSharedModal} title={sharedViewStep === 'verify' ? "View Shared Workspace" : sharedViewStep === 'view' ? "Shared Workspace Preview" : "Copy Tracks"}>
+        {sharedViewStep === 'verify' && (
+          <form onSubmit={handleVerifyShare} className="space-y-5">
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">View Shared Workspace</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Enter the workspace credentials shared with you.
+              </p>
+            </div>
+            
+            <InputField
+              id="workspace-share-id-input"
+              label="Workspace ID"
+              placeholder="e.g. MOS-FD7X29"
+              value={shareIdInput}
+              onChange={(e) => setShareIdInput(e.target.value)}
+              required
+            />
+            
+            <div className="space-y-2">
+              <label className="block text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-xs font-semibold">Workspace Password</label>
+              <div className="relative">
+                <input
+                  id="workspace-share-password-input"
+                  type={showJoinPassword ? 'text' : 'password'}
+                  placeholder="Enter sharing password"
+                  value={sharePinInput}
+                  onChange={(e) => setSharePinInput(e.target.value)}
+                  className="w-full bg-[#111118] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowJoinPassword(!showJoinPassword)}
+                  className="absolute right-3 top-3 text-on-surface-variant hover:text-white"
+                >
+                  <span className="material-symbols-outlined text-xs">
+                    {showJoinPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {sharedWorkspaceError && (
+              <p className="text-[11px] text-red-400 font-bold flex items-center gap-1">
+                <span>❌</span> {sharedWorkspaceError}
+              </p>
+            )}
+            
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+              <Button variant="ghost" type="button" onClick={resetJoinSharedModal}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isSharedWorkspaceLoading} icon={isSharedWorkspaceLoading ? "sync" : "arrow_forward"}>
+                {isSharedWorkspaceLoading ? "Verifying..." : "View Workspace"}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {sharedViewStep === 'view' && sharedWorkspaceData && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2 border-b border-white/5 pb-4">
+              <span className="text-[9px] uppercase tracking-widest text-[#8B5CF6] font-black block">WORKSPACE</span>
+              <span className="material-symbols-outlined text-[16px] text-zinc-500">arrow_downward</span>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider">{sharedWorkspaceData.title}</h3>
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Owner: @{sharedWorkspaceData.ownerUsername || 'user'}</p>
+            </div>
+
+            <div className="space-y-4">
+              {sharedWorkspaceData.description && (
+                <p className="text-xs text-on-surface-variant leading-relaxed text-center italic bg-white/2 p-3 rounded-lg border border-white/5">
+                  "{sharedWorkspaceData.description}"
+                </p>
+              )}
+
+              <div className="bg-[#111118]/80 border border-white/5 p-4 rounded-xl space-y-2.5">
+                <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-on-surface-variant">
+                  <span>Overall Progress</span>
+                  <span className="text-primary font-black">{sharedWorkspaceData.progress}% Done</span>
+                </div>
+                <div className="w-full bg-[#0D0D14] h-2 rounded-full overflow-hidden border border-white/3">
+                  <div 
+                    className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(139,92,246,0.4)]" 
+                    style={{ width: `${sharedWorkspaceData.progress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Tracks</h4>
+              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 no-scrollbar animate-fade-in">
+                {sharedWorkspaceData.tracks && sharedWorkspaceData.tracks.length > 0 ? (
+                  sharedWorkspaceData.tracks.map((track, idx) => (
+                    <div key={track.id || idx} className="p-3 bg-background/50 border border-white/5 rounded-xl flex items-center justify-between shadow-sm hover:border-white/10 transition-colors">
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        {idx + 1}. {track.title}
+                      </span>
+                      <span className="text-[10px] font-black text-primary">{track.progress}% Done</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-on-surface-variant italic">No tracks available inside this workspace.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between gap-3 pt-4 border-t border-white/5">
+              <Button variant="ghost" onClick={() => setSharedViewStep('verify')}>
+                Close
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={handleRequestCollabDirect} icon="groups">
+                  Collaborate
+                </Button>
+                <Button variant="primary" onClick={handleCopyWorkspaceDirect} icon="content_copy">
+                  Copy Workspace
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sharedViewStep === 'copy' && sharedWorkspaceData && (
+          <form onSubmit={handleCopySharedTracks} className="space-y-6">
+            <div className="space-y-3">
+              <label className="block text-[9px] uppercase font-bold text-on-surface-variant tracking-wider">Copy tracks to workspace:</label>
+              <select
+                value={targetWorkspaceIdToCopy}
+                onChange={(e) => {
+                  setTargetWorkspaceIdToCopy(e.target.value);
+                  if (e.target.value !== 'new') {
+                    setNewWorkspaceNameToCopy('');
+                  }
+                }}
+                className="w-full bg-[#111118] border border-white/5 rounded-lg px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                required
+              >
+                <option value="">-- Select Workspace --</option>
+                <option value="new">+ Create new workspace</option>
+                {(workspaces || []).map(ws => (
+                  <option key={ws.id} value={ws.id}>{ws.title}</option>
+                ))}
+              </select>
+            </div>
+
+            {targetWorkspaceIdToCopy === 'new' && (
+              <InputField
+                id="new-workspace-name-to-copy"
+                label="New Workspace Name"
+                placeholder="e.g. My Study Copy"
+                value={newWorkspaceNameToCopy}
+                onChange={(e) => setNewWorkspaceNameToCopy(e.target.value)}
+                required
+              />
+            )}
+
+            <div className="space-y-3">
+              <label className="block text-[9px] uppercase font-bold text-on-surface-variant tracking-wider">Select Tracks to Copy:</label>
+              <div className="space-y-2.5 max-h-[180px] overflow-y-auto pr-1 no-scrollbar">
+                {sharedWorkspaceData.tracks && sharedWorkspaceData.tracks.map((track) => {
+                  const isChecked = selectedTracksToCopy.includes(track.id);
+                  return (
+                    <div
+                      key={track.id}
+                      onClick={() => {
+                        if (isChecked) {
+                          setSelectedTracksToCopy(selectedTracksToCopy.filter(id => id !== track.id));
+                        } else {
+                          setSelectedTracksToCopy([...selectedTracksToCopy, track.id]);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                        isChecked 
+                          ? 'bg-[#8B5CF6]/5 border-primary/45' 
+                          : 'bg-transparent border-white/5 hover:border-white/10'
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">{track.title}</span>
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                        isChecked ? 'border-primary bg-primary' : 'border-white/10'
+                      }`}>
+                        {isChecked && <span className="material-symbols-outlined text-white text-[10px] font-bold">check</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+              <Button variant="ghost" type="button" onClick={() => setSharedViewStep('view')}>
+                Back
+              </Button>
+              <Button type="submit" variant="primary" icon="content_copy">
+                Copy Selected Tracks
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { TaskContext } from '../context/TaskContext';
 import PandaCompanion from './PandaCompanion';
@@ -11,6 +11,12 @@ const Sidebar = () => {
   const [isPandaModalOpen, setIsPandaModalOpen] = useState(false);
 
   const avatarSrc = getAvatar(userProfile);
+
+  useEffect(() => {
+    const handleOpen = () => setIsExpanded(true);
+    window.addEventListener('open-mobile-sidebar', handleOpen);
+    return () => window.removeEventListener('open-mobile-sidebar', handleOpen);
+  }, []);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -28,19 +34,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Floating Mobile Menu Trigger */}
-      {!isExpanded && (
-        <div className="md:hidden fixed top-3 left-4 z-40">
-          <button 
-            onClick={() => setIsExpanded(true)}
-            className="w-10 h-10 rounded-xl bg-[#0D0D14]/90 border border-white/5 text-on-surface-variant hover:text-white flex items-center justify-center backdrop-blur-md shadow-lg cursor-pointer"
-            title="Open Menu"
-          >
-            <span className="material-symbols-outlined text-[22px]">menu</span>
-          </button>
-        </div>
-      )}
-
       {/* Backdrop for mobile drawer */}
       {isExpanded && (
         <div 

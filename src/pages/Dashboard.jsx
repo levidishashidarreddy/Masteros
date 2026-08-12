@@ -226,7 +226,7 @@ const Dashboard = () => {
     switch (key) {
       case 'workspaces':
         return (
-          <section key="workspaces" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-6">
+          <section key="workspaces" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
                 Featured Workspaces
@@ -287,7 +287,7 @@ const Dashboard = () => {
 
       case 'focusTasks':
         return (
-          <section key="focusTasks" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl flex flex-col min-h-[300px]">
+          <section key="focusTasks" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl flex flex-col min-h-[300px]">
             <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
                 Focus Tasks
@@ -328,7 +328,7 @@ const Dashboard = () => {
 
       case 'exams':
         return (
-          <section key="exams" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-4 min-h-[300px]">
+          <section key="exams" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-4 min-h-[300px]">
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">Upcoming Exams</h3>
               <span className="text-[9px] font-bold px-2.5 py-0.5 bg-secondary/10 text-secondary rounded-full uppercase tracking-wider">Midterms</span>
@@ -362,7 +362,7 @@ const Dashboard = () => {
 
       case 'assignments':
         return (
-          <section key="assignments" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-4 min-h-[300px]">
+          <section key="assignments" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-4 min-h-[300px]">
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">Assignments</h3>
               <span className="text-[9px] font-bold px-2.5 py-0.5 bg-tertiary/10 text-tertiary rounded-full uppercase tracking-wider">Due Soon</span>
@@ -406,7 +406,7 @@ const Dashboard = () => {
 
       case 'leaderboardRank':
         return (
-          <section key="leaderboardRank" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-6">
+          <section key="leaderboardRank" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
             <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant border-b border-white/5 pb-3">
               Achievements Showcase
             </h3>
@@ -435,7 +435,7 @@ const Dashboard = () => {
 
       case 'activityHeatmap':
         return (
-          <section key="activityHeatmap" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-6">
+          <section key="activityHeatmap" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <div>
                 <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
@@ -526,7 +526,7 @@ const Dashboard = () => {
         const overallGrowth = Math.round((learningIndex + projectsIndex + goalsIndex) / 3);
 
         return (
-          <section key="skillsProgress" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-6">
+          <section key="skillsProgress" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
             <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant border-b border-white/5 pb-3">
               Growth Indexes &amp; Progress Rings
             </h3>
@@ -589,11 +589,11 @@ const Dashboard = () => {
       <main className="flex-1 flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10">
         <Header />
 
-        <div className="w-full px-12 py-10 animate-page-transition space-y-12 dashboard-content-container">
+        <div className="w-full px-4 py-6 md:px-12 md:py-10 animate-page-transition space-y-8 md:space-y-12 dashboard-content-container">
           {/* Welcome Row */}
           <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-text-reveal dashboard-welcome-row">
             <div className="space-y-2">
-              <h2 className="font-display-lg text-[42px] font-black tracking-tight text-white leading-none">
+              <h2 className="font-display-lg text-2xl md:text-[42px] font-black tracking-tight text-white leading-none">
                 {displayName} 👋
               </h2>
               <p className="text-on-surface-variant text-sm font-medium">
@@ -611,7 +611,7 @@ const Dashboard = () => {
           </section>
 
           {/* This Week Summary */}
-          <section className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl rounded-2xl px-8 py-6 animate-fade-in">
+          <section className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl rounded-2xl p-5 md:px-8 md:py-6 animate-fade-in">
             <div className="flex items-center gap-2 mb-5">
               <span className="material-symbols-outlined text-primary text-base">calendar_view_week</span>
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">This Week</h3>
@@ -637,7 +637,7 @@ const Dashboard = () => {
 
           {/* Stats Cards Row */}
           {hasActiveStatsWidgets && (
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in">
               {widgets.streak && (
                 <StatsCard title="Current Streak" value={(userProfile.streak || 0).toString()} unit="Days" icon="local_fire_department" progress={Math.min((userProfile.streak || 0) * 10, 100)} />
               )}
@@ -654,7 +654,7 @@ const Dashboard = () => {
           )}
 
           {/* 🚨 Important & Urgent Section (Preview only, placed in the middle of dashboard) */}
-          <section className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-8 rounded-2xl space-y-6">
+          <section className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
             <div className="flex items-center gap-2.5">
               <span className="text-lg">🚨</span>
               <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
@@ -670,8 +670,8 @@ const Dashboard = () => {
               ) : (
                 getUrgentItems.slice(0, 3).map((item, idx) => (
                   <div 
-                    key={idx} 
-                    className="p-6 bg-[#0D0D14]/40 border border-red-500/10 rounded-xl hover:border-red-500/25 transition-all duration-300 flex flex-col justify-between min-h-[110px] relative overflow-hidden group"
+                     key={idx} 
+                     className="p-6 bg-[#0D0D14]/40 border border-red-500/10 rounded-xl hover:border-red-500/25 transition-all duration-300 flex flex-col justify-between min-h-[110px] relative overflow-hidden group"
                   >
                     <div className="absolute right-0 top-0 bottom-0 w-1 bg-red-500/20 group-hover:bg-red-500/40 transition-colors" />
                     <div>
@@ -693,7 +693,7 @@ const Dashboard = () => {
           </section>
 
           {/* Dynamic Grid Layout for Large Widgets */}
-          <div className="grid grid-cols-12 gap-8">
+          <div className="flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-8">
             {activeLargeWidgets.map(key => (
               <div key={key} className={getWidgetColSpan(key)}>
                 {renderLargeWidget(key)}
