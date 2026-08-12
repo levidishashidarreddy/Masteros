@@ -836,13 +836,13 @@ const WorkspaceDetail = () => {
         </div>
 
         {/* Content Layout Grid */}
-        <div className="px-4 py-6 md:px-8 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 w-full flex-grow min-h-0 workspace-detail-content">
+        <div className="px-3 py-4 md:px-8 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 w-full flex-grow min-h-0 workspace-detail-content">
           
           {/* Column 1: Left Milestones / Roadmap */}
-          <div className="lg:col-span-8 space-y-8 workspace-detail-left-col">
+          <div className="lg:col-span-8 space-y-4 md:space-y-8 workspace-detail-left-col">
             
             {/* Multi-Roadmaps Section */}
-            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-6 workspace-roadmap-section shadow-lg shadow-black/10">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-3 md:p-6 space-y-4 md:space-y-6 workspace-roadmap-section shadow-lg shadow-black/10">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Roadmap Progress</h3>
@@ -851,32 +851,63 @@ const WorkspaceDetail = () => {
               </div>
 
               {ws.roadmaps && ws.roadmaps.length > 0 ? (
-                <div className="space-y-8">
+                <div className="space-y-4 md:space-y-8">
                   {ws.roadmaps.map((rm) => {
                     const rmProg = getRoadmapProgress(rm);
                     return (
-                      <div key={rm.id} className="space-y-6 bg-[#0B0B10] border border-white/5 p-6 rounded-xl animate-fade-in shadow-lg shadow-black/10">
+                      <div key={rm.id} className="space-y-3 md:space-y-6 bg-[#0B0B10] border border-white/5 p-3 md:p-6 rounded-xl animate-fade-in shadow-lg shadow-black/10">
                         
-                        {/* Roadmap Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
-                          <div className="space-y-1">
-                            <h4 className="font-extrabold font-display-lg text-xs tracking-widest text-zinc-150 uppercase flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                              {rm.title}
+                        {/* ── Roadmap Header — Mobile: single compact row ── */}
+                        <div className="border-b border-white/5 pb-3">
+                          {/* Mobile layout: title left | % right */}
+                          <div className="flex items-center justify-between gap-2 md:hidden">
+                            <h4 className="font-extrabold font-display-lg text-[10px] tracking-widest text-zinc-300 uppercase flex items-center gap-1.5 min-w-0 truncate">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                              <span className="truncate">{rm.title}</span>
                             </h4>
-                            <div className="sm:hidden mt-0.5">
+                            <div className="shrink-0">
                               {rmProg === 100 ? (
-                                <span className="text-[10px] text-[#FFB800] font-extrabold flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-[11px] font-bold">emoji_events</span>
-                                  100% MASTERED
+                                <span className="text-[9px] text-[#FFB800] font-extrabold flex items-center gap-0.5">
+                                  <span className="material-symbols-outlined text-[10px]">emoji_events</span>
+                                  MASTERED
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-primary font-bold">{rmProg}% Done</span>
+                                <span className="text-[10px] text-primary font-bold">{rmProg}%</span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                            <div className="hidden sm:block">
+                          {/* Mobile: progress bar */}
+                          <div className="md:hidden mt-2 h-[3px] w-full bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${rmProg}%`,
+                                background: rmProg === 100 ? 'linear-gradient(90deg,#00C8E0,#00F0FF)' : 'linear-gradient(90deg,#8B5CF6,#6366F1)'
+                              }}
+                            />
+                          </div>
+                          {/* Mobile: Add Topic button */}
+                          <div className="md:hidden flex justify-end mt-2">
+                            <button
+                              onClick={() => {
+                                setActiveRoadmapForTopic(rm.id);
+                                setIsTopicModalOpen(true);
+                              }}
+                              className="px-3 py-1 bg-white/5 border border-white/5 rounded text-[9px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
+                            >
+                              + Add Topic
+                            </button>
+                          </div>
+
+                          {/* Desktop layout: unchanged */}
+                          <div className="hidden md:flex md:items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <h4 className="font-extrabold font-display-lg text-xs tracking-widest text-zinc-150 uppercase flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                {rm.title}
+                              </h4>
+                            </div>
+                            <div className="flex items-center gap-3">
                               {rmProg === 100 ? (
                                 <span className="text-xs text-[#FFB800] font-extrabold flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,184,0,0.15)] bg-[#FFB800]/5 px-2.5 py-0.5 border border-[#FFB800]/20 rounded-full">
                                   <span className="material-symbols-outlined text-[13px] font-bold">emoji_events</span>
@@ -885,21 +916,21 @@ const WorkspaceDetail = () => {
                               ) : (
                                 <span className="text-xs text-primary font-bold">{rmProg}% Done</span>
                               )}
+                              <button
+                                onClick={() => {
+                                  setActiveRoadmapForTopic(rm.id);
+                                  setIsTopicModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 bg-white/5 border border-white/5 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
+                              >
+                                + Add Topic
+                              </button>
                             </div>
-                            <button
-                              onClick={() => {
-                                setActiveRoadmapForTopic(rm.id);
-                                setIsTopicModalOpen(true);
-                              }}
-                              className="w-full sm:w-auto text-center justify-center px-3 py-1.5 sm:px-2.5 sm:py-1 bg-white/5 border border-white/5 rounded text-[10px] uppercase font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer"
-                            >
-                              + Add Topic
-                            </button>
                           </div>
                         </div>
 
                         {/* Topics Loop */}
-                        <div className="space-y-5">
+                        <div className="space-y-2 md:space-y-5">
                           {(rm.topics || []).map((topic) => {
                             const doneSubtopics = (topic.subtopics || []).filter(s => s.done).length;
                             const totalSubtopics = (topic.subtopics || []).length;
@@ -910,53 +941,61 @@ const WorkspaceDetail = () => {
                             return (
                               <div 
                                 key={topic.id} 
-                                className={`border rounded-xl backdrop-blur-md overflow-hidden transition-all duration-200 shadow-lg ${
+                                className={`border rounded-xl overflow-hidden transition-all duration-200 ${
                                   isFullyCompleted
-                                    ? (isExpanded ? 'completed-track-card-active relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00F0FF]/60 scale-[1.002]' : 'completed-track-card')
-                                    : (isExpanded ? 'border-primary/45 bg-[#0e0e16]/80 shadow-[0_0_20px_rgba(139,92,246,0.12)] relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary scale-[1.002]' : 'border-white/[0.08] bg-[#0D0D14]/20 hover:bg-white/[0.035] hover:border-white/12 shadow-black/20 hover:-translate-y-[1px]')
+                                    ? (isExpanded ? 'completed-track-card-active relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[#00F0FF]/60' : 'completed-track-card')
+                                    : (isExpanded ? 'border-primary/45 bg-[#0e0e16]/80 shadow-[0_0_20px_rgba(139,92,246,0.12)] relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary' : 'border-white/[0.08] bg-[#0D0D14]/20 hover:bg-white/[0.035] hover:border-white/12')
                                 }`}
                               >
                                 
-                                {/* Topic Header */}
-                                <div className="flex items-center justify-between px-4 py-3.5 bg-zinc-900/10 hover:bg-zinc-900/35 transition-all duration-300 cursor-pointer select-none border-b border-white/5">
-                                  <div className="flex items-center gap-3 min-w-0 flex-grow" onClick={() => handleToggleTopicExpand(rm.id, topic.id)}>
+                                {/* ── Topic Header ── */}
+                                <div className="flex items-center justify-between px-3 md:px-4 py-2.5 md:py-3.5 bg-zinc-900/10 hover:bg-zinc-900/35 transition-all duration-300 cursor-pointer select-none border-b border-white/5">
+                                  {/* Left: chevron + title + count/badges — fills available space */}
+                                  <div className="flex items-center gap-2 min-w-0 flex-1" onClick={() => handleToggleTopicExpand(rm.id, topic.id)}>
                                     {isFullyCompleted ? (
-                                      <div className="w-5 h-5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] flex items-center justify-center shrink-0 shadow-[0_0_6px_rgba(0,240,255,0.25)] transition-all duration-300 scale-100 animate-fade-in">
-                                        <span className="material-symbols-outlined text-xs font-bold">check</span>
+                                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] flex items-center justify-center shrink-0 shadow-[0_0_6px_rgba(0,240,255,0.25)]">
+                                        <span className="material-symbols-outlined text-[10px] md:text-xs font-bold">check</span>
                                       </div>
                                     ) : (
-                                      <span className={`material-symbols-outlined text-zinc-400 text-base transition-transform duration-200 ${isExpanded ? 'rotate-90 text-primary' : ''}`}>
+                                      <span className={`material-symbols-outlined text-zinc-400 text-sm md:text-base transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-90 text-primary' : ''}`}>
                                         chevron_right
                                       </span>
                                     )}
-                                    <div className="flex flex-col min-w-0 flex-grow">
-                                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                                        <span className={`font-semibold text-zinc-150 text-[13px] tracking-wide truncate ${isFullyCompleted ? 'text-zinc-100 font-bold' : ''}`}>{topic.title}</span>
-                                        <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${isFullyCompleted ? 'text-[#00F0FF] bg-[#00F0FF]/[0.07] border-[#00F0FF]/20' : 'text-zinc-400 bg-white/3 border-white/5'}`}>
+
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      {/* Title row with count and MASTERED badge */}
+                                      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                                        <span className={`font-semibold text-zinc-150 text-[12px] md:text-[13px] tracking-wide leading-tight ${isFullyCompleted ? 'text-zinc-100 font-bold' : ''}`}>
+                                          {topic.title}
+                                        </span>
+                                        <span className={`text-[9px] font-bold px-1.5 md:px-2.5 py-0.5 rounded-full border shrink-0 ${isFullyCompleted ? 'text-[#00F0FF] bg-[#00F0FF]/[0.07] border-[#00F0FF]/20' : 'text-zinc-400 bg-white/3 border-white/5'}`}>
                                           {doneSubtopics}/{totalSubtopics}
                                         </span>
                                         {isFullyCompleted && (
-                                          <span className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF] bg-[#00F0FF]/[0.07] px-2.5 py-0.5 border border-[#00F0FF]/20 rounded-md animate-fade-in">
+                                          <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-[#00F0FF] bg-[#00F0FF]/[0.07] px-1.5 md:px-2.5 py-0.5 border border-[#00F0FF]/20 rounded-md">
                                             MASTERED
                                           </span>
                                         )}
                                       </div>
-                                      {/* Micro progress bar for each topic */}
-                                      <div className="w-full max-w-[200px] bg-[#09090D] h-[4px] rounded-full overflow-hidden mt-2 relative border border-white/3">
+                                      {/* Progress bar — always visible, not hidden on mobile */}
+                                      <div className="w-full bg-[#09090D] h-[3px] md:h-[4px] rounded-full overflow-hidden mt-1.5 md:mt-2 border border-white/3">
                                         <div 
-                                          className={`h-full rounded-full transition-all duration-500 ease-out ${
-                                            isFullyCompleted
-                                              ? 'shadow-[0_0_6px_rgba(0,240,255,0.4)]'
-                                              : progressPercent > 0 ? 'bg-gradient-to-r from-primary to-secondary shadow-[0_0_6px_rgba(139,92,246,0.35)]' : 'bg-white/10'
-                                          }`}
-                                          style={{ width: `${progressPercent}%`, ...(isFullyCompleted ? { background: 'linear-gradient(90deg, #00C8E0, #00F0FF)' } : {}) }}
+                                          className="h-full rounded-full transition-all duration-500 ease-out"
+                                          style={{
+                                            width: `${progressPercent}%`,
+                                            background: isFullyCompleted
+                                              ? 'linear-gradient(90deg,#00C8E0,#00F0FF)'
+                                              : progressPercent > 0
+                                                ? 'linear-gradient(90deg,#8B5CF6,#6366F1)'
+                                                : 'rgba(255,255,255,0.08)'
+                                          }}
                                         />
                                       </div>
                                     </div>
                                   </div>
 
                                   {/* Desktop Actions (hidden on mobile) */}
-                                  <div className="hidden md:flex items-center gap-1.5 shrink-0 ml-4">
+                                  <div className="hidden md:flex items-center gap-1.5 shrink-0 ml-3">
                                     <button 
                                       onClick={() => handleOpenEditTopic(rm.id, topic)}
                                       className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
@@ -994,37 +1033,48 @@ const WorkspaceDetail = () => {
                                     </button>
                                   </div>
 
-                                  {/* Mobile More Actions Button & Dropdown */}
-                                  <div className="relative md:hidden shrink-0 ml-2">
+                                  {/* Mobile More-Actions Button & Bottom-anchored Dropdown */}
+                                  <div className="relative md:hidden shrink-0 ml-1">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setActiveTopicMenu(activeTopicMenu === topic.id ? null : topic.id);
                                       }}
-                                      className="p-2 rounded-lg bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                                      className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                                      aria-label="Topic actions"
                                     >
-                                      <span className="material-symbols-outlined text-sm">more_horiz</span>
+                                      <span className="material-symbols-outlined text-[16px]">more_horiz</span>
                                     </button>
                                     {activeTopicMenu === topic.id && (
                                       <>
-                                        {/* Backdrop to close menu */}
+                                        {/* Full-screen backdrop */}
                                         <div 
-                                          className="fixed inset-0 z-20 bg-transparent" 
+                                          className="fixed inset-0 z-40" 
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setActiveTopicMenu(null);
                                           }}
                                         />
-                                        <div className="absolute right-0 top-9 w-40 bg-[#111118] border border-white/10 rounded-xl shadow-2xl z-30 py-1.5 animate-scale-in">
+                                        {/*
+                                          Dropdown: positioned right-0, but clamped so it never clips.
+                                          min-w keeps it readable, max-w keeps it from overflowing left.
+                                        */}
+                                        <div
+                                          className="absolute right-0 top-9 min-w-[160px] max-w-[220px] bg-[#111118] border border-white/10 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden"
+                                          style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
+                                        >
+                                          <div className="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest text-primary/70 border-b border-white/5 mb-1">
+                                            Topic Actions
+                                          </div>
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setActiveTopicMenu(null);
                                               handleOpenEditTopic(rm.id, topic);
                                             }}
-                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
                                           >
-                                            <span className="material-symbols-outlined text-xs">edit</span>
+                                            <span className="material-symbols-outlined text-[14px] shrink-0">edit</span>
                                             Edit Topic
                                           </button>
                                           <button
@@ -1034,10 +1084,10 @@ const WorkspaceDetail = () => {
                                               setActiveTopicForSubtopic(topic.id);
                                               setNewSubtopicText('');
                                             }}
-                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
                                           >
-                                            <span className="material-symbols-outlined text-xs">add_circle</span>
-                                            Add Subtopic
+                                            <span className="material-symbols-outlined text-[14px] shrink-0">add_circle</span>
+                                            Add Task
                                           </button>
                                           <button
                                             onClick={(e) => {
@@ -1045,9 +1095,9 @@ const WorkspaceDetail = () => {
                                               setActiveTopicMenu(null);
                                               handleReorderTopic(rm.id, topic.id, 'up');
                                             }}
-                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
                                           >
-                                            <span className="material-symbols-outlined text-xs">arrow_upward</span>
+                                            <span className="material-symbols-outlined text-[14px] shrink-0">arrow_upward</span>
                                             Move Up
                                           </button>
                                           <button
@@ -1056,9 +1106,9 @@ const WorkspaceDetail = () => {
                                               setActiveTopicMenu(null);
                                               handleReorderTopic(rm.id, topic.id, 'down');
                                             }}
-                                            className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
                                           >
-                                            <span className="material-symbols-outlined text-xs">arrow_downward</span>
+                                            <span className="material-symbols-outlined text-[14px] shrink-0">arrow_downward</span>
                                             Move Down
                                           </button>
                                           <div className="border-t border-white/5 my-1" />
@@ -1068,10 +1118,10 @@ const WorkspaceDetail = () => {
                                               setActiveTopicMenu(null);
                                               handleRemoveTopic(rm.id, topic.id);
                                             }}
-                                            className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/5 flex items-center gap-2 cursor-pointer border-0 bg-transparent"
+                                            className="w-full text-left px-3 py-2.5 text-[12px] text-red-400 hover:text-red-300 hover:bg-red-500/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
                                           >
-                                            <span className="material-symbols-outlined text-xs">delete</span>
-                                            Delete Topic
+                                            <span className="material-symbols-outlined text-[14px] shrink-0">delete</span>
+                                            Delete
                                           </button>
                                         </div>
                                       </>
@@ -1083,34 +1133,38 @@ const WorkspaceDetail = () => {
                                 {activeTopicForSubtopic === topic.id && (
                                   <form 
                                     onSubmit={(e) => handleAddSubtopicSubmit(e, rm.id, topic.id)}
-                                    className="p-3 bg-zinc-950/20 border-t border-white/5 flex gap-2"
+                                    className="px-3 py-2 md:p-3 bg-zinc-950/20 border-t border-white/5 flex gap-2 items-center"
                                   >
                                     <input
                                       type="text"
                                       value={newSubtopicText}
                                       onChange={(e) => setNewSubtopicText(e.target.value)}
-                                      placeholder="Add subtopic name..."
-                                      className="flex-grow bg-[#111118] border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary/40 transition-colors duration-250"
+                                      placeholder="Add task name..."
+                                      className="flex-1 min-w-0 bg-[#111118] border border-white/5 rounded-lg px-2.5 py-2 md:py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary/40 transition-colors"
+                                      autoFocus
                                       required
                                     />
-                                    <Button type="submit" variant="secondary" className="px-3 py-1 text-[10px]">Add</Button>
-                                    <Button type="button" variant="ghost" className="px-2 py-1 text-[10px]" onClick={() => setActiveTopicForSubtopic(null)}>Cancel</Button>
+                                    <Button type="submit" variant="secondary" className="px-2.5 py-1.5 md:px-3 md:py-1 text-[10px] shrink-0">Add</Button>
+                                    <Button type="button" variant="ghost" className="px-2 py-1.5 md:py-1 text-[10px] shrink-0" onClick={() => setActiveTopicForSubtopic(null)}>✕</Button>
                                   </form>
                                 )}
 
-                                {/* Subtopics List */}
+                                {/* ── Subtopics/Task List ── */}
                                 {isExpanded && (
-                                  <div className="p-4 space-y-2.5 border-t border-white/5 bg-[#0D0D14]/10 animate-fade-in">
+                                  <div className="px-2 py-2 md:p-4 md:space-y-0 border-t border-white/5 bg-[#0D0D14]/10 animate-fade-in">
                                     {topic.subtopics && topic.subtopics.length === 0 ? (
-                                      <p className="text-[11px] text-zinc-500 italic">No subtopics available.</p>
+                                      <p className="text-[11px] text-zinc-500 italic px-2 py-2">No tasks yet.</p>
                                     ) : (
                                       (topic.subtopics || []).map((st) => (
                                         <div 
                                           key={st.id} 
-                                          className={`flex items-center justify-between gap-3 group px-2 py-2.5 md:py-1.5 rounded-lg transition-all ${
-                                            st.done ? 'bg-[#00F0FF]/[0.025] border border-[#00F0FF]/[0.07]' : 'hover:bg-white/[0.025] border border-transparent'
+                                          className={`flex items-center gap-2 group rounded-lg transition-colors ${
+                                            st.done
+                                              ? 'bg-[#00F0FF]/[0.025] border border-[#00F0FF]/[0.06] mb-px'
+                                              : 'hover:bg-white/[0.025] border border-transparent'
                                           }`}
                                         >
+                                          {/* Checkbox + Text — takes up all space except delete button */}
                                           <div 
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -1126,20 +1180,22 @@ const WorkspaceDetail = () => {
                                             tabIndex={0}
                                             role="checkbox"
                                             aria-checked={st.done}
-                                            className="flex items-center gap-3 cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-md px-1 py-0.5 min-h-[44px] md:min-h-0"
+                                            className="flex items-start gap-2.5 cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-md flex-1 min-w-0 px-1.5 py-1.5 md:py-1 min-h-[40px] md:min-h-0"
                                           >
-                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 relative ${
+                                            {/* Checkbox — fixed size, always aligned top when text wraps */}
+                                            <div className={`w-[18px] h-[18px] md:w-5 md:h-5 rounded-[5px] border flex items-center justify-center shrink-0 mt-px transition-all duration-200 ${
                                               st.done 
-                                                ? 'bg-[#00F0FF]/[0.08] border-[#00F0FF]/30 shadow-[0_0_6px_rgba(0,240,255,0.15)] scale-100 text-[#00F0FF]' 
-                                                : 'bg-zinc-900/30 border-white/10 group-hover:border-primary/45 group-hover:bg-zinc-900/60 scale-100 hover:scale-105'
+                                                ? 'bg-[#00F0FF]/[0.08] border-[#00F0FF]/30 shadow-[0_0_5px_rgba(0,240,255,0.12)] text-[#00F0FF]' 
+                                                : 'bg-zinc-900/30 border-white/10 group-hover:border-primary/40 group-hover:bg-zinc-900/50'
                                             }`}>
                                               {st.done && (
-                                                <span className="material-symbols-outlined text-[12px] text-[#00F0FF] font-bold scale-100">
+                                                <span className="material-symbols-outlined text-[11px] md:text-[12px] text-[#00F0FF] font-bold">
                                                   check
                                                 </span>
                                               )}
                                             </div>
-                                            <span className={`text-[12.5px] font-medium tracking-wide transition-all duration-300 ${
+                                            {/* Task text — left aligned, wraps naturally */}
+                                            <span className={`text-[12px] md:text-[12.5px] font-medium leading-snug text-left transition-colors duration-200 ${
                                               st.done 
                                                 ? 'line-through text-zinc-500/70 decoration-[#00F0FF]/15 font-normal' 
                                                 : 'text-zinc-200 group-hover:text-white'
@@ -1148,10 +1204,14 @@ const WorkspaceDetail = () => {
                                             </span>
                                           </div>
 
+                                          {/* Delete — hidden until hover/focus */}
                                           <button
-                                            onClick={() => handleRemoveSubtopic(rm.id, topic.id, st.id)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-red-400 transition-all cursor-pointer rounded-md hover:bg-zinc-900/40"
-                                            title="Delete Subtopic"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRemoveSubtopic(rm.id, topic.id, st.id);
+                                            }}
+                                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 mr-1 text-zinc-600 hover:text-red-400 transition-all cursor-pointer rounded hover:bg-zinc-900/40 shrink-0"
+                                            title="Delete task"
                                           >
                                             <span className="material-symbols-outlined text-xs">close</span>
                                           </button>

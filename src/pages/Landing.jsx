@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ShaderBackground from '../components/ShaderBackground';
 import ThreeJSAnimation from '../components/ThreeJSAnimation';
 import Button from '../components/Button';
+import MasterOSBrandLogo from '../components/MasterOSBrandLogo';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -13,16 +14,11 @@ const Landing = () => {
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-background/60 border-b border-white/5 shadow-2xl landing-navbar">
         <div className="max-w-[1200px] mx-auto px-4 md:px-margin-desktop h-16 md:h-20 flex justify-between items-center">
           <div className="flex items-center gap-12">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center text-primary shadow-[0_0_15px_rgba(139,92,246,0.25)] border border-primary/20">
-                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  dashboard_customize
-                </span>
-              </div>
-              <span className="font-display-lg text-[22px] leading-tight font-bold tracking-tight text-white">
-                Master<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
-              </span>
-            </div>
+            <MasterOSBrandLogo
+              size={32}
+              showText
+              onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+            />
             <div className="hidden md:flex gap-8">
               <a className="text-primary font-bold border-b border-primary pb-1 font-body-md text-sm transition-all" href="#features">Features</a>
               <a className="text-on-surface-variant font-medium font-body-md text-sm hover:text-white transition-colors" href="#how-it-works">How It Works</a>

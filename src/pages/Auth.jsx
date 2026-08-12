@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ShaderBackground from '../components/ShaderBackground';
+import MasterOSBrandLogo from '../components/MasterOSBrandLogo';
 import { auth, db, googleProvider } from '../firebase';
 import { signInWithPopup, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -66,16 +67,11 @@ const Auth = () => {
           {/* Branding Content */}
           <div className="relative z-10 flex flex-col h-full justify-between animate-fade-in">
             {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}>
-              <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-primary shadow-[0_0_15px_rgba(139,92,246,0.25)] border border-primary/20">
-                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  dashboard_customize
-                </span>
-              </div>
-              <span className="font-display-lg text-[22px] font-bold tracking-tight text-white">
-                Master<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
-              </span>
-            </div>
+            <MasterOSBrandLogo
+              size={36}
+              showText
+              onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+            />
 
             {/* Headline */}
             <div className="max-w-xl mt-auto mb-16 space-y-6">
@@ -119,13 +115,12 @@ const Auth = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
           {/* Mobile Logo Only */}
-          <div className="md:hidden absolute top-12 left-1/2 -translate-x-1/2 flex items-center gap-2" onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}>
-            <div className="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                dashboard_customize
-              </span>
-            </div>
-            <span className="font-display-lg text-lg font-bold tracking-tight text-white">MasterOS</span>
+          <div className="md:hidden absolute top-10 left-1/2 -translate-x-1/2">
+            <MasterOSBrandLogo
+              size={32}
+              showText
+              onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+            />
           </div>
 
           <div className="w-full max-w-[420px] animate-fade-in relative z-10">

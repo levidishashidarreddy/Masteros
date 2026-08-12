@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children }) => {
   const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
   
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><PandaLoader message="Connecting to MasterOS..." duration={1000} /></div>;
+    return <PandaLoader appReady={false} />;
   }
   
   if (!currentUser) {
@@ -40,7 +40,7 @@ const OnboardingRoute = ({ children }) => {
   const { currentUser, loading } = React.useContext(TaskContext);
   
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><PandaLoader message="Connecting to MasterOS..." duration={1000} /></div>;
+    return <PandaLoader appReady={false} />;
   }
   
   if (!currentUser) {
@@ -51,18 +51,22 @@ const OnboardingRoute = ({ children }) => {
 
 function AppContent() {
   const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
+  const [animationCompleted, setAnimationCompleted] = React.useState(false);
 
-  if (loading) {
+  const showLoader = loading || !animationCompleted;
+
+  if (showLoader) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <PandaLoader message="Connecting to MasterOS..." duration={1000} />
-      </div>
+      <PandaLoader
+        appReady={!loading}
+        onComplete={() => setAnimationCompleted(true)}
+      />
     );
   }
 
   return (
     <Router>
-      <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><PandaLoader message="Loading MasterOS..." duration={1000} /></div>}>
+      <Suspense fallback={<PandaLoader appReady={true} />}>
         <Routes>
           {/* Public Routes */}
           <Route 

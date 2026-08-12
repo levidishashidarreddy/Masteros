@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import InputField from '../../components/InputField';
+import MasterOSBrandLogo from '../../components/MasterOSBrandLogo';
 import { SearchableSingleSelect, SearchableMultiSelect } from '../../components/SearchableSelect';
 import { TaskContext } from '../../context/TaskContext';
 import { auth } from '../../firebase';
@@ -297,16 +298,11 @@ const OnboardingFlow = () => {
       
       {/* Top Navbar */}
       <nav className="fixed top-0 w-full bg-background/60 backdrop-blur-xl border-b border-white/5 flex justify-between items-center px-8 h-20 z-50">
-        <div className="flex items-center gap-3 cursor-pointer animate-fade-in" onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}>
-          <div className="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center text-primary border border-primary/20">
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              dashboard_customize
-            </span>
-          </div>
-          <span className="font-display-lg text-lg font-bold text-white tracking-tight">
-            Master<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
-          </span>
-        </div>
+        <MasterOSBrandLogo
+          size={32}
+          showText
+          onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+        />
         {step <= 6 && (
           <div className="flex items-center gap-4">
             <span className="font-label-md text-label-md text-primary font-bold text-xs bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">

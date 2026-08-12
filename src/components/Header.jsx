@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskContext } from '../context/TaskContext';
+import MasterOSBrandLogo from './MasterOSBrandLogo';
 
 const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hideNotifications = false, workspaceTitle = '' }) => {
   const navigate = useNavigate();
@@ -507,17 +508,14 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
             </div>
           )}
 
-          {/* MasterOS Logo */}
+          {/* MasterOS Brand Logo */}
           {!hideLogo && (
-            <div className="flex items-center gap-2 border-l border-white/10 pl-6 cursor-pointer scale-105 transition-transform shrink-0" onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}>
-              <div className="w-7 h-7 bg-primary-container rounded flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_12px_rgba(139,92,246,0.2)]">
-                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  dashboard_customize
-                </span>
-              </div>
-              <span className="font-display-lg text-base font-black tracking-tight text-white">
-                Master<span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">OS</span>
-              </span>
+            <div className="border-l border-white/10 pl-6 shrink-0">
+              <MasterOSBrandLogo
+                size={28}
+                showText
+                onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+              />
             </div>
           )}
 
