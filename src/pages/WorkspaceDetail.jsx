@@ -163,6 +163,28 @@ const WorkspaceDetail = () => {
     }
   }, [ws]);
 
+  // Local React state for topic accordion open/close state
+  const [expandedTopics, setExpandedTopics] = useState({});
+
+  useEffect(() => {
+    if (ws && ws.roadmaps) {
+      setExpandedTopics(prev => {
+        const next = { ...prev };
+        let updated = false;
+        (ws.roadmaps || []).forEach(rm => {
+          (rm.topics || []).forEach(t => {
+            const key = `${rm.id}-${t.id}`;
+            if (next[key] === undefined) {
+              next[key] = !!t.expanded;
+              updated = true;
+            }
+          });
+        });
+        return updated ? next : prev;
+      });
+    }
+  }, [ws]);
+
   if (!ws) {
     return (
       <div className="flex min-h-screen bg-background text-on-surface select-none">
@@ -221,6 +243,12 @@ const WorkspaceDetail = () => {
 
   // Topic control actions
   const handleToggleTopicExpand = (roadmapId, topicId) => {
+    const key = `${roadmapId}-${topicId}`;
+    setExpandedTopics(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+
     const updatedRoadmaps = (ws.roadmaps || []).map(rm => {
       if (rm.id !== roadmapId) return rm;
       return {
@@ -544,7 +572,7 @@ const WorkspaceDetail = () => {
           
           <div className="absolute bottom-0 left-0 w-full px-8 pb-6 flex flex-col md:flex-row items-end justify-between gap-6 z-10">
             <div className="flex items-start gap-6">
-              <div className="w-16 h-16 rounded-xl bg-[#111118] border border-white/10 flex items-center justify-center text-white shrink-0 shadow-2xl">
+              <div className="w-16 h-16 rounded-xl bg-[#111118]/90 border border-white/5 flex items-center justify-center text-white shrink-0 shadow-2xl">
                 <span className="material-symbols-outlined text-3xl">{ws.icon || 'folder'}</span>
               </div>
               <div>
@@ -594,7 +622,7 @@ const WorkspaceDetail = () => {
           <div className="lg:col-span-8 space-y-8 workspace-detail-left-col">
             
             {/* Multi-Roadmaps Section */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6 workspace-roadmap-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-6 workspace-roadmap-section shadow-lg shadow-black/10">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Roadmap Progress</h3>
@@ -607,11 +635,11 @@ const WorkspaceDetail = () => {
                   {ws.roadmaps.map((rm) => {
                     const rmProg = getRoadmapProgress(rm);
                     return (
-                      <div key={rm.id} className="space-y-5 bg-[#0D0D14]/40 border border-white/5 p-5 rounded-xl animate-fade-in">
+                      <div key={rm.id} className="space-y-6 bg-[#0B0B10] border border-white/5 p-6 rounded-xl animate-fade-in shadow-lg shadow-black/10">
                         
                         {/* Roadmap Header */}
                         <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                          <h4 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2">
+                          <h4 className="font-extrabold font-display-lg text-xs tracking-widest text-zinc-150 uppercase flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                             {rm.title}
                           </h4>
@@ -630,29 +658,51 @@ const WorkspaceDetail = () => {
                         </div>
 
                         {/* Topics Loop */}
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           {(rm.topics || []).map((topic) => {
                             const doneSubtopics = (topic.subtopics || []).filter(s => s.done).length;
                             const totalSubtopics = (topic.subtopics || []).length;
+                            const progressPercent = totalSubtopics > 0 ? Math.round((doneSubtopics / totalSubtopics) * 100) : 0;
+                            const isExpanded = !!expandedTopics[`${rm.id}-${topic.id}`];
                             
                             return (
-                              <div key={topic.id} className="border border-white/5 rounded-lg bg-[#111118]/50 overflow-hidden">
+                              <div 
+                                key={topic.id} 
+                                className={`border rounded-xl backdrop-blur-md overflow-hidden transition-all duration-300 shadow-lg ${
+                                  isExpanded 
+                                    ? 'border-primary/45 bg-[#0e0e16]/80 shadow-[0_0_20px_rgba(139,92,246,0.12)] relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary scale-[1.002]' 
+                                    : 'border-white/5 bg-[#0D0D14]/20 hover:border-white/12 shadow-black/20 hover:scale-[1.002]'
+                                }`}
+                              >
                                 
                                 {/* Topic Header */}
-                                <div className="flex items-center justify-between p-3.5 bg-[#0D0D14]/20 hover:bg-[#0D0D14]/40 transition-colors cursor-pointer">
-                                  <div className="flex items-center gap-3 min-w-0" onClick={() => handleToggleTopicExpand(rm.id, topic.id)}>
-                                    <span className="material-symbols-outlined text-on-surface-variant text-base">
-                                      {topic.expanded ? 'expand_more' : 'chevron_right'}
+                                <div className="flex items-center justify-between px-4 py-3.5 bg-zinc-900/10 hover:bg-zinc-900/35 transition-all duration-300 cursor-pointer select-none border-b border-white/5">
+                                  <div className="flex items-center gap-3 min-w-0 flex-grow" onClick={() => handleToggleTopicExpand(rm.id, topic.id)}>
+                                    <span className={`material-symbols-outlined text-zinc-400 text-base transition-transform duration-200 ${isExpanded ? 'rotate-90 text-primary' : ''}`}>
+                                      chevron_right
                                     </span>
-                                    <span className="font-bold text-white text-xs truncate">{topic.title}</span>
-                                    <span className="text-[10px] text-on-surface-variant font-medium">({doneSubtopics}/{totalSubtopics} done)</span>
+                                    <div className="flex flex-col min-w-0 flex-grow">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-zinc-150 text-[13px] tracking-wide truncate">{topic.title}</span>
+                                        <span className="text-[9px] text-zinc-400 font-bold bg-white/3 px-2.5 py-0.5 rounded-full border border-white/5 shrink-0">
+                                          {doneSubtopics}/{totalSubtopics}
+                                        </span>
+                                      </div>
+                                      {/* Micro progress bar for each topic */}
+                                      <div className="w-full max-w-[200px] bg-[#09090D] h-[4px] rounded-full overflow-hidden mt-2 relative border border-white/3">
+                                        <div 
+                                          className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(139,92,246,0.45)]" 
+                                          style={{ width: `${progressPercent}%` }}
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex items-center gap-1.5 shrink-0 ml-4">
                                     {/* Edit Topic Title */}
                                     <button 
                                       onClick={() => handleOpenEditTopic(rm.id, topic)}
-                                      className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors"
+                                      className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
                                       title="Edit Topic Title"
                                     >
                                       <span className="material-symbols-outlined text-sm">edit</span>
@@ -664,7 +714,7 @@ const WorkspaceDetail = () => {
                                         setActiveTopicForSubtopic(topic.id);
                                         setNewSubtopicText('');
                                       }}
-                                      className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors"
+                                      className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
                                       title="Add Subtopic"
                                     >
                                       <span className="material-symbols-outlined text-sm">add_circle</span>
@@ -673,13 +723,13 @@ const WorkspaceDetail = () => {
                                     {/* Reordering */}
                                     <button 
                                       onClick={() => handleReorderTopic(rm.id, topic.id, 'up')}
-                                      className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors"
+                                      className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
                                     >
                                       <span className="material-symbols-outlined text-sm">arrow_upward</span>
                                     </button>
                                     <button 
                                       onClick={() => handleReorderTopic(rm.id, topic.id, 'down')}
-                                      className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors"
+                                      className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-primary hover:bg-primary/10 hover:shadow-[0_0_8px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-pointer"
                                     >
                                       <span className="material-symbols-outlined text-sm">arrow_downward</span>
                                     </button>
@@ -687,7 +737,7 @@ const WorkspaceDetail = () => {
                                     {/* Remove Topic */}
                                     <button 
                                       onClick={() => handleRemoveTopic(rm.id, topic.id)}
-                                      className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-red-400 transition-colors"
+                                      className="p-1.5 rounded-lg bg-white/2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 cursor-pointer"
                                     >
                                       <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
@@ -698,14 +748,14 @@ const WorkspaceDetail = () => {
                                 {activeTopicForSubtopic === topic.id && (
                                   <form 
                                     onSubmit={(e) => handleAddSubtopicSubmit(e, rm.id, topic.id)}
-                                    className="p-3 bg-[#0D0D14]/15 border-t border-white/5 flex gap-2"
+                                    className="p-3 bg-zinc-950/20 border-t border-white/5 flex gap-2"
                                   >
                                     <input
                                       type="text"
                                       value={newSubtopicText}
                                       onChange={(e) => setNewSubtopicText(e.target.value)}
                                       placeholder="Add subtopic name..."
-                                      className="flex-grow bg-[#111118] border border-white/5 rounded px-2.5 py-1.5 text-xs text-on-surface focus:outline-none"
+                                      className="flex-grow bg-[#111118] border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary/40 transition-colors duration-250"
                                       required
                                     />
                                     <Button type="submit" variant="secondary" className="px-3 py-1 text-[10px]">Add</Button>
@@ -714,30 +764,58 @@ const WorkspaceDetail = () => {
                                 )}
 
                                 {/* Subtopics List */}
-                                {topic.expanded && (
-                                  <div className="p-3.5 space-y-2 border-t border-white/5 bg-[#0D0D14]/5 animate-fade-in">
+                                {isExpanded && (
+                                  <div className="p-4 space-y-2.5 border-t border-white/5 bg-[#0D0D14]/10 animate-fade-in">
                                     {topic.subtopics && topic.subtopics.length === 0 ? (
-                                      <p className="text-[11px] text-on-surface-variant italic">No subtopics available.</p>
+                                      <p className="text-[11px] text-zinc-500 italic">No subtopics available.</p>
                                     ) : (
                                       (topic.subtopics || []).map((st) => (
-                                        <div key={st.id} className="flex items-center justify-between gap-3 group">
+                                        <div 
+                                          key={st.id} 
+                                          className={`flex items-center justify-between gap-3 group px-2 py-1.5 rounded-lg transition-all ${
+                                            st.done ? 'opacity-65' : ''
+                                          }`}
+                                        >
                                           <div 
-                                            onClick={() => toggleSubtopic(ws.id, rm.id, topic.id, st.id)}
-                                            className="flex items-center gap-3 cursor-pointer"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleSubtopic(ws.id, rm.id, topic.id, st.id);
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === ' ' || e.key === 'Enter') {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toggleSubtopic(ws.id, rm.id, topic.id, st.id);
+                                              }
+                                            }}
+                                            tabIndex={0}
+                                            role="checkbox"
+                                            aria-checked={st.done}
+                                            className="flex items-center gap-3 cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-md px-1 py-0.5"
                                           >
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                              st.done ? 'bg-primary border-primary' : 'border-white/20 group-hover:border-primary'
+                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 relative ${
+                                              st.done 
+                                                ? 'bg-emerald-950/20 border-emerald-500/40 shadow-emerald-950/20 scale-100' 
+                                                : 'bg-zinc-900/30 border-white/10 group-hover:border-primary/45 group-hover:bg-zinc-900/60 scale-100 hover:scale-105'
                                             }`}>
-                                              {st.done && <span className="material-symbols-outlined text-[10px] text-white font-bold">check</span>}
+                                              {st.done && (
+                                                <span className="material-symbols-outlined text-[12px] text-emerald-400 font-bold scale-100">
+                                                  check
+                                                </span>
+                                              )}
                                             </div>
-                                            <span className={`text-xs ${st.done ? 'line-through text-on-surface-variant' : 'text-white'}`}>
+                                            <span className={`text-[12.5px] font-medium tracking-wide transition-all duration-300 ${
+                                              st.done 
+                                                ? 'line-through text-zinc-500 decoration-zinc-650/30 font-normal' 
+                                                : 'text-zinc-200 group-hover:text-white'
+                                            }`}>
                                               {st.title}
                                             </span>
                                           </div>
 
                                           <button
                                             onClick={() => handleRemoveSubtopic(rm.id, topic.id, st.id)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-red-400 transition-all cursor-pointer"
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-red-400 transition-all cursor-pointer rounded-md hover:bg-zinc-900/40"
                                             title="Delete Subtopic"
                                           >
                                             <span className="material-symbols-outlined text-xs">close</span>
@@ -763,7 +841,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Workspace Notepad Card */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5 workspace-notepad-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-5 workspace-notepad-section shadow-lg shadow-black/10">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Workspace Notepad</h3>
@@ -804,7 +882,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Task Management Section */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-6 workspace-todo-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-6 workspace-todo-section shadow-lg shadow-black/10">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">Workspace Todo List</h3>
@@ -884,7 +962,7 @@ const WorkspaceDetail = () => {
           <div className="lg:col-span-4 space-y-8 workspace-detail-right-col">
             
             {/* Progress Rings */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 workspace-progress-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 workspace-progress-section shadow-lg shadow-black/10">
               <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant mb-6 text-[10px] font-bold">
                 Overall Progress
               </h3>
@@ -894,7 +972,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Study Session Pomodoro Timer */}
-            <section className="bg-[#111118]/80 border border-white/5 backdrop-blur-xl rounded-2xl p-6 space-y-6 relative overflow-hidden workspace-timer-section">
+            <section className="bg-[#111118]/95 border border-white/5 backdrop-blur-xl rounded-2xl p-6 space-y-6 relative overflow-hidden workspace-timer-section shadow-lg shadow-black/10">
               <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
                 <div>
@@ -992,7 +1070,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Links Resources Manager */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 space-y-5 workspace-resources-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 space-y-5 workspace-resources-section shadow-lg shadow-black/10">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
                 <h3 className="font-label-sm uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">
                   Resources ({(ws.resources || []).length})
@@ -1052,7 +1130,7 @@ const WorkspaceDetail = () => {
             </section>
 
             {/* Collaborators */}
-            <section className="bg-[#111118] border border-white/5 rounded-2xl p-6 workspace-collaborators-section">
+            <section className="bg-[#111118]/90 border border-white/5 rounded-2xl p-6 workspace-collaborators-section shadow-lg shadow-black/10">
               <div 
                 className="flex items-center justify-between cursor-pointer md:cursor-default"
                 onClick={toggleCollabCollapse}

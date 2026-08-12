@@ -19,6 +19,7 @@ const Sidebar = () => {
   const prefetchRoute = (route) => {
     if (route === '/dashboard') import('../pages/Dashboard');
     else if (route === '/workspaces') import('../pages/Workspaces');
+
     else if (route === '/tasks') import('../pages/Tasks');
     else if (route === '/analytics') import('../pages/Analytics');
     else if (route === '/friends') import('../pages/Friends');
@@ -162,6 +163,8 @@ const Sidebar = () => {
               <span className="material-symbols-outlined nav-folder-icon transition-all duration-300 group-[.sidebar-link-active]:scale-110 group-[.sidebar-link-active]:rotate-[5deg]">folder_open</span>
               <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Workspaces</span>
             </NavLink>
+
+
 
             <NavLink
               to="/tasks"

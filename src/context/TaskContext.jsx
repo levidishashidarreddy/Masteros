@@ -663,6 +663,10 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_collaborated_workspaces');
     return cached ? JSON.parse(cached) : [];
   });
+  const [journeys, setJourneys] = useState(() => {
+    const cached = localStorage.getItem('cache_journeys');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [myCreatedTasks, setMyCreatedTasks] = useState([]);
   const [workspaceTasksMap, setWorkspaceTasksMap] = useState({});
   const [allUsers, setAllUsers] = useState([]);
@@ -682,6 +686,7 @@ export const TaskProvider = ({ children }) => {
   });
 
   const msgListenersRef = useRef({});
+  const unsubscribeProfileRef = useRef(null);
 
   // Caching updates to localStorage
   useEffect(() => {
@@ -707,6 +712,10 @@ export const TaskProvider = ({ children }) => {
   useEffect(() => {
     if (collaboratedWorkspaces.length > 0) localStorage.setItem('cache_collaborated_workspaces', JSON.stringify(collaboratedWorkspaces));
   }, [collaboratedWorkspaces]);
+
+  useEffect(() => {
+    if (journeys.length > 0) localStorage.setItem('cache_journeys', JSON.stringify(journeys));
+  }, [journeys]);
 
   const wsTasksListenersRef = useRef({});
 
@@ -858,12 +867,18 @@ export const TaskProvider = ({ children }) => {
 
   // 1. Auth state observer
   useEffect(() => {
-    const handleUser = async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Clean up previous profile listener if any exists
+      if (unsubscribeProfileRef.current) {
+        unsubscribeProfileRef.current();
+        unsubscribeProfileRef.current = null;
+      }
+
       setCurrentUser(user);
       if (user) {
         // Listen to active user's profile doc in Firestore
         const profileRef = doc(db, 'users', user.uid);
-        const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+        unsubscribeProfileRef.current = onSnapshot(profileRef, (docSnap) => {
           if (docSnap.exists()) {
             const profileData = docSnap.data();
             setUserProfile(profileData);
@@ -880,10 +895,6 @@ export const TaskProvider = ({ children }) => {
           console.error("Profile listen error:", error);
           setLoading(false);
         });
-
-        return () => {
-          unsubscribeProfile();
-        };
       } else {
         setUserProfile(null);
         setIsOnboarded(false);
@@ -891,10 +902,14 @@ export const TaskProvider = ({ children }) => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('isOnboarded');
       }
-    };
+    });
 
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeProfileRef.current) {
+        unsubscribeProfileRef.current();
+      }
+    };
   }, []);
 
   // Apply theme from localStorage instantly on mount to avoid flashes
@@ -1096,6 +1111,184 @@ export const TaskProvider = ({ children }) => {
       setWorkspaces(list);
     });
 
+    // E3. Listen to journeys
+    const journeysQuery = query(collection(db, 'journeys'), where('userId', '==', uid));
+    const unsubscribeJourneys = onSnapshot(journeysQuery, (snapshot) => {
+      const list = [];
+      snapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setJourneys(list);
+      
+      // Auto-populate default Web Dev journey if the collection is empty
+      if (snapshot.empty) {
+        const defaultWebDevJourney = {
+          userId: uid,
+          title: 'Web Development',
+          description: 'Full Stack Web Engineering Track',
+          icon: 'conversion_path',
+          theme: 'purple',
+          coverColor: '#8B5CF6',
+          estDuration: '300 Hours',
+          difficulty: 'Intermediate',
+          nodes: [
+            {
+              id: 'c',
+              title: 'C Programming',
+              progress: 100,
+              status: 'Completed',
+              x: 160,
+              y: 120,
+              logoKey: 'c',
+              themeColor: '#00599C',
+              description: 'Learn the fundamentals of systems programming, memory management, pointers, and compilers using the C language.',
+              concepts: ['Variables & Syntax', 'Pointers & References', 'Memory Allocation (malloc/free)', 'Data Structures in C', 'Compilation Stages'],
+              estHours: 40,
+              xpReward: 500,
+              connections: ['python']
+            },
+            {
+              id: 'python',
+              title: 'Python Developer',
+              progress: 100,
+              status: 'Completed',
+              x: 390,
+              y: 190,
+              logoKey: 'python',
+              themeColor: '#3776AB',
+              description: 'Master clean, readable Python code. Discover scripting, standard library modules, object-oriented concepts, and package ecosystems.',
+              concepts: ['Control Structures', 'Lists, Dicts, Tuples', 'OOP: Classes & Inheritance', 'Virtual Environments', 'File I/O & Exceptions'],
+              estHours: 35,
+              xpReward: 400,
+              connections: ['sql']
+            },
+            {
+              id: 'sql',
+              title: 'SQL Databases',
+              progress: 90,
+              status: 'Completed',
+              x: 620,
+              y: 120,
+              logoKey: 'sql',
+              themeColor: '#00758F',
+              description: 'Understand relational databases, structure data, write efficient joins, handle indexing, transaction scopes, and design schemas.',
+              concepts: ['SELECT, WHERE, GROUP BY', 'JOIN Queries (Inner, Left, Outer)', 'Aggregate Functions', 'Database Normalization', 'Transactions & Indexes'],
+              estHours: 30,
+              xpReward: 350,
+              connections: ['html']
+            },
+            {
+              id: 'html',
+              title: 'HTML5 Foundations',
+              progress: 90,
+              status: 'Completed',
+              x: 850,
+              y: 190,
+              logoKey: 'html',
+              themeColor: '#E34F26',
+              description: 'Create the skeletal structure of websites. Master semantic elements, layout structuring, forms validation, and basic accessibility standards.',
+              concepts: ['HTML5 Semantic Elements', 'Document Structure', 'Forms & Inputs', 'SEO Core Tags', 'Accessibility (ARIA)'],
+              estHours: 15,
+              xpReward: 200,
+              connections: ['css']
+            },
+            {
+              id: 'css',
+              title: 'CSS3 Aesthetics',
+              progress: 85,
+              status: 'In Progress',
+              x: 1080,
+              y: 120,
+              logoKey: 'css',
+              themeColor: '#1572B6',
+              description: 'Bring style, motion, and layouts to life. Deep dive into Flexbox, CSS Grid, media queries, CSS variables, transitions, and keyframe animations.',
+              concepts: ['Box Model & Resetting', 'Flexbox & CSS Grid', 'Responsive Media Queries', 'CSS Custom Variables', 'Keyframe Animations'],
+              estHours: 25,
+              xpReward: 250,
+              connections: ['javascript']
+            },
+            {
+              id: 'javascript',
+              title: 'JavaScript Engine',
+              progress: 75,
+              status: 'In Progress',
+              x: 1160,
+              y: 340,
+              logoKey: 'javascript',
+              themeColor: '#F7DF1E',
+              description: 'Inject interaction and logic into frontend layouts. Explore DOM manipulation, event capturing, ES6+ features, asynchronous fetch, and execution contexts.',
+              concepts: ['Scope & Hoisting', 'DOM & Event Listeners', 'Promises & Async/Await', 'Closures & Callbacks', 'Local / Session Storage'],
+              estHours: 50,
+              xpReward: 600,
+              connections: ['react']
+            },
+            {
+              id: 'react',
+              title: 'React UI Framework',
+              progress: 60,
+              status: 'In Progress',
+              x: 930,
+              y: 400,
+              logoKey: 'react',
+              themeColor: '#61DAFB',
+              description: 'Construct modern component-based single page applications. Master React state management, hook hooks, routing lifecycle, and virtual DOM diffs.',
+              concepts: ['JSX & Component Design', 'useState & useEffect Hooks', 'Props & Event Passing', 'React Router Navigation', 'Context API State Management'],
+              estHours: 45,
+              xpReward: 550,
+              connections: ['node']
+            },
+            {
+              id: 'node',
+              title: 'Node.js Backend',
+              progress: 45,
+              status: 'In Progress',
+              x: 700,
+              y: 340,
+              logoKey: 'node',
+              themeColor: '#339933',
+              description: 'Build fast network servers using JavaScript. Discover NPM packages, Express routing controllers, server middlewares, and rest APIs.',
+              concepts: ['Event Loop & Non-blocking I/O', 'Express.js Routing', 'Middleware Architecture', 'Request/Response Controllers', 'RESTful API Design'],
+              estHours: 40,
+              xpReward: 500,
+              connections: ['mongodb']
+            },
+            {
+              id: 'mongodb',
+              title: 'MongoDB NoSQL',
+              progress: 30,
+              status: 'In Progress',
+              x: 470,
+              y: 400,
+              logoKey: 'mongodb',
+              themeColor: '#47A248',
+              description: 'Learn document-oriented database design. Store collections, design dynamic schemas, manage aggregate pipelines, and query JSON collections.',
+              concepts: ['Documents & Collections', 'CRUD Operations', 'Mongoose ODM Schema', 'Aggregation Pipelines', 'Referencing & Embedding Documents'],
+              estHours: 25,
+              xpReward: 300,
+              connections: ['aws']
+            },
+            {
+              id: 'aws',
+              title: 'AWS Cloud Services',
+              progress: 0,
+              status: 'Locked',
+              x: 240,
+              y: 460,
+              logoKey: 'aws',
+              themeColor: '#FF9900',
+              description: 'Deploy global production infrastructures on Amazon Web Services. Learn cloud scaling, compute virtualization, static CDNs, and database backends.',
+              concepts: ['Amazon EC2 Instances', 'S3 Storage Buckets', 'CloudFront Content CDN', 'IAM Security Roles', 'Lambda Serverless Functions'],
+              estHours: 35,
+              xpReward: 450,
+              connections: []
+            }
+          ],
+          createdAt: new Date().toISOString()
+        };
+        setDoc(doc(db, 'journeys', 'web-dev-default'), defaultWebDevJourney);
+      }
+    });
+
     // E2. Listen to collaborated workspaces
     let unsubscribeCollabWs = () => {};
     if (userProfile && userProfile.userId) {
@@ -1222,6 +1415,7 @@ export const TaskProvider = ({ children }) => {
       unsubscribeAssign();
       unsubscribeWs();
       unsubscribeCollabWs();
+      unsubscribeJourneys();
       unsubscribeNotif();
       unsubscribeFriends();
       unsubscribeSentReqs();
@@ -1528,6 +1722,36 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
+  // ================= JOURNEY CRUD OPERATIONS =================
+  const addJourney = async (journey) => {
+    if (!currentUser) return;
+    const journeyId = journey.id || `journey-${Date.now()}`;
+    const newJourney = {
+      userId: currentUser.uid,
+      title: journey.title || 'New Journey',
+      description: journey.description || '',
+      icon: journey.icon || 'explore',
+      theme: journey.theme || 'purple',
+      coverColor: journey.coverColor || '#8B5CF6',
+      estDuration: journey.estDuration || '30 Hours',
+      difficulty: journey.difficulty || 'Intermediate',
+      nodes: journey.nodes || [],
+      createdAt: new Date().toISOString()
+    };
+    await setDoc(doc(db, 'journeys', journeyId), newJourney);
+  };
+
+  const updateJourney = async (journeyId, updatedFields) => {
+    if (!currentUser) return;
+    setJourneys(prev => prev.map(j => j.id === journeyId ? { ...j, ...updatedFields } : j));
+    await updateDoc(doc(db, 'journeys', journeyId), updatedFields);
+  };
+
+  const deleteJourney = async (journeyId) => {
+    if (!currentUser) return;
+    await deleteDoc(doc(db, 'journeys', journeyId));
+  };
+
   // ================= WORKSPACE CRUD OPERATIONS =================
   const addWorkspace = async (workspace) => {
     if (!currentUser || !userProfile) return;
@@ -1602,25 +1826,76 @@ export const TaskProvider = ({ children }) => {
 
   const toggleSubtopic = async (wsId, roadmapId, topicId, subtopicId) => {
     if (!currentUser) return;
-    const wsRef = doc(db, 'workspaces', wsId);
-    const wsSnap = await getDoc(wsRef);
-    if (wsSnap.exists()) {
-      const ws = wsSnap.data();
-      let wasDone = false;
-      const originalRm = (ws.roadmaps || []).find(rm => rm.id === roadmapId);
-      if (originalRm) {
-        const originalT = (originalRm.topics || []).find(t => t.id === topicId);
-        if (originalT) {
-          const originalSt = (originalT.subtopics || []).find(st => st.id === subtopicId);
-          if (originalSt) {
-            wasDone = originalSt.done;
-          }
+
+    // Retrieve active workspace from local state
+    const localWs = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
+    if (!localWs) return;
+
+    // Determine target subtopic current done state and calculate target completion
+    let isNowDone = true;
+    const localRm = (localWs.roadmaps || []).find(rm => rm.id === roadmapId);
+    if (localRm) {
+      const localT = (localRm.topics || []).find(t => t.id === topicId);
+      if (localT) {
+        const localSt = (localT.subtopics || []).find(st => st.id === subtopicId);
+        if (localSt) {
+          isNowDone = !localSt.done;
         }
       }
-      const isNowDone = !wasDone;
-      const xpChange = isNowDone ? 10 : -10;
+    }
 
-      const updatedRoadmaps = (ws.roadmaps || []).map((rm) => {
+    const updateLocalWorkspaces = (prevList, targetState) => {
+      return prevList.map((ws) => {
+        if (ws.id !== wsId) return ws;
+
+        const updatedRoadmaps = (ws.roadmaps || []).map((rm) => {
+          if (rm.id !== roadmapId) return rm;
+
+          const updatedTopics = (rm.topics || []).map((t) => {
+            if (t.id !== topicId) return t;
+
+            const updatedSubtopics = (t.subtopics || []).map((st) => {
+              if (st.id !== subtopicId) return st;
+              return { ...st, done: targetState };
+            });
+
+            return { ...t, subtopics: updatedSubtopics };
+          });
+
+          return { ...rm, topics: updatedTopics };
+        });
+
+        let totalSubtopics = 0;
+        let completedSubtopics = 0;
+
+        updatedRoadmaps.forEach((rm) => {
+          (rm.topics || []).forEach((t) => {
+            (t.subtopics || []).forEach((st) => {
+              totalSubtopics++;
+              if (st.done) completedSubtopics++;
+            });
+          });
+        });
+
+        const overallProgress = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
+
+        return {
+          ...ws,
+          roadmaps: updatedRoadmaps,
+          progress: overallProgress
+        };
+      });
+    };
+
+    // Apply optimistic updates to states instantly
+    setWorkspaces(prev => updateLocalWorkspaces(prev, isNowDone));
+    setCollaboratedWorkspaces(prev => updateLocalWorkspaces(prev, isNowDone));
+
+    try {
+      const wsRef = doc(db, 'workspaces', wsId);
+      
+      // Calculate updated fields using localWs data
+      const updatedRoadmaps = (localWs.roadmaps || []).map((rm) => {
         if (rm.id !== roadmapId) return rm;
 
         const updatedTopics = (rm.topics || []).map((t) => {
@@ -1651,6 +1926,7 @@ export const TaskProvider = ({ children }) => {
 
       const overallProgress = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
 
+      // Write directly to Firestore, bypassing additional slow getDoc reads
       await updateDoc(wsRef, {
         roadmaps: updatedRoadmaps,
         progress: overallProgress
@@ -1658,12 +1934,10 @@ export const TaskProvider = ({ children }) => {
 
       if (isNowDone) {
         await logProductiveActivity('subtopic');
-        // Check if all subtopics of this topic are completed
-        const originalRm = (ws.roadmaps || []).find(rm => rm.id === roadmapId);
-        if (originalRm) {
-          const originalT = (originalRm.topics || []).find(t => t.id === topicId);
-          if (originalT) {
-            const updatedSubtopics = (originalT.subtopics || []).map((st) => {
+        if (localRm) {
+          const localT = (localRm.topics || []).find(t => t.id === topicId);
+          if (localT) {
+            const updatedSubtopics = (localT.subtopics || []).map((st) => {
               if (st.id === subtopicId) return { ...st, done: true };
               return st;
             });
@@ -1681,6 +1955,11 @@ export const TaskProvider = ({ children }) => {
           }
         }
       }
+    } catch (err) {
+      console.error("Error syncing subtopic toggle with Firestore:", err);
+      // Revert optimistic updates on error
+      setWorkspaces(prev => updateLocalWorkspaces(prev, !isNowDone));
+      setCollaboratedWorkspaces(prev => updateLocalWorkspaces(prev, !isNowDone));
     }
   };
 
@@ -2185,6 +2464,11 @@ export const TaskProvider = ({ children }) => {
         updateWorkspace,
         deleteWorkspace,
         toggleSubtopic,
+        journeys,
+        addJourney,
+        updateJourney,
+        deleteJourney,
+        workspaceTasksMap,
         sendFollowRequest,
         acceptFollowRequest,
         rejectFollowRequest,

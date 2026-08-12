@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ShaderBackground from '../components/ShaderBackground';
 import { auth, db, googleProvider } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 const Auth = () => {
@@ -15,6 +15,7 @@ const Auth = () => {
     setLoading(true);
     setError('');
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
