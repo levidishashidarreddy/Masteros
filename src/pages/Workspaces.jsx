@@ -1,4 +1,5 @@
 import React, { useState, useContext, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -73,41 +74,44 @@ const Workspaces = () => {
     const vw = window.innerWidth;
     
     const popoverElem = addWorkspacePopoverRef.current;
-    const popHeight = popoverElem ? popoverElem.offsetHeight : 185;
-    const popWidth = popoverElem ? popoverElem.offsetWidth : 300;
+    const popHeight = popoverElem ? popoverElem.offsetHeight : 190;
+    const popWidth = popoverElem ? popoverElem.offsetWidth : 320;
+    const padding = 12;
 
     const spaceAbove = btnRect.top;
     const spaceBelow = vh - btnRect.bottom;
-    const padding = 12;
 
     let targetTop = 0;
-    // Prefer UPWARD if space permits
-    if (spaceAbove >= popHeight + padding) {
-      targetTop = btnRect.top - popHeight - 8;
-    } 
-    // Else DOWNWARD if space permits
-    else if (spaceBelow >= popHeight + padding) {
+    // Prefer opening DOWNWARD below button when space permits (ideal for top header button)
+    if (spaceBelow >= popHeight + padding) {
       targetTop = btnRect.bottom + 8;
     } 
-    // Else clamp top position so popover stays fully inside [padding, vh - popHeight - padding]
+    // Else open UPWARD above button
+    else if (spaceAbove >= popHeight + padding) {
+      targetTop = btnRect.top - popHeight - 8;
+    } 
+    // Else clamp top position inside viewport bounds [padding, vh - popHeight - padding]
     else {
-      targetTop = Math.max(padding, Math.min(btnRect.top - popHeight - 8, vh - popHeight - padding));
+      targetTop = Math.max(padding, Math.min(btnRect.bottom + 8, vh - popHeight - padding));
     }
 
-    // Horizontal positioning: align right edge with button right edge, clamped to viewport bounds
-    let targetRight = vw - btnRect.right;
-    const targetLeft = vw - targetRight - popWidth;
+    // Horizontal positioning: align right edge of popover with right edge of button
+    let targetLeft = btnRect.right - popWidth;
     if (targetLeft < padding) {
-      targetRight = Math.max(padding, vw - popWidth - padding);
+      targetLeft = Math.max(padding, vw - popWidth - padding);
+    }
+    if (targetLeft + popWidth > vw - padding) {
+      targetLeft = vw - popWidth - padding;
     }
 
     setPopoverStyle({
       position: 'fixed',
       top: `${targetTop}px`,
-      right: `${targetRight}px`,
+      left: `${targetLeft}px`,
+      width: `${Math.min(popWidth, vw - 24)}px`,
       opacity: 1,
       pointerEvents: 'auto',
-      zIndex: 100
+      zIndex: 99999
     });
   }, []);
 
@@ -1085,22 +1089,23 @@ const Workspaces = () => {
                 <span className="material-symbols-outlined text-[16px] md:text-[18px] font-bold">add</span>
                 <span className="hidden md:inline">Add Workspace</span>
               </button>
-              
-              {/* TWO-OPTION VIEWPORT-AWARE PANEL/POPOVER */}
-              {isAddMenuOpen && (
+
+              {/* TWO-OPTION TOP-LEVEL PORTAL POPOVER */}
+              {isAddMenuOpen && createPortal(
                 <>
                   {/* Backdrop for outside click closing */}
                   <div 
-                    className="fixed inset-0 z-[90] bg-transparent" 
+                    className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-[1px]" 
                     onClick={() => setIsAddMenuOpen(false)}
                   />
                   <div 
                     ref={addWorkspacePopoverRef}
                     style={popoverStyle}
-                    className="w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65),0_0_20px_rgba(139,92,246,0.15)] z-[100] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
+                    className="bg-[#111118] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(139,92,246,0.2)] z-[99999] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
                   >
-                    <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none">
-                      Add Workspace
+                    <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none flex items-center justify-between">
+                      <span>Add Workspace</span>
+                      <span className="text-[9px] text-[#8B5CF6] font-bold">MasterOS</span>
                     </div>
                     
                     {/* Option 1: Create Workspace */}
@@ -1109,7 +1114,7 @@ const Workspaces = () => {
                         setIsAddMenuOpen(false);
                         setIsModalOpen(true);
                       }}
-                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/12 hover:border-[#8B5CF6]/45 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/15 hover:border-[#8B5CF6]/50 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
                     >
                       <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover/opt:scale-105 group-hover/opt:border-primary transition-all shrink-0">
                         <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
@@ -1126,7 +1131,7 @@ const Workspaces = () => {
                         setIsAddMenuOpen(false);
                         setIsJoinSharedModalOpen(true);
                       }}
-                      className="w-full text-left p-3.5 rounded-xl border border-white/5 bg-[#0D0D14]/40 hover:bg-white/[0.04] hover:border-white/12 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                      className="w-full text-left p-3.5 rounded-xl border border-white/5 bg-[#0D0D14]/60 hover:bg-white/[0.06] hover:border-white/15 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
                     >
                       <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] group-hover/opt:scale-105 group-hover/opt:border-[#8B5CF6] transition-all shrink-0">
                         <span className="material-symbols-outlined text-[18px]">hub</span>
@@ -1137,7 +1142,8 @@ const Workspaces = () => {
                       </div>
                     </button>
                   </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
           </div>
