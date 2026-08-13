@@ -29,32 +29,57 @@ const CARD_LANG_THEMES = {
   default:    { gradientFrom: '#0D0822', accent: '#8B5CF6', iconSlug: null,          iconColor: '8B5CF6', wordmark: null },
 };
 
-const detectCardTheme = (title, tag) => {
-  const txt = ((title || '') + ' ' + (tag || '')).toLowerCase();
-  if (txt.includes('c++') || txt.includes('cpp'))                          return CARD_LANG_THEMES.cpp;
-  if (txt.includes('typescript') || /\bts\b/.test(txt))                    return CARD_LANG_THEMES.typescript;
-  if (txt.includes('next.js') || txt.includes('nextjs'))                   return CARD_LANG_THEMES.nextjs;
-  if (txt.includes('javascript') || /\bjs\b/.test(txt))                    return CARD_LANG_THEMES.javascript;
-  if (txt.includes('react'))                                                return CARD_LANG_THEMES.react;
-  if (txt.includes('node'))                                                 return CARD_LANG_THEMES.node;
-  if (txt.includes('vue'))                                                  return CARD_LANG_THEMES.vue;
-  if (txt.includes('angular'))                                              return CARD_LANG_THEMES.angular;
-  if (txt.includes('graphql'))                                              return CARD_LANG_THEMES.graphql;
-  if (txt.includes('python'))                                               return CARD_LANG_THEMES.python;
-  if (txt.includes('html'))                                                 return CARD_LANG_THEMES.html;
-  if (txt.includes('css') && !txt.includes('success'))                     return CARD_LANG_THEMES.css;
-  if (txt.includes('java') && !txt.includes('javascript'))                  return CARD_LANG_THEMES.java;
-  if (txt.includes('sql') || txt.includes('mysql') || txt.includes('postgres') || txt.includes('database')) return CARD_LANG_THEMES.sql;
-  if (txt.includes('aws') || txt.includes('amazon web'))                   return CARD_LANG_THEMES.aws;
-  if (txt.includes('docker') || txt.includes('container'))                 return CARD_LANG_THEMES.docker;
-  if (txt.includes('flutter'))                                              return CARD_LANG_THEMES.flutter;
-  if (txt.includes('kotlin'))                                               return CARD_LANG_THEMES.kotlin;
-  if (txt.includes('swift'))                                                return CARD_LANG_THEMES.swift;
-  if (txt.includes('rust'))                                                 return CARD_LANG_THEMES.rust;
-  if (txt.includes('linux'))                                                return CARD_LANG_THEMES.linux;
-  if (txt.includes('golang') || /\bgo\b/.test(txt))                        return CARD_LANG_THEMES.go;
-  if (txt.includes('git'))                                                  return CARD_LANG_THEMES.git;
-  if (/\bc\b/.test(txt) || txt.includes('c language'))                     return CARD_LANG_THEMES.c;
+const detectCardTheme = (technology, technologySlug, technologyId, tag) => {
+  const target = (technology || technologySlug || technologyId || '').toLowerCase().trim();
+  if (target) {
+    if (target.includes('c++') || target === 'cpp' || target === 'cplusplus') return CARD_LANG_THEMES.cpp;
+    if (target === 'c' || target === 'c language') return CARD_LANG_THEMES.c;
+    if (target.includes('python')) return CARD_LANG_THEMES.python;
+    if (target.includes('java') && !target.includes('javascript')) return CARD_LANG_THEMES.java;
+    if (target.includes('javascript') || target === 'js') return CARD_LANG_THEMES.javascript;
+    if (target.includes('typescript') || target === 'ts') return CARD_LANG_THEMES.typescript;
+    if (target.includes('react')) return CARD_LANG_THEMES.react;
+    if (target.includes('node')) return CARD_LANG_THEMES.node;
+    if (target.includes('html')) return CARD_LANG_THEMES.html;
+    if (target.includes('css')) return CARD_LANG_THEMES.css;
+    if (target.includes('sql') || target.includes('mysql') || target.includes('postgres') || target.includes('database')) return CARD_LANG_THEMES.sql;
+    if (target.includes('aws') || target.includes('amazon')) return CARD_LANG_THEMES.aws;
+    if (target.includes('docker')) return CARD_LANG_THEMES.docker;
+    if (target.includes('git')) return CARD_LANG_THEMES.git;
+    if (target.includes('flutter')) return CARD_LANG_THEMES.flutter;
+    if (target.includes('kotlin')) return CARD_LANG_THEMES.kotlin;
+    if (target.includes('swift')) return CARD_LANG_THEMES.swift;
+    if (target.includes('rust')) return CARD_LANG_THEMES.rust;
+    if (target.includes('go') || target.includes('golang')) return CARD_LANG_THEMES.go;
+    if (target.includes('angular')) return CARD_LANG_THEMES.angular;
+    if (target.includes('vue')) return CARD_LANG_THEMES.vue;
+    if (target.includes('next')) return CARD_LANG_THEMES.nextjs;
+    if (target.includes('graphql')) return CARD_LANG_THEMES.graphql;
+    if (target.includes('linux')) return CARD_LANG_THEMES.linux;
+  }
+  // Fallback: check tag if explicit technology was not provided (never check title!)
+  const tagStr = (tag || '').toLowerCase().trim();
+  if (tagStr) {
+    if (tagStr.includes('c++') || tagStr.includes('cpp')) return CARD_LANG_THEMES.cpp;
+    if (tagStr.includes('typescript') || /\bts\b/.test(tagStr)) return CARD_LANG_THEMES.typescript;
+    if (tagStr.includes('next')) return CARD_LANG_THEMES.nextjs;
+    if (tagStr.includes('javascript') || /\bjs\b/.test(tagStr)) return CARD_LANG_THEMES.javascript;
+    if (tagStr.includes('react')) return CARD_LANG_THEMES.react;
+    if (tagStr.includes('node')) return CARD_LANG_THEMES.node;
+    if (tagStr.includes('python')) return CARD_LANG_THEMES.python;
+    if (tagStr.includes('html')) return CARD_LANG_THEMES.html;
+    if (tagStr.includes('css')) return CARD_LANG_THEMES.css;
+    if (tagStr.includes('java') && !tagStr.includes('javascript')) return CARD_LANG_THEMES.java;
+    if (tagStr.includes('sql') || tagStr.includes('mysql')) return CARD_LANG_THEMES.sql;
+    if (tagStr.includes('aws')) return CARD_LANG_THEMES.aws;
+    if (tagStr.includes('docker')) return CARD_LANG_THEMES.docker;
+    if (tagStr.includes('flutter')) return CARD_LANG_THEMES.flutter;
+    if (tagStr.includes('kotlin')) return CARD_LANG_THEMES.kotlin;
+    if (tagStr.includes('swift')) return CARD_LANG_THEMES.swift;
+    if (tagStr.includes('rust')) return CARD_LANG_THEMES.rust;
+    if (tagStr.includes('go')) return CARD_LANG_THEMES.go;
+    if (tagStr.includes('git')) return CARD_LANG_THEMES.git;
+  }
   return CARD_LANG_THEMES.default;
 };
 
@@ -63,6 +88,9 @@ const WorkspaceCard = ({
   title,
   description,
   tag,
+  technology,
+  technologySlug,
+  technologyId,
   progress = 0,
   streak = 0,
   isPublic = false,
@@ -86,7 +114,7 @@ const WorkspaceCard = ({
   };
 
   const theme = getThemeColor();
-  const lang = detectCardTheme(title, tag);
+  const lang = detectCardTheme(technology, technologySlug, technologyId, tag);
   const iconUrl = lang.iconSlug
     ? `https://cdn.simpleicons.org/${lang.iconSlug}/${lang.iconColor}`
     : null;

@@ -12,6 +12,8 @@ import { WorkspacesSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { generateRoadmapFromGemini } from '../utils/gemini';
 
+import Toast from '../components/Toast';
+
 // Import local JSON datasets
 import roadmapsData from '../data/roadmaps.json';
 import technologies from '../data/technologies.json';
@@ -52,6 +54,11 @@ const Workspaces = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -65,6 +72,7 @@ const Workspaces = () => {
 
   // Shared Workspace viewer states
   const [isJoinSharedModalOpen, setIsJoinSharedModalOpen] = useState(false);
+  const [isCopyConfirmModalOpen, setIsCopyConfirmModalOpen] = useState(false);
   const [shareIdInput, setShareIdInput] = useState('');
   const [sharePinInput, setSharePinInput] = useState('');
   const [showJoinPassword, setShowJoinPassword] = useState(false);
@@ -78,6 +86,7 @@ const Workspaces = () => {
 
   const resetJoinSharedModal = () => {
     setIsJoinSharedModalOpen(false);
+    setIsCopyConfirmModalOpen(false);
     setShareIdInput('');
     setSharePinInput('');
     setShowJoinPassword(false);
@@ -103,8 +112,9 @@ const Workspaces = () => {
       const data = await verifySharedWorkspace(shareIdInput.trim(), sharePinInput.trim());
       setSharedWorkspaceData(data);
       // Pre-select all tracks by default
-      if (data.tracks && data.tracks.length > 0) {
-        setSelectedTracksToCopy(data.tracks.map(t => t.id));
+      const tracksList = data.tracks || data.roadmaps || [];
+      if (tracksList && tracksList.length > 0) {
+        setSelectedTracksToCopy(tracksList.map(t => t.id || t.title));
       }
       setSharedViewStep('view');
     } catch (err) {
@@ -118,7 +128,7 @@ const Workspaces = () => {
   const handleCopySharedTracks = async (e) => {
     if (e) e.preventDefault();
     if (selectedTracksToCopy.length === 0) {
-      alert('Please select at least one track to copy.');
+      showToast('Please select at least one track to copy.', 'error');
       return;
     }
 
@@ -127,12 +137,13 @@ const Workspaces = () => {
     try {
       if (targetWsId === 'new') {
         if (!newWorkspaceNameToCopy.trim()) {
-          alert('Please enter a name for the new workspace.');
+          showToast('Please enter a name for the new workspace.', 'error');
           return;
         }
         // Create new workspace first
         const newWsId = `ws-${Date.now()}-${Math.round(Math.random() * 100000)}`;
-        await addWorkspace(newWsId, {
+        await addWorkspace({
+          id: newWsId,
           title: newWorkspaceNameToCopy.trim(),
           description: `Copied tracks from shared workspace "${sharedWorkspaceData.title}"`,
           category: 'Learning',
@@ -144,26 +155,35 @@ const Workspaces = () => {
       // Now copy tracks
       const targetWorkspace = (workspaces || []).find(w => w.id === targetWsId);
       if (!targetWorkspace) {
-        alert('Target workspace not found.');
+        showToast('Target workspace not found.', 'error');
         return;
       }
 
-      // Recreate selected tracks
-      const tracksToCopyObj = sharedWorkspaceData.tracks.filter(t => selectedTracksToCopy.includes(t.id));
-      
+      const sourceTracks = sharedWorkspaceData.tracks || sharedWorkspaceData.roadmaps || [];
+      const tracksToCopyObj = sourceTracks.filter(t => selectedTracksToCopy.includes(t.id || t.title));
+
       const newRoadmaps = [
         ...(targetWorkspace.roadmaps || []),
-        ...tracksToCopyObj.map(track => ({
-          id: `rm-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+        ...tracksToCopyObj.map((track, trackIdx) => ({
+          id: `rm-${Date.now()}-${trackIdx}-${Math.round(Math.random() * 100000)}`,
           title: track.title,
-          topics: (track.topics || []).map(t => ({
-            id: `topic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+          description: track.description || '',
+          icon: track.icon || '',
+          topics: (track.topics || []).map((t, topicIdx) => ({
+            id: `topic-${Date.now()}-${trackIdx}-${topicIdx}-${Math.round(Math.random() * 100000)}`,
             title: t.title,
             expanded: false,
-            subtopics: (t.subtopics || []).map(st => ({
-              id: `subtopic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
+            icon: t.icon || '',
+            subtopics: (t.subtopics || []).map((st, subIdx) => ({
+              id: `subtopic-${Date.now()}-${trackIdx}-${topicIdx}-${subIdx}-${Math.round(Math.random() * 100000)}`,
               title: st.title,
               done: false
+            })),
+            resources: (t.resources || []).map((r, rIdx) => ({
+              id: `res-${Date.now()}-${rIdx}-${Math.round(Math.random() * 100000)}`,
+              title: r.title || 'Resource',
+              link: r.link || r.url || '',
+              category: r.category || r.type || 'Other'
             }))
           }))
         }))
@@ -172,8 +192,7 @@ const Workspaces = () => {
       // Update workspace roadmaps
       const { doc, db, updateDoc } = await import('firebase/firestore');
       const wsRef = doc(db, 'workspaces', targetWsId);
-      
-      // Calculate overall progress index of new roadmaps array
+
       let totalSub = 0;
       let completedSub = 0;
       newRoadmaps.forEach(rm => {
@@ -191,56 +210,105 @@ const Workspaces = () => {
         progress: newProg
       });
 
-      alert('🎉 Selected tracks successfully copied to your workspace!');
+      showToast('✓ Selected tracks successfully copied to your workspace!');
       resetJoinSharedModal();
     } catch (err) {
       console.error(err);
-      alert('Error copying tracks: ' + err.message);
+      showToast('Error copying tracks: ' + err.message, 'error');
     }
   };
 
-  const handleCopyWorkspaceDirect = async () => {
+  const handleOpenCopyConfirmModal = () => {
     if (!sharedWorkspaceData) return;
-    if (window.confirm("Copy this workspace?\n\nCreate your own editable copy of this workspace and its tracks.")) {
-      try {
-        const newWsId = `ws-${Date.now()}-${Math.round(Math.random() * 100000)}`;
-        
-        // Recreate all tracks
-        const newRoadmaps = (sharedWorkspaceData.tracks || []).map(track => ({
-          id: `rm-${Date.now()}-${Math.round(Math.random() * 100000)}`,
-          title: track.title,
-          topics: (track.topics || []).map(t => ({
-            id: `topic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
-            title: t.title,
-            expanded: false,
-            subtopics: (t.subtopics || []).map(st => ({
-              id: `subtopic-${Date.now()}-${Math.round(Math.random() * 100000)}`,
-              title: st.title,
-              done: false
-            }))
+    setIsCopyConfirmModalOpen(true);
+  };
+
+  const handleExecuteCopyWorkspace = async () => {
+    if (!sharedWorkspaceData) return;
+    setIsCopyConfirmModalOpen(false);
+    setIsSharedWorkspaceLoading(true);
+
+    try {
+      const sourceTracks = sharedWorkspaceData.tracks || sharedWorkspaceData.roadmaps || [];
+
+      // Deep clone all tracks, topics, subtopics, and resources
+      const clonedRoadmaps = sourceTracks.map((track, trackIdx) => ({
+        id: `rm-${Date.now()}-${trackIdx}-${Math.round(Math.random() * 100000)}`,
+        title: track.title || `Track ${trackIdx + 1}`,
+        description: track.description || '',
+        icon: track.icon || '',
+        topics: (track.topics || []).map((t, topicIdx) => ({
+          id: `topic-${Date.now()}-${trackIdx}-${topicIdx}-${Math.round(Math.random() * 100000)}`,
+          title: t.title || `Topic ${topicIdx + 1}`,
+          expanded: false,
+          icon: t.icon || '',
+          subtopics: (t.subtopics || []).map((st, subIdx) => ({
+            id: `subtopic-${Date.now()}-${trackIdx}-${topicIdx}-${subIdx}-${Math.round(Math.random() * 100000)}`,
+            title: st.title || `Task ${subIdx + 1}`,
+            done: false
+          })),
+          resources: (t.resources || []).map((r, rIdx) => ({
+            id: `res-${Date.now()}-${rIdx}-${Math.round(Math.random() * 100000)}`,
+            title: r.title || 'Resource',
+            link: r.link || r.url || '',
+            category: r.category || r.type || 'Other'
           }))
-        }));
+        })),
+        resources: (track.resources || []).map((r, rIdx) => ({
+          id: `res-${Date.now()}-${rIdx}-${Math.round(Math.random() * 100000)}`,
+          title: r.title || 'Resource',
+          link: r.link || r.url || '',
+          category: r.category || r.type || 'Other'
+        }))
+      }));
 
-        await addWorkspace(newWsId, {
-          title: `${sharedWorkspaceData.title} (Copy)`,
-          description: sharedWorkspaceData.description || `Copied from shared workspace of @${sharedWorkspaceData.ownerUsername}`,
-          category: 'Learning',
-          roadmaps: newRoadmaps
-        });
-
-        alert("🎉 Workspace successfully copied to your workspaces!");
-        resetJoinSharedModal();
-      } catch (err) {
-        console.error(err);
-        alert("Failed to copy workspace: " + err.message);
+      // Validation: verify tracks were cloned if source had tracks
+      if (sourceTracks.length > 0 && clonedRoadmaps.length === 0) {
+        throw new Error("Cloning failed: tracks could not be cloned.");
       }
+
+      const newWsId = `ws-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+      const newWsObj = {
+        id: newWsId,
+        title: `${sharedWorkspaceData.title} (Copy)`,
+        description: sharedWorkspaceData.description || `Copied from shared workspace of @${sharedWorkspaceData.ownerUsername || 'user'}`,
+        category: sharedWorkspaceData.category || 'Learning',
+        tag: sharedWorkspaceData.tag || '',
+        technology: sharedWorkspaceData.technology || '',
+        technologySlug: sharedWorkspaceData.technologySlug || '',
+        technologyId: sharedWorkspaceData.technologyId || '',
+        icon: sharedWorkspaceData.icon || 'folder',
+        colorTheme: sharedWorkspaceData.colorTheme || 'primary',
+        bannerImage: sharedWorkspaceData.bannerImage || '',
+        roadmaps: clonedRoadmaps,
+        resources: (sharedWorkspaceData.resources || []).map((r, rIdx) => ({
+          id: `res-${Date.now()}-${rIdx}-${Math.round(Math.random() * 100000)}`,
+          title: r.title || 'Resource',
+          link: r.link || r.url || '',
+          category: r.category || r.type || 'Other'
+        })),
+        progress: 0
+      };
+
+      await addWorkspace(newWsObj);
+
+      resetJoinSharedModal();
+      showToast("✓ Workspace copied successfully!");
+    } catch (err) {
+      console.error(err);
+      showToast("Unable to copy workspace. Please try again.", "error");
+    } finally {
+      setIsSharedWorkspaceLoading(false);
     }
   };
 
   const handleRequestCollabDirect = async () => {
     if (!sharedWorkspaceData) return;
-    if (window.confirm(`Request to collaborate with @${sharedWorkspaceData.ownerUsername || 'owner'}?`)) {
-      await requestCollaboration(sharedWorkspaceData.workspaceId, sharedWorkspaceData.ownerId);
+    try {
+      const res = await requestCollaboration(sharedWorkspaceData.workspaceId, sharedWorkspaceData.ownerId);
+      showToast("✓ Collaboration request sent to owner!");
+    } catch (err) {
+      showToast(err.message || "Failed to send collaboration request.", "error");
     }
   };
 
@@ -934,15 +1002,17 @@ const Workspaces = () => {
                 <span className="hidden md:inline">Add Workspace</span>
               </button>
               
-              {/* TWO-OPTION PANEL/POPOVER (Desktop version) */}
+              {/* TWO-OPTION PANEL/POPOVER (Opens UPWARD above button) */}
               {isAddMenuOpen && (
                 <>
                   {/* Backdrop for outside click closing */}
                   <div 
-                    className="fixed inset-0 z-45 bg-transparent" 
+                    className="fixed inset-0 z-[90] bg-transparent" 
                     onClick={() => setIsAddMenuOpen(false)}
                   />
-                  <div className="hidden md:block absolute right-0 top-12 w-72 bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] z-50 p-4 space-y-3 add-workspace-popover text-left">
+                  <div 
+                    className="absolute right-0 bottom-full mb-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65),0_0_20px_rgba(139,92,246,0.15)] z-[100] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
+                  >
                     <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none">
                       Add Workspace
                     </div>
@@ -953,7 +1023,7 @@ const Workspaces = () => {
                         setIsAddMenuOpen(false);
                         setIsModalOpen(true);
                       }}
-                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/45 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/12 hover:border-[#8B5CF6]/45 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
                     >
                       <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover/opt:scale-105 group-hover/opt:border-primary transition-all shrink-0">
                         <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
@@ -964,7 +1034,7 @@ const Workspaces = () => {
                       </div>
                     </button>
                     
-                    {/* Option 2: Join / View Shared */}
+                    {/* Option 2: Join / View Workspace */}
                     <button
                       onClick={() => {
                         setIsAddMenuOpen(false);
@@ -976,75 +1046,12 @@ const Workspaces = () => {
                         <span className="material-symbols-outlined text-[18px]">hub</span>
                       </div>
                       <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-[#8B5CF6] transition-colors">Join / View Shared</div>
-                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Open a workspace shared with you</div>
+                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-[#8B5CF6] transition-colors">Join / View Workspace</div>
+                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Join or view a shared workspace</div>
                       </div>
                     </button>
                   </div>
                 </>
-              )}
-
-              {/* Bottom Sheet for Mobile */}
-              {isAddMenuOpen && (
-                <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center">
-                  {/* Backdrop */}
-                  <div 
-                    className="fixed inset-0 bg-[#0D0D14]/75 backdrop-blur-sm transition-opacity duration-300"
-                    onClick={() => setIsAddMenuOpen(false)}
-                  />
-                  
-                  {/* Content Container (Bottom Sheet) */}
-                  <div className="relative w-full max-w-md bg-[#111118] border-t border-white/10 rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] space-y-4 shadow-2xl z-50 transform translate-y-0 transition-transform duration-300 add-workspace-bottom-sheet text-left">
-                    {/* Pull Bar */}
-                    <div className="w-12 h-1 bg-white/15 rounded-full mx-auto mb-2" />
-                    
-                    <div className="text-xs uppercase tracking-widest font-black text-on-surface-variant text-center pb-2 border-b border-white/5 select-none">
-                      Add Workspace
-                    </div>
-                    
-                    {/* Option 1: Create Workspace */}
-                    <button
-                      onClick={() => {
-                        setIsAddMenuOpen(false);
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full text-left p-4 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 transition-all flex items-start gap-4 cursor-pointer text-white border-0 bg-transparent"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">create_new_folder</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-wider text-white">Create Workspace</div>
-                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Start something new</div>
-                      </div>
-                    </button>
-                    
-                    {/* Option 2: Join / View Shared */}
-                    <button
-                      onClick={() => {
-                        setIsAddMenuOpen(false);
-                        setIsJoinSharedModalOpen(true);
-                      }}
-                      className="w-full text-left p-4 rounded-xl border border-white/5 bg-[#0D0D14]/40 hover:bg-white/[0.04] transition-all flex items-start gap-4 cursor-pointer text-white border-0 bg-transparent"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">hub</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-wider text-white">Join / View Shared</div>
-                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Enter shared credentials</div>
-                      </div>
-                    </button>
-                    
-                    {/* Cancel Button */}
-                    <button
-                      onClick={() => setIsAddMenuOpen(false)}
-                      className="w-full py-3 rounded-xl bg-white/5 border border-white/5 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-white transition-colors cursor-pointer text-center"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
           </div>
@@ -1102,6 +1109,9 @@ const Workspaces = () => {
                     title={ws.title}
                     description={ws.description}
                     tag={ws.tag}
+                    technology={ws.technology}
+                    technologySlug={ws.technologySlug}
+                    technologyId={ws.technologyId}
                     progress={ws.progress}
                     streak={ws.streak}
                     isPublic={ws.isPublic}
@@ -1145,6 +1155,9 @@ const Workspaces = () => {
                           title={ws.title}
                           description={ws.description}
                           tag={ws.tag}
+                          technology={ws.technology}
+                          technologySlug={ws.technologySlug}
+                          technologyId={ws.technologyId}
                           progress={ws.progress}
                           streak={ws.streak}
                           isPublic={ws.isPublic}
@@ -2044,7 +2057,7 @@ const Workspaces = () => {
                 <Button variant="secondary" onClick={handleRequestCollabDirect} icon="groups">
                   Collaborate
                 </Button>
-                <Button variant="primary" onClick={handleCopyWorkspaceDirect} icon="content_copy">
+                <Button variant="primary" onClick={handleOpenCopyConfirmModal} icon="content_copy">
                   Copy Workspace
                 </Button>
               </div>
@@ -2090,15 +2103,15 @@ const Workspaces = () => {
               <label className="block text-[9px] uppercase font-bold text-on-surface-variant tracking-wider">Select Tracks to Copy:</label>
               <div className="space-y-2.5 max-h-[180px] overflow-y-auto pr-1 no-scrollbar">
                 {sharedWorkspaceData.tracks && sharedWorkspaceData.tracks.map((track) => {
-                  const isChecked = selectedTracksToCopy.includes(track.id);
+                  const isChecked = selectedTracksToCopy.includes(track.id || track.title);
                   return (
                     <div
-                      key={track.id}
+                      key={track.id || track.title}
                       onClick={() => {
                         if (isChecked) {
-                          setSelectedTracksToCopy(selectedTracksToCopy.filter(id => id !== track.id));
+                          setSelectedTracksToCopy(selectedTracksToCopy.filter(id => id !== (track.id || track.title)));
                         } else {
-                          setSelectedTracksToCopy([...selectedTracksToCopy, track.id]);
+                          setSelectedTracksToCopy([...selectedTracksToCopy, track.id || track.title]);
                         }
                       }}
                       className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
@@ -2130,6 +2143,60 @@ const Workspaces = () => {
           </form>
         )}
       </Modal>
+
+      {/* Custom MasterOS Copy Confirmation Modal */}
+      <Modal
+        isOpen={isCopyConfirmModalOpen}
+        onClose={() => setIsCopyConfirmModalOpen(false)}
+        title="Copy Workspace"
+      >
+        <div className="space-y-5 text-left">
+          <div className="flex items-center gap-3.5 p-3.5 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 rounded-xl text-white">
+            <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 flex items-center justify-center text-[#A78BFA] shrink-0">
+              <span className="material-symbols-outlined text-xl">content_copy</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold truncate text-white">{sharedWorkspaceData?.title}</div>
+              <div className="text-[10px] text-on-surface-variant font-medium">Shared Workspace by @{sharedWorkspaceData?.ownerUsername || 'owner'}</div>
+            </div>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Create your own editable copy of this workspace and its complete roadmap tracks.
+          </p>
+
+          <div className="p-3.5 bg-[#0D0D14] border border-white/5 rounded-xl space-y-1.5">
+            <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-xs text-primary">info</span>
+              Fresh Progress Notice
+            </div>
+            <p className="text-[10px] text-on-surface-variant/80 leading-normal">
+              Your progress will start from 0%. Your own progress, streaks, and activity history will not be copied from the shared owner.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setIsCopyConfirmModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              icon="content_copy"
+              onClick={handleExecuteCopyWorkspace}
+              disabled={isSharedWorkspaceLoading}
+            >
+              {isSharedWorkspaceLoading ? 'Copying...' : 'Copy Workspace'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Non-blocking MasterOS Toast System */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ message: '', type: 'success' })}
+      />
     </div>
   );
 };

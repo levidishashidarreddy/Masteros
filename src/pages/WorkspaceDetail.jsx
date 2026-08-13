@@ -10,6 +10,8 @@ import { TaskContext } from '../context/TaskContext';
 import { WorkspaceDetailSkeleton } from '../components/Skeleton';
 import ErrorState from '../components/ErrorState';
 
+import Toast from '../components/Toast';
+
 import { AvatarImg, getAvatar } from '../components/Avatar';
 
 // ─── Language Visual Identity System ────────────────────────────────────────
@@ -38,26 +40,48 @@ const LANG_THEMES = {
 
 const detectLangTheme = (ws) => {
   if (!ws) return LANG_THEMES.default;
-  const txt = `${ws.title || ''} ${ws.category || ''} ${ws.tag || ''}`.toLowerCase();
-  if (txt.includes('c++') || txt.includes('cpp'))                         return LANG_THEMES.cpp;
-  if (txt.includes('typescript') || /\bts\b/.test(txt))                   return LANG_THEMES.typescript;
-  if (txt.includes('javascript') || /\bjs\b/.test(txt))                   return LANG_THEMES.javascript;
-  if (txt.includes('react'))                                               return LANG_THEMES.react;
-  if (txt.includes('node'))                                                return LANG_THEMES.node;
-  if (txt.includes('python'))                                              return LANG_THEMES.python;
-  if (txt.includes('html'))                                                return LANG_THEMES.html;
-  if (txt.includes('css') && !txt.includes('success'))                    return LANG_THEMES.css;
-  if (txt.includes('java') && !txt.includes('javascript'))                 return LANG_THEMES.java;
-  if (txt.includes('sql') || txt.includes('mysql') || txt.includes('postgres') || txt.includes('database')) return LANG_THEMES.sql;
-  if (txt.includes('aws') || txt.includes('amazon web'))                  return LANG_THEMES.aws;
-  if (txt.includes('docker') || txt.includes('container'))                return LANG_THEMES.docker;
-  if (txt.includes('flutter'))                                             return LANG_THEMES.flutter;
-  if (txt.includes('kotlin'))                                              return LANG_THEMES.kotlin;
-  if (txt.includes('swift'))                                               return LANG_THEMES.swift;
-  if (txt.includes('rust'))                                                return LANG_THEMES.rust;
-  if (txt.includes('golang') || /\bgo\b/.test(txt))                       return LANG_THEMES.go;
-  if (txt.includes('git'))                                                 return LANG_THEMES.git;
-  if (/\bc\b/.test(txt) || txt.includes('c language'))                    return LANG_THEMES.c;
+  const target = (ws.technology || ws.technologySlug || ws.technologyId || '').toLowerCase().trim();
+  if (target) {
+    if (target.includes('c++') || target === 'cpp' || target === 'cplusplus') return LANG_THEMES.cpp;
+    if (target === 'c' || target === 'c language') return LANG_THEMES.c;
+    if (target.includes('python')) return LANG_THEMES.python;
+    if (target.includes('java') && !target.includes('javascript')) return LANG_THEMES.java;
+    if (target.includes('javascript') || target === 'js') return LANG_THEMES.javascript;
+    if (target.includes('typescript') || target === 'ts') return LANG_THEMES.typescript;
+    if (target.includes('react')) return LANG_THEMES.react;
+    if (target.includes('node')) return LANG_THEMES.node;
+    if (target.includes('html')) return LANG_THEMES.html;
+    if (target.includes('css')) return LANG_THEMES.css;
+    if (target.includes('sql') || target.includes('mysql') || target.includes('postgres') || target.includes('database')) return LANG_THEMES.sql;
+    if (target.includes('aws') || target.includes('amazon')) return LANG_THEMES.aws;
+    if (target.includes('docker')) return LANG_THEMES.docker;
+    if (target.includes('git')) return LANG_THEMES.git;
+    if (target.includes('flutter')) return LANG_THEMES.flutter;
+    if (target.includes('kotlin')) return LANG_THEMES.kotlin;
+    if (target.includes('swift')) return LANG_THEMES.swift;
+    if (target.includes('rust')) return LANG_THEMES.rust;
+    if (target.includes('go') || target.includes('golang')) return LANG_THEMES.go;
+  }
+  const tagStr = `${ws.category || ''} ${ws.tag || ''}`.toLowerCase();
+  if (tagStr.includes('c++') || tagStr.includes('cpp')) return LANG_THEMES.cpp;
+  if (tagStr.includes('typescript') || /\bts\b/.test(tagStr)) return LANG_THEMES.typescript;
+  if (tagStr.includes('javascript') || /\bjs\b/.test(tagStr)) return LANG_THEMES.javascript;
+  if (tagStr.includes('react')) return LANG_THEMES.react;
+  if (tagStr.includes('node')) return LANG_THEMES.node;
+  if (tagStr.includes('python')) return LANG_THEMES.python;
+  if (tagStr.includes('html')) return LANG_THEMES.html;
+  if (tagStr.includes('css')) return LANG_THEMES.css;
+  if (tagStr.includes('java') && !tagStr.includes('javascript')) return LANG_THEMES.java;
+  if (tagStr.includes('sql') || tagStr.includes('mysql')) return LANG_THEMES.sql;
+  if (tagStr.includes('aws')) return LANG_THEMES.aws;
+  if (tagStr.includes('docker')) return LANG_THEMES.docker;
+  if (tagStr.includes('flutter')) return LANG_THEMES.flutter;
+  if (tagStr.includes('kotlin')) return LANG_THEMES.kotlin;
+  if (tagStr.includes('swift')) return LANG_THEMES.swift;
+  if (tagStr.includes('rust')) return LANG_THEMES.rust;
+  if (tagStr.includes('go')) return LANG_THEMES.go;
+  if (tagStr.includes('git')) return LANG_THEMES.git;
+  if (/\bc\b/.test(tagStr) || tagStr.includes('c language')) return LANG_THEMES.c;
   return LANG_THEMES.default;
 };
 
@@ -282,6 +306,11 @@ const WorkspaceDetail = () => {
   // Sharing PIN visibility state
   const [showPin, setShowPin] = useState(false);
   const [activeTopicMenu, setActiveTopicMenu] = useState(null);
+  const [toast, setToast] = useState({ message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   if (!ws) {
     return (
@@ -361,9 +390,27 @@ const WorkspaceDetail = () => {
     updateWorkspace(id, { roadmaps: updatedRoadmaps });
   };
 
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-    alert(`📋 ${label} copied to clipboard!`);
+  const copyToClipboard = async (text, label) => {
+    if (!text) {
+      showToast("Nothing to copy.", "error");
+      return;
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      showToast(`✓ ${label} copied`);
+    } catch (err) {
+      console.error(err);
+      showToast("Could not copy. Tap and hold to copy manually.", "error");
+    }
   };
 
   const handleToggleSharing = async () => {
@@ -376,24 +423,25 @@ const WorkspaceDetail = () => {
         shareId,
         sharePassword
       });
+      showToast("✓ Workspace sharing enabled");
     } else {
       await updateWorkspace(ws.id, {
         isShared: false
       });
+      showToast("Workspace sharing disabled", "info");
     }
   };
 
   const handleRegenerateShareId = async () => {
     const shareId = 'MOS-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     await updateWorkspace(ws.id, { shareId });
+    showToast("✓ New Workspace ID generated");
   };
 
   const handleRegeneratePassword = async () => {
-    if (window.confirm("Regenerate workspace password?\n\nThis will invalidate the current sharing password.")) {
-      const sharePassword = Math.random().toString(36).substring(2, 10).toUpperCase();
-      await updateWorkspace(ws.id, { sharePassword });
-      alert(`🔑 New Workspace Password generated: ${sharePassword}`);
-    }
+    const sharePassword = Math.random().toString(36).substring(2, 10).toUpperCase();
+    await updateWorkspace(ws.id, { sharePassword });
+    showToast("✓ New password generated");
   };
 
   const handleAddTopicSubmit = (e) => {
@@ -2041,6 +2089,13 @@ const WorkspaceDetail = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Non-blocking MasterOS Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ message: '', type: 'success' })}
+      />
     </div>
   );
 };

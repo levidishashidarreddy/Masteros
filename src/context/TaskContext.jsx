@@ -1777,15 +1777,30 @@ export const TaskProvider = ({ children }) => {
   };
 
   // ================= WORKSPACE CRUD OPERATIONS =================
-  const addWorkspace = async (workspace) => {
+  const addWorkspace = async (arg1, arg2) => {
     if (!currentUser || !userProfile) return;
-    const wsId = workspace.id || `ws-${Date.now()}`;
+    let workspace = arg1;
+    let wsId;
+
+    if (typeof arg1 === 'string' && typeof arg2 === 'object' && arg2 !== null) {
+      wsId = arg1;
+      workspace = arg2;
+    } else if (typeof arg1 === 'object' && arg1 !== null) {
+      wsId = arg1.id || `ws-${Date.now()}`;
+      workspace = arg1;
+    } else {
+      return;
+    }
+
     const newWorkspace = {
       ownerId: currentUser.uid,
       title: workspace.title || '',
       description: workspace.description || '',
       tag: workspace.tag || '',
-      progress: 0,
+      technology: workspace.technology || '',
+      technologySlug: workspace.technologySlug || '',
+      technologyId: workspace.technologyId || '',
+      progress: workspace.progress || 0,
       streak: 0,
       isPublic: workspace.isPublic || false,
       icon: workspace.icon || 'folder',
@@ -1812,30 +1827,8 @@ export const TaskProvider = ({ children }) => {
       try {
         const sharedRef = doc(db, 'sharedWorkspaces', wsData.shareId);
         
-        // Calculate track-level progress and construct track objects (roadmaps)
-        const tracks = (wsData.roadmaps || []).map(rm => {
-          let totalSt = 0;
-          let completedSt = 0;
-          (rm.topics || []).forEach(t => {
-            (t.subtopics || []).forEach(st => {
-              totalSt++;
-              if (st.done) completedSt++;
-            });
-          });
-          const prog = totalSt > 0 ? Math.round((completedSt / totalSt) * 100) : 0;
-          
-          return {
-            id: rm.id,
-            title: rm.title,
-            progress: prog,
-            topics: (rm.topics || []).map(t => ({
-              title: t.title,
-              subtopics: (t.subtopics || []).map(st => ({
-                title: st.title
-              }))
-            }))
-          };
-        });
+        // Preserve full roadmap track structure including topics, subtopics, resources and metadata
+        const fullRoadmaps = wsData.roadmaps || [];
 
         await setDoc(sharedRef, {
           workspaceId: wsId,
@@ -1844,9 +1837,19 @@ export const TaskProvider = ({ children }) => {
           ownerUsername: userProfile?.username || '',
           title: wsData.title,
           description: wsData.description || '',
+          category: wsData.category || 'Learning',
+          tag: wsData.tag || '',
+          technology: wsData.technology || '',
+          technologySlug: wsData.technologySlug || '',
+          technologyId: wsData.technologyId || '',
+          icon: wsData.icon || 'folder',
+          colorTheme: wsData.colorTheme || 'primary',
+          bannerImage: wsData.bannerImage || '',
           progress: wsData.progress || 0,
           password: wsData.sharePassword || wsData.sharePin || '',
-          tracks: tracks
+          tracks: fullRoadmaps,
+          roadmaps: fullRoadmaps,
+          resources: wsData.resources || []
         });
       } catch (err) {
         console.error("Error syncing shared workspace snapshot:", err);
@@ -1864,7 +1867,12 @@ export const TaskProvider = ({ children }) => {
     if (snap.empty) {
       throw new Error("Invalid Share ID or Password.");
     }
-    return { id: snap.docs[0].id, ...snap.docs[0].data() };
+    const data = snap.docs[0].data();
+    return {
+      id: snap.docs[0].id,
+      ...data,
+      tracks: data.tracks || data.roadmaps || []
+    };
   };
 
   const requestCollaboration = async (workspaceId, ownerId) => {
@@ -1890,10 +1898,10 @@ export const TaskProvider = ({ children }) => {
           requesterUserId: userProfile.userId // store requester's username/ID
         }
       });
-      alert('✉️ Collaboration request sent to the workspace owner!');
+      return { success: true, message: 'Collaboration request sent to the workspace owner.' };
     } catch (err) {
       console.error("Error requesting collaboration:", err);
-      alert('Failed to send request: ' + err.message);
+      throw new Error('Failed to send request: ' + err.message);
     }
   };
 
