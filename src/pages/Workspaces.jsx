@@ -874,7 +874,9 @@ const Workspaces = () => {
 
       const tag = filteredRoadmaps.map(r => r.title.slice(0, 4).toUpperCase()).join(' · ');
 
-      const aiTech = aiSubject || (filteredRoadmaps[0] ? filteredRoadmaps[0].title : newTitle);
+      const rawText = `${aiSubject} ${newTitle} ${newDesc} ${filteredRoadmaps.map(r => r.title).join(' ')}`;
+      const extractedTech = extractTechnology(rawText);
+      const aiTech = extractedTech || aiSubject || (filteredRoadmaps[0] ? filteredRoadmaps[0].title : newTitle);
       const aiTechSlug = aiTech.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       const wsId = `ws-${Date.now()}`;
@@ -883,7 +885,7 @@ const Workspaces = () => {
         title: newTitle,
         description: newDesc,
         category: newCategory,
-        tag: tag || 'AI',
+        tag: extractedTech ? extractedTech.toUpperCase() : (tag || 'AI'),
         technology: aiTech,
         technologySlug: aiTechSlug,
         technologyId: aiTechSlug,
@@ -935,14 +937,16 @@ const Workspaces = () => {
         .join(' · ');
 
       const primaryRoadmap = activeRoadmaps[0];
-      const techName = primaryRoadmap ? primaryRoadmap.title : newTitle;
+      const rawText = `${primaryRoadmap ? primaryRoadmap.title : ''} ${newTitle} ${newDesc}`;
+      const extractedTech = extractTechnology(rawText);
+      const techName = extractedTech || (primaryRoadmap ? primaryRoadmap.title : newTitle);
       const techSlug = techName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       const newWs = {
         title: newTitle,
         description: newDesc,
         category: newCategory,
-        tag: tag,
+        tag: extractedTech ? extractedTech.toUpperCase() : tag,
         technology: techName,
         technologySlug: techSlug,
         technologyId: techSlug,

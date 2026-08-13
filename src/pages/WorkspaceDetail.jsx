@@ -55,6 +55,7 @@ const LANG_THEMES = {
 
 const detectLangTheme = (ws) => {
   if (!ws) return LANG_THEMES.default;
+  // Step 1: Explicit technology property FIRST
   const target = (ws.technology || ws.technologySlug || ws.technologyId || '').toLowerCase().trim();
   if (target) {
     if (target.includes('c++') || target === 'cpp' || target === 'cplusplus') return LANG_THEMES.cpp;
@@ -92,6 +93,43 @@ const detectLangTheme = (ws) => {
     if (target.includes('linux')) return LANG_THEMES.linux;
     if (target.includes('java') && !target.includes('javascript')) return LANG_THEMES.java;
   }
+
+  // Step 2: Check Title & Description for language keywords
+  const titleDescStr = `${ws.title || ''} ${ws.description || ''}`.toLowerCase();
+  if (titleDescStr) {
+    if (titleDescStr.includes('c++') || titleDescStr.includes('cpp')) return LANG_THEMES.cpp;
+    if (titleDescStr.includes('c#') || titleDescStr.includes('csharp')) return LANG_THEMES.csharp;
+    if (titleDescStr.includes('javascript') || /\bjs\b/.test(titleDescStr)) return LANG_THEMES.javascript;
+    if (titleDescStr.includes('typescript') || /\bts\b/.test(titleDescStr)) return LANG_THEMES.typescript;
+    if (titleDescStr.includes('python')) return LANG_THEMES.python;
+    if (titleDescStr.includes('react')) return LANG_THEMES.react;
+    if (titleDescStr.includes('node')) return LANG_THEMES.node;
+    if (titleDescStr.includes('next')) return LANG_THEMES.nextjs;
+    if (titleDescStr.includes('vue')) return LANG_THEMES.vue;
+    if (titleDescStr.includes('angular')) return LANG_THEMES.angular;
+    if (titleDescStr.includes('django')) return LANG_THEMES.django;
+    if (titleDescStr.includes('spring')) return LANG_THEMES.spring_boot;
+    if (titleDescStr.includes('docker')) return LANG_THEMES.docker;
+    if (titleDescStr.includes('kubernetes')) return LANG_THEMES.kubernetes;
+    if (titleDescStr.includes('aws')) return LANG_THEMES.aws;
+    if (titleDescStr.includes('flutter')) return LANG_THEMES.flutter;
+    if (titleDescStr.includes('sql') || titleDescStr.includes('mysql')) return LANG_THEMES.sql;
+    if (titleDescStr.includes('mongo')) return LANG_THEMES.mongodb;
+    if (titleDescStr.includes('rust')) return LANG_THEMES.rust;
+    if (titleDescStr.includes('go')) return LANG_THEMES.go;
+    if (titleDescStr.includes('php')) return LANG_THEMES.php;
+    if (titleDescStr.includes('ruby')) return LANG_THEMES.ruby;
+    if (titleDescStr.includes('kotlin')) return LANG_THEMES.kotlin;
+    if (titleDescStr.includes('swift')) return LANG_THEMES.swift;
+    if (titleDescStr.includes('dart')) return LANG_THEMES.dart;
+    if (titleDescStr.includes('html')) return LANG_THEMES.html;
+    if (titleDescStr.includes('css')) return LANG_THEMES.css;
+    if (titleDescStr.includes('git')) return LANG_THEMES.git;
+    if (titleDescStr.includes('java') && !titleDescStr.includes('javascript')) return LANG_THEMES.java;
+    if (/\bc\b/.test(titleDescStr) || titleDescStr.includes('c language')) return LANG_THEMES.c;
+  }
+
+  // Step 3: Check category, tag, roadmaps fallback
   const tagStr = `${ws.category || ''} ${ws.tag || ''} ${ws.roadmaps && ws.roadmaps[0] ? ws.roadmaps[0].title : ''}`.toLowerCase();
   if (tagStr.includes('c++') || tagStr.includes('cpp')) return LANG_THEMES.cpp;
   if (tagStr.includes('c#') || tagStr.includes('csharp')) return LANG_THEMES.csharp;
