@@ -16,26 +16,41 @@ import { AvatarImg, getAvatar } from '../components/Avatar';
 
 // ─── Language Visual Identity System ────────────────────────────────────────
 const LANG_THEMES = {
-  cpp:        { gradientFrom: '#00243A', accent: '#00C8FF', iconSlug: 'cplusplus',   iconColor: '00C8FF', label: 'C++ DEVELOPMENT' },
-  c:          { gradientFrom: '#0D1E33', accent: '#5C9CD5', iconSlug: 'c',           iconColor: '5C9CD5', label: 'C LANGUAGE' },
-  python:     { gradientFrom: '#0A1A30', accent: '#4B8BBE', iconSlug: 'python',      iconColor: '4B8BBE', label: 'PYTHON DEVELOPMENT' },
-  java:       { gradientFrom: '#1E0E00', accent: '#ED8B00', iconSlug: 'openjdk',     iconColor: 'ED8B00', label: 'JAVA DEVELOPMENT' },
-  javascript: { gradientFrom: '#141200', accent: '#F7DF1E', iconSlug: 'javascript',  iconColor: 'F7DF1E', label: 'JAVASCRIPT DEVELOPMENT' },
-  typescript: { gradientFrom: '#050F1F', accent: '#3178C6', iconSlug: 'typescript',  iconColor: '3178C6', label: 'TYPESCRIPT DEVELOPMENT' },
-  react:      { gradientFrom: '#001525', accent: '#61DAFB', iconSlug: 'react',       iconColor: '61DAFB', label: 'REACT DEVELOPMENT' },
-  node:       { gradientFrom: '#051005', accent: '#68A063', iconSlug: 'nodedotjs',   iconColor: '68A063', label: 'NODE.JS DEVELOPMENT' },
-  html:       { gradientFrom: '#1A0400', accent: '#E34F26', iconSlug: 'html5',       iconColor: 'E34F26', label: 'HTML5 DEVELOPMENT' },
-  css:        { gradientFrom: '#00031A', accent: '#264DE4', iconSlug: 'css3',        iconColor: '264DE4', label: 'CSS3 DEVELOPMENT' },
-  sql:        { gradientFrom: '#00101A', accent: '#00758F', iconSlug: 'mysql',       iconColor: '00758F', label: 'SQL / DATABASE' },
-  aws:        { gradientFrom: '#100900', accent: '#FF9900', iconSlug: 'amazonaws',   iconColor: 'FF9900', label: 'AWS CLOUD' },
-  docker:     { gradientFrom: '#000D1E', accent: '#2496ED', iconSlug: 'docker',      iconColor: '2496ED', label: 'DOCKER / CONTAINERS' },
-  git:        { gradientFrom: '#150200', accent: '#F05032', iconSlug: 'git',         iconColor: 'F05032', label: 'GIT / VERSION CONTROL' },
-  flutter:    { gradientFrom: '#001020', accent: '#54C5F8', iconSlug: 'flutter',     iconColor: '54C5F8', label: 'FLUTTER DEVELOPMENT' },
-  kotlin:     { gradientFrom: '#08001A', accent: '#7F52FF', iconSlug: 'kotlin',      iconColor: '7F52FF', label: 'KOTLIN DEVELOPMENT' },
-  swift:      { gradientFrom: '#180600', accent: '#F05138', iconSlug: 'swift',       iconColor: 'F05138', label: 'SWIFT DEVELOPMENT' },
-  rust:       { gradientFrom: '#140400', accent: '#CE422B', iconSlug: 'rust',        iconColor: 'CE422B', label: 'RUST DEVELOPMENT' },
-  go:         { gradientFrom: '#000E18', accent: '#00ACD7', iconSlug: 'go',          iconColor: '00ACD7', label: 'GO DEVELOPMENT' },
-  default:    { gradientFrom: '#0D0822', accent: '#8B5CF6', iconSlug: null,          iconColor: '8B5CF6', label: 'WORKSPACE' },
+  cpp:          { gradientFrom: '#00243A', accent: '#00C8FF', iconSlug: 'cplusplus',   iconColor: '00C8FF', label: 'C++ DEVELOPMENT' },
+  c:            { gradientFrom: '#0D1E33', accent: '#5C9CD5', iconSlug: 'c',           iconColor: '5C9CD5', label: 'C LANGUAGE' },
+  csharp:       { gradientFrom: '#150A2A', accent: '#512BD4', iconSlug: 'csharp',      iconColor: '512BD4', label: 'C# DEVELOPMENT' },
+  python:       { gradientFrom: '#0A1A30', accent: '#3776AB', iconSlug: 'python',      iconColor: '3776AB', label: 'PYTHON DEVELOPMENT' },
+  java:         { gradientFrom: '#1E0E00', accent: '#ED8B00', iconSlug: 'openjdk',     iconColor: 'ED8B00', label: 'JAVA DEVELOPMENT' },
+  javascript:   { gradientFrom: '#141200', accent: '#F7DF1E', iconSlug: 'javascript',  iconColor: 'F7DF1E', label: 'JAVASCRIPT DEVELOPMENT' },
+  typescript:   { gradientFrom: '#050F1F', accent: '#3178C6', iconSlug: 'typescript',  iconColor: '3178C6', label: 'TYPESCRIPT DEVELOPMENT' },
+  react:        { gradientFrom: '#001525', accent: '#61DAFB', iconSlug: 'react',       iconColor: '61DAFB', label: 'REACT DEVELOPMENT' },
+  react_native: { gradientFrom: '#001525', accent: '#61DAFB', iconSlug: 'react',       iconColor: '61DAFB', label: 'REACT NATIVE' },
+  node:         { gradientFrom: '#051005', accent: '#68A063', iconSlug: 'nodedotjs',   iconColor: '68A063', label: 'NODE.JS DEVELOPMENT' },
+  html:         { gradientFrom: '#1A0400', accent: '#E34F26', iconSlug: 'html5',       iconColor: 'E34F26', label: 'HTML5 DEVELOPMENT' },
+  css:          { gradientFrom: '#00031A', accent: '#264DE4', iconSlug: 'css3',        iconColor: '264DE4', label: 'CSS3 DEVELOPMENT' },
+  sql:          { gradientFrom: '#00101A', accent: '#00758F', iconSlug: 'mysql',       iconColor: '00758F', label: 'SQL / DATABASE' },
+  mongodb:      { gradientFrom: '#051508', accent: '#47A248', iconSlug: 'mongodb',     iconColor: '47A248', label: 'MONGODB DATABASE' },
+  aws:          { gradientFrom: '#100900', accent: '#FF9900', iconSlug: 'amazonaws',   iconColor: 'FF9900', label: 'AWS CLOUD' },
+  docker:       { gradientFrom: '#000D1E', accent: '#2496ED', iconSlug: 'docker',      iconColor: '2496ED', label: 'DOCKER / CONTAINERS' },
+  kubernetes:   { gradientFrom: '#04102A', accent: '#326CE5', iconSlug: 'kubernetes',  iconColor: '326CE5', label: 'KUBERNETES' },
+  git:          { gradientFrom: '#150200', accent: '#F05032', iconSlug: 'git',         iconColor: 'F05032', label: 'GIT VERSION CONTROL' },
+  flutter:      { gradientFrom: '#001020', accent: '#54C5F8', iconSlug: 'flutter',     iconColor: '54C5F8', label: 'FLUTTER DEVELOPMENT' },
+  kotlin:       { gradientFrom: '#08001A', accent: '#7F52FF', iconSlug: 'kotlin',      iconColor: '7F52FF', label: 'KOTLIN DEVELOPMENT' },
+  swift:        { gradientFrom: '#180600', accent: '#F05138', iconSlug: 'swift',       iconColor: 'F05138', label: 'SWIFT DEVELOPMENT' },
+  dart:         { gradientFrom: '#001220', accent: '#0175C2', iconSlug: 'dart',        iconColor: '0175C2', label: 'DART DEVELOPMENT' },
+  rust:         { gradientFrom: '#140400', accent: '#CE422B', iconSlug: 'rust',        iconColor: 'CE422B', label: 'RUST DEVELOPMENT' },
+  go:           { gradientFrom: '#000E18', accent: '#00ACD7', iconSlug: 'go',          iconColor: '00ACD7', label: 'GO DEVELOPMENT' },
+  angular:      { gradientFrom: '#1A0000', accent: '#DD0031', iconSlug: 'angular',     iconColor: 'DD0031', label: 'ANGULAR DEVELOPMENT' },
+  vue:          { gradientFrom: '#001A0A', accent: '#42B883', iconSlug: 'vuedotjs',    iconColor: '42B883', label: 'VUE.JS DEVELOPMENT' },
+  nextjs:       { gradientFrom: '#000000', accent: '#ffffff', iconSlug: 'nextdotjs',   iconColor: 'ffffff', label: 'NEXT.JS DEVELOPMENT' },
+  django:       { gradientFrom: '#04140D', accent: '#092E20', iconSlug: 'django',      iconColor: '44B78B', label: 'DJANGO FRAMEWORK' },
+  spring_boot:  { gradientFrom: '#0B1A0A', accent: '#6DB33F', iconSlug: 'springboot',  iconColor: '6DB33F', label: 'SPRING BOOT' },
+  php:          { gradientFrom: '#0C0E20', accent: '#777BB4', iconSlug: 'php',         iconColor: '777BB4', label: 'PHP DEVELOPMENT' },
+  ruby:         { gradientFrom: '#1A0404', accent: '#CC342D', iconSlug: 'ruby',        iconColor: 'CC342D', label: 'RUBY DEVELOPMENT' },
+  tensorflow:   { gradientFrom: '#1C0A00', accent: '#FF6F00', iconSlug: 'tensorflow',  iconColor: 'FF6F00', label: 'TENSORFLOW MACHINE LEARNING' },
+  graphql:      { gradientFrom: '#1A0020', accent: '#E10098', iconSlug: 'graphql',     iconColor: 'E10098', label: 'GRAPHQL API' },
+  linux:        { gradientFrom: '#0A0A00', accent: '#FCC624', iconSlug: 'linux',       iconColor: 'FCC624', label: 'LINUX OS' },
+  default:      { gradientFrom: '#0D0822', accent: '#8B5CF6', iconSlug: null,          iconColor: '8B5CF6', label: 'WORKSPACE' },
 };
 
 const detectLangTheme = (ws) => {
@@ -43,45 +58,70 @@ const detectLangTheme = (ws) => {
   const target = (ws.technology || ws.technologySlug || ws.technologyId || '').toLowerCase().trim();
   if (target) {
     if (target.includes('c++') || target === 'cpp' || target === 'cplusplus') return LANG_THEMES.cpp;
+    if (target.includes('c#') || target === 'csharp' || target === 'cs') return LANG_THEMES.csharp;
     if (target === 'c' || target === 'c language') return LANG_THEMES.c;
     if (target.includes('python')) return LANG_THEMES.python;
-    if (target.includes('java') && !target.includes('javascript')) return LANG_THEMES.java;
     if (target.includes('javascript') || target === 'js') return LANG_THEMES.javascript;
     if (target.includes('typescript') || target === 'ts') return LANG_THEMES.typescript;
+    if (target.includes('react native') || target === 'react_native') return LANG_THEMES.react_native;
     if (target.includes('react')) return LANG_THEMES.react;
     if (target.includes('node')) return LANG_THEMES.node;
-    if (target.includes('html')) return LANG_THEMES.html;
-    if (target.includes('css')) return LANG_THEMES.css;
-    if (target.includes('sql') || target.includes('mysql') || target.includes('postgres') || target.includes('database')) return LANG_THEMES.sql;
-    if (target.includes('aws') || target.includes('amazon')) return LANG_THEMES.aws;
+    if (target.includes('next')) return LANG_THEMES.nextjs;
+    if (target.includes('vue')) return LANG_THEMES.vue;
+    if (target.includes('angular')) return LANG_THEMES.angular;
+    if (target.includes('django')) return LANG_THEMES.django;
+    if (target.includes('spring')) return LANG_THEMES.spring_boot;
     if (target.includes('docker')) return LANG_THEMES.docker;
-    if (target.includes('git')) return LANG_THEMES.git;
+    if (target.includes('kubernetes') || target.includes('k8s')) return LANG_THEMES.kubernetes;
+    if (target.includes('aws') || target.includes('amazon')) return LANG_THEMES.aws;
     if (target.includes('flutter')) return LANG_THEMES.flutter;
+    if (target.includes('sql') || target.includes('mysql') || target.includes('postgres') || target.includes('database')) return LANG_THEMES.sql;
+    if (target.includes('mongo')) return LANG_THEMES.mongodb;
+    if (target.includes('go') || target.includes('golang')) return LANG_THEMES.go;
+    if (target.includes('rust')) return LANG_THEMES.rust;
+    if (target.includes('php')) return LANG_THEMES.php;
+    if (target.includes('ruby')) return LANG_THEMES.ruby;
     if (target.includes('kotlin')) return LANG_THEMES.kotlin;
     if (target.includes('swift')) return LANG_THEMES.swift;
-    if (target.includes('rust')) return LANG_THEMES.rust;
-    if (target.includes('go') || target.includes('golang')) return LANG_THEMES.go;
+    if (target.includes('dart')) return LANG_THEMES.dart;
+    if (target.includes('html')) return LANG_THEMES.html;
+    if (target.includes('css')) return LANG_THEMES.css;
+    if (target.includes('git')) return LANG_THEMES.git;
+    if (target.includes('tensorflow')) return LANG_THEMES.tensorflow;
+    if (target.includes('graphql')) return LANG_THEMES.graphql;
+    if (target.includes('linux')) return LANG_THEMES.linux;
+    if (target.includes('java') && !target.includes('javascript')) return LANG_THEMES.java;
   }
-  const tagStr = `${ws.category || ''} ${ws.tag || ''}`.toLowerCase();
+  const tagStr = `${ws.category || ''} ${ws.tag || ''} ${ws.roadmaps && ws.roadmaps[0] ? ws.roadmaps[0].title : ''}`.toLowerCase();
   if (tagStr.includes('c++') || tagStr.includes('cpp')) return LANG_THEMES.cpp;
+  if (tagStr.includes('c#') || tagStr.includes('csharp')) return LANG_THEMES.csharp;
+  if (tagStr.includes('python')) return LANG_THEMES.python;
   if (tagStr.includes('typescript') || /\bts\b/.test(tagStr)) return LANG_THEMES.typescript;
   if (tagStr.includes('javascript') || /\bjs\b/.test(tagStr)) return LANG_THEMES.javascript;
   if (tagStr.includes('react')) return LANG_THEMES.react;
   if (tagStr.includes('node')) return LANG_THEMES.node;
-  if (tagStr.includes('python')) return LANG_THEMES.python;
-  if (tagStr.includes('html')) return LANG_THEMES.html;
-  if (tagStr.includes('css')) return LANG_THEMES.css;
-  if (tagStr.includes('java') && !tagStr.includes('javascript')) return LANG_THEMES.java;
-  if (tagStr.includes('sql') || tagStr.includes('mysql')) return LANG_THEMES.sql;
-  if (tagStr.includes('aws')) return LANG_THEMES.aws;
+  if (tagStr.includes('next')) return LANG_THEMES.nextjs;
+  if (tagStr.includes('vue')) return LANG_THEMES.vue;
+  if (tagStr.includes('angular')) return LANG_THEMES.angular;
+  if (tagStr.includes('django')) return LANG_THEMES.django;
+  if (tagStr.includes('spring')) return LANG_THEMES.spring_boot;
   if (tagStr.includes('docker')) return LANG_THEMES.docker;
+  if (tagStr.includes('kubernetes')) return LANG_THEMES.kubernetes;
+  if (tagStr.includes('aws')) return LANG_THEMES.aws;
   if (tagStr.includes('flutter')) return LANG_THEMES.flutter;
-  if (tagStr.includes('kotlin')) return LANG_THEMES.kotlin;
-  if (tagStr.includes('swift')) return LANG_THEMES.swift;
+  if (tagStr.includes('sql') || tagStr.includes('mysql')) return LANG_THEMES.sql;
+  if (tagStr.includes('mongo')) return LANG_THEMES.mongodb;
   if (tagStr.includes('rust')) return LANG_THEMES.rust;
   if (tagStr.includes('go')) return LANG_THEMES.go;
+  if (tagStr.includes('php')) return LANG_THEMES.php;
+  if (tagStr.includes('ruby')) return LANG_THEMES.ruby;
+  if (tagStr.includes('kotlin')) return LANG_THEMES.kotlin;
+  if (tagStr.includes('swift')) return LANG_THEMES.swift;
+  if (tagStr.includes('dart')) return LANG_THEMES.dart;
+  if (tagStr.includes('html')) return LANG_THEMES.html;
+  if (tagStr.includes('css')) return LANG_THEMES.css;
   if (tagStr.includes('git')) return LANG_THEMES.git;
-  if (/\bc\b/.test(tagStr) || tagStr.includes('c language')) return LANG_THEMES.c;
+  if (tagStr.includes('java') && !tagStr.includes('javascript')) return LANG_THEMES.java;
   return LANG_THEMES.default;
 };
 

@@ -56,6 +56,76 @@ const Workspaces = () => {
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' });
 
+  const addWorkspaceBtnRef = useRef(null);
+  const addWorkspacePopoverRef = useRef(null);
+  const [popoverStyle, setPopoverStyle] = useState({
+    position: 'fixed',
+    top: '0px',
+    right: '0px',
+    opacity: 0,
+    pointerEvents: 'none'
+  });
+
+  const updatePopoverPosition = React.useCallback(() => {
+    if (!addWorkspaceBtnRef.current) return;
+    const btnRect = addWorkspaceBtnRef.current.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    
+    const popoverElem = addWorkspacePopoverRef.current;
+    const popHeight = popoverElem ? popoverElem.offsetHeight : 185;
+    const popWidth = popoverElem ? popoverElem.offsetWidth : 300;
+
+    const spaceAbove = btnRect.top;
+    const spaceBelow = vh - btnRect.bottom;
+    const padding = 12;
+
+    let targetTop = 0;
+    // Prefer UPWARD if space permits
+    if (spaceAbove >= popHeight + padding) {
+      targetTop = btnRect.top - popHeight - 8;
+    } 
+    // Else DOWNWARD if space permits
+    else if (spaceBelow >= popHeight + padding) {
+      targetTop = btnRect.bottom + 8;
+    } 
+    // Else clamp top position so popover stays fully inside [padding, vh - popHeight - padding]
+    else {
+      targetTop = Math.max(padding, Math.min(btnRect.top - popHeight - 8, vh - popHeight - padding));
+    }
+
+    // Horizontal positioning: align right edge with button right edge, clamped to viewport bounds
+    let targetRight = vw - btnRect.right;
+    const targetLeft = vw - targetRight - popWidth;
+    if (targetLeft < padding) {
+      targetRight = Math.max(padding, vw - popWidth - padding);
+    }
+
+    setPopoverStyle({
+      position: 'fixed',
+      top: `${targetTop}px`,
+      right: `${targetRight}px`,
+      opacity: 1,
+      pointerEvents: 'auto',
+      zIndex: 100
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (isAddMenuOpen) {
+      updatePopoverPosition();
+      const handleScrollOrResize = () => {
+        updatePopoverPosition();
+      };
+      window.addEventListener('resize', handleScrollOrResize);
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      return () => {
+        window.removeEventListener('resize', handleScrollOrResize);
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+      };
+    }
+  }, [isAddMenuOpen, updatePopoverPosition]);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
   };
@@ -800,6 +870,9 @@ const Workspaces = () => {
 
       const tag = filteredRoadmaps.map(r => r.title.slice(0, 4).toUpperCase()).join(' · ');
 
+      const aiTech = aiSubject || (filteredRoadmaps[0] ? filteredRoadmaps[0].title : newTitle);
+      const aiTechSlug = aiTech.toLowerCase().replace(/[^a-z0-9]/g, '');
+
       const wsId = `ws-${Date.now()}`;
       const newWs = {
         id: wsId,
@@ -807,6 +880,9 @@ const Workspaces = () => {
         description: newDesc,
         category: newCategory,
         tag: tag || 'AI',
+        technology: aiTech,
+        technologySlug: aiTechSlug,
+        technologyId: aiTechSlug,
         roadmaps: filteredRoadmaps,
         projects: aiSelectedProjects.map(name => {
           const matchingProj = availableProjects.find(p => p.name === name);
@@ -854,11 +930,18 @@ const Workspaces = () => {
         })
         .join(' · ');
 
+      const primaryRoadmap = activeRoadmaps[0];
+      const techName = primaryRoadmap ? primaryRoadmap.title : newTitle;
+      const techSlug = techName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
       const newWs = {
         title: newTitle,
         description: newDesc,
         category: newCategory,
         tag: tag,
+        technology: techName,
+        technologySlug: techSlug,
+        technologyId: techSlug,
         roadmaps: activeRoadmaps,
         colorTheme: activeRoadmaps.length % 3 === 0 ? 'primary' : (activeRoadmaps.length % 3 === 1 ? 'secondary' : 'tertiary'),
         icon: activeRoadmaps.some(r => ['fitness', 'gym', 'workout'].some(kw => r.title.toLowerCase().includes(kw))) ? 'fitness_center' : (activeRoadmaps.some(r => r.title.toLowerCase().includes('startup')) ? 'rocket_launch' : 'terminal')
@@ -991,6 +1074,7 @@ const Workspaces = () => {
             {/* Compact Rounded Button on the right */}
             <div className="relative shrink-0">
               <button
+                ref={addWorkspaceBtnRef}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsAddMenuOpen(!isAddMenuOpen);
@@ -1002,7 +1086,7 @@ const Workspaces = () => {
                 <span className="hidden md:inline">Add Workspace</span>
               </button>
               
-              {/* TWO-OPTION PANEL/POPOVER (Opens UPWARD above button) */}
+              {/* TWO-OPTION VIEWPORT-AWARE PANEL/POPOVER */}
               {isAddMenuOpen && (
                 <>
                   {/* Backdrop for outside click closing */}
@@ -1011,7 +1095,9 @@ const Workspaces = () => {
                     onClick={() => setIsAddMenuOpen(false)}
                   />
                   <div 
-                    className="absolute right-0 bottom-full mb-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65),0_0_20px_rgba(139,92,246,0.15)] z-[100] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
+                    ref={addWorkspacePopoverRef}
+                    style={popoverStyle}
+                    className="w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111118] border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65),0_0_20px_rgba(139,92,246,0.15)] z-[100] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
                   >
                     <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none">
                       Add Workspace
