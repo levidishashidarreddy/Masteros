@@ -336,10 +336,29 @@ const WorkspaceDetail = () => {
   const [editTopicRoadmapId, setEditTopicRoadmapId] = useState('');
   const [editTopicTitle, setEditTopicTitle] = useState('');
 
-  // Overhaul states
+  // Overhaul & Delete states
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isCollabCollapsed, setIsCollabCollapsed] = useState(true);
+
+  const handleDeleteWorkspaceConfirm = async () => {
+    if (!ws || !id) return;
+    try {
+      setIsDeletingWorkspace(true);
+      await deleteWorkspace(id);
+      setIsDeletingWorkspace(false);
+      setIsDeleteModalOpen(false);
+      setDeleteStep(0);
+      showToast("Workspace deleted", "success");
+      navigate('/workspaces');
+    } catch (err) {
+      console.error("Error deleting workspace:", err);
+      setIsDeletingWorkspace(false);
+      showToast("Unable to delete workspace. Please try again.", "error");
+    }
+  };
 
   const toggleCollabCollapse = () => {
     setIsCollabCollapsed(!isCollabCollapsed);
@@ -826,17 +845,31 @@ const WorkspaceDetail = () => {
       `}</style>
       <Sidebar />
 
-      {/* Gym Workspace Disabled Overlay Banner */}
+      {/* Restricted Workspace Disabled Overlay Banner */}
       {isFitnessOrGym && (
-        <div className="absolute inset-0 bg-[#0D0D14]/90 backdrop-blur-md z-[80] flex flex-col items-center justify-center space-y-5">
+        <div className="absolute inset-0 bg-[#0D0D14]/95 backdrop-blur-md z-40 flex flex-col items-center justify-center space-y-5 p-6 text-center">
           <span className="material-symbols-outlined text-yellow-500 text-6xl animate-bounce">construction</span>
-          <h2 className="text-2xl font-bold text-white tracking-tight">🚧 Gym Workspace</h2>
+          <h2 className="text-2xl font-bold text-white tracking-tight">🚧 {ws?.title || 'Gym Workspace'}</h2>
           <p className="text-on-surface-variant text-sm font-semibold text-center max-w-sm">
             "Will be available in the next version."
           </p>
-          <Link to="/workspaces">
-            <Button variant="secondary" icon="arrow_back">Go back to Workspaces</Button>
-          </Link>
+          <div className="flex flex-col gap-3 w-full max-w-xs pt-2">
+            <Link to="/workspaces" className="w-full">
+              <Button variant="secondary" icon="arrow_back" className="w-full justify-center">
+                Go back to Workspaces
+              </Button>
+            </Link>
+            {isWorkspaceOwner && (
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="w-full px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 active:scale-95 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">delete</span>
+                DELETE WORKSPACE
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -1854,11 +1887,8 @@ const WorkspaceDetail = () => {
               <div className="pt-4 flex justify-end workspace-delete-section">
                 <Button 
                   variant="ghost" 
-                  className="bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-white px-5 py-2.5 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 w-full justify-center"
-                  onClick={() => {
-                    setDeleteStep(1);
-                    setDeleteConfirmText('');
-                  }}
+                  className="bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-white px-5 py-2.5 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 w-full justify-center cursor-pointer"
+                  onClick={() => setIsDeleteModalOpen(true)}
                   icon="delete"
                 >
                   Delete Workspace
@@ -2100,69 +2130,42 @@ const WorkspaceDetail = () => {
         </form>
       </Modal>
 
-      {/* Delete Workspace - Step 1: Warning and Name Match */}
+      {/* Delete Workspace Confirmation Modal */}
       <Modal 
-        isOpen={deleteStep === 1} 
-        onClose={() => setDeleteStep(0)} 
-        title="Delete Workspace"
+        isOpen={isDeleteModalOpen || deleteStep > 0} 
+        onClose={() => {
+          if (!isDeletingWorkspace) {
+            setIsDeleteModalOpen(false);
+            setDeleteStep(0);
+          }
+        }} 
+        title="Delete Workspace?"
       >
-        <div className="space-y-4">
-          <div className="p-3.5 bg-red-950/20 border border-red-500/20 rounded-xl text-red-400 text-xs font-semibold leading-relaxed">
-            ⚠️ <strong>Warning:</strong> This action is permanent and cannot be undone. All tasks, roadmaps, and files associated with this workspace will be deleted forever.
-          </div>
-          <p className="text-xs text-on-surface-variant leading-relaxed text-left">
-            To confirm deletion, please type the workspace name exactly as shown below:
+        <div className="space-y-4 text-left">
+          <p className="text-sm text-on-surface-variant leading-relaxed">
+            Are you sure you want to delete <strong className="text-white font-bold">"{ws?.title}"</strong>?
           </p>
-          <div className="py-2 px-3 bg-white/5 border border-white/5 rounded-lg text-xs font-mono font-bold text-white text-center select-all">
-            {ws.title}
-          </div>
-          <InputField
-            id="delete-workspace-confirm-input"
-            label="Type workspace name to confirm"
-            placeholder="Type name here..."
-            value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
-          />
+          <p className="text-xs text-red-400 font-semibold">
+            This action cannot be undone.
+          </p>
           <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
             <Button 
-              variant="primary" 
+              variant="ghost" 
               onClick={() => {
-                if (deleteConfirmText === ws.title) {
-                  setDeleteStep(2);
-                }
+                setIsDeleteModalOpen(false);
+                setDeleteStep(0);
               }}
-              disabled={deleteConfirmText !== ws.title}
-              className="bg-red-600 border border-red-600 text-white hover:bg-red-700"
+              disabled={isDeletingWorkspace}
             >
-              Continue
+              Cancel
             </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Delete Workspace - Step 2: Final Confirmation */}
-      <Modal 
-        isOpen={deleteStep === 2} 
-        onClose={() => setDeleteStep(0)} 
-        title="Are you absolutely sure?"
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-on-surface-variant leading-relaxed text-left">
-            You are about to delete <strong>{ws.title}</strong> permanently. This will delete all task records, timeline logs, and active invitations.
-          </p>
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
             <Button 
               variant="primary" 
-              onClick={async () => {
-                setDeleteStep(0);
-                await deleteWorkspace(id);
-                navigate('/workspaces');
-              }}
-              className="bg-red-600 border border-red-600 text-white hover:bg-red-700"
+              onClick={handleDeleteWorkspaceConfirm}
+              disabled={isDeletingWorkspace}
+              className="bg-red-600 border border-red-600 text-white hover:bg-red-700 shadow-[0_0_15px_rgba(239,68,68,0.3)] cursor-pointer"
             >
-              Delete permanently
+              {isDeletingWorkspace ? 'Deleting...' : 'Delete Workspace'}
             </Button>
           </div>
         </div>

@@ -1928,6 +1928,12 @@ export const TaskProvider = ({ children }) => {
     if (!currentUser || !userProfile) return;
 
     const wsObj = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
+    
+    // Strict Authorization check: only owner can delete workspace
+    if (wsObj && wsObj.ownerId && wsObj.ownerId !== currentUser.uid) {
+      throw new Error("Unauthorized: Only the workspace owner can delete this workspace.");
+    }
+
     if (wsObj && wsObj.shareId) {
       try {
         await deleteDoc(doc(db, 'sharedWorkspaces', wsObj.shareId));
