@@ -41,6 +41,47 @@ const OTHER_PATH_OPTIONS = [
   'Design'
 ];
 
+const extractTechnology = (text) => {
+  if (!text || typeof text !== 'string') return null;
+  const str = text.toLowerCase();
+
+  if (str.includes('react native')) return 'React Native';
+  if (str.includes('spring boot') || str.includes('springboot')) return 'Spring Boot';
+  if (str.includes('c++') || /\bcpp\b/.test(str) || str.includes('cplusplus')) return 'C++';
+  if (str.includes('c#') || /\bcsharp\b/.test(str)) return 'C#';
+  if (str.includes('python')) return 'Python';
+  if (str.includes('typescript') || /\bts\b/.test(str)) return 'TypeScript';
+  if (str.includes('javascript') || /\bjs\b/.test(str)) return 'JavaScript';
+  if (str.includes('react')) return 'React';
+  if (str.includes('next.js') || str.includes('nextjs')) return 'NextJS';
+  if (str.includes('vue')) return 'Vue';
+  if (str.includes('angular')) return 'Angular';
+  if (str.includes('node') || str.includes('nodejs')) return 'NodeJS';
+  if (str.includes('django')) return 'Django';
+  if (str.includes('docker')) return 'Docker';
+  if (str.includes('kubernetes') || str.includes('k8s')) return 'Kubernetes';
+  if (str.includes('aws') || str.includes('amazon')) return 'AWS';
+  if (str.includes('flutter')) return 'Flutter';
+  if (str.includes('mongodb') || str.includes('mongo')) return 'MongoDB';
+  if (str.includes('sql') || str.includes('mysql') || str.includes('postgres')) return 'SQL';
+  if (str.includes('golang') || /\bgo\b/.test(str)) return 'Go';
+  if (str.includes('rust')) return 'Rust';
+  if (str.includes('kotlin')) return 'Kotlin';
+  if (str.includes('swift')) return 'Swift';
+  if (str.includes('dart')) return 'Dart';
+  if (str.includes('php')) return 'PHP';
+  if (str.includes('ruby')) return 'Ruby';
+  if (str.includes('html')) return 'HTML';
+  if (str.includes('css')) return 'CSS';
+  if (str.includes('git')) return 'Git';
+  if (str.includes('tensorflow')) return 'TensorFlow';
+  if (str.includes('graphql')) return 'GraphQL';
+  if (str.includes('linux')) return 'Linux';
+  if (str.includes('java')) return 'Java';
+
+  return null;
+};
+
 const Workspaces = () => {
   const navigate = useNavigate();
   const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, updateWorkspace, verifySharedWorkspace, requestCollaboration, userProfile, tasks, loading, addTask } = useContext(TaskContext);
