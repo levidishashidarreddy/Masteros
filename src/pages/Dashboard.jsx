@@ -253,10 +253,7 @@ const Dashboard = () => {
                 dashboardWorkspaces.map(ws => (
                   <div 
                     key={ws.id} 
-                    onClick={() => {
-                      touchWorkspace(ws.id);
-                      navigate(`/workspaces/${ws.id}`);
-                    }}
+                    onClick={() => navigate(`/workspaces/${ws.id}`)}
                     className="p-6 bg-[#0D0D14]/30 border border-white/5 rounded-xl hover:border-primary/20 transition-all duration-300 cursor-pointer group flex flex-col justify-between h-44 animate-fade-in"
                   >
                     <div className="flex justify-between items-start">

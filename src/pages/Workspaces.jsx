@@ -1005,7 +1005,6 @@ const Workspaces = () => {
   };
 
   const handleOpenWorkspace = (wsId) => {
-    touchWorkspace(wsId);
     navigate(`/workspaces/${wsId}`);
   };
 
