@@ -12,6 +12,7 @@ import { SearchableSingleSelect } from '../components/SearchableSelect';
 import { WorkspacesSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { generateRoadmapFromGemini } from '../utils/gemini';
+import { sortWorkspacesByRecentActivity } from '../utils/workspaceUtils';
 
 import Toast from '../components/Toast';
 
@@ -84,7 +85,7 @@ const extractTechnology = (text) => {
 
 const Workspaces = () => {
   const navigate = useNavigate();
-  const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, updateWorkspace, verifySharedWorkspace, requestCollaboration, userProfile, tasks, loading, addTask } = useContext(TaskContext);
+  const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, updateWorkspace, touchWorkspace, verifySharedWorkspace, requestCollaboration, userProfile, tasks, loading, addTask } = useContext(TaskContext);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -1003,63 +1004,26 @@ const Workspaces = () => {
     resetModalState();
   };
 
-  const workspaceLogs = useMemo(() => {
-    const list = [];
-    tasks.forEach(t => {
-      if (t.done && t.workspaceId && t.completedAt) {
-        const ws = workspaces.find(w => w.id === t.workspaceId);
-        if (ws) {
-          const diffMs = Date.now() - new Date(t.completedAt).getTime();
-          const diffMins = Math.floor(diffMs / 60000);
-          const diffHours = Math.floor(diffMins / 60);
-          const diffDays = Math.floor(diffHours / 24);
-          let timeAgo = 'Just now';
-          if (diffDays > 0) timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-          else if (diffHours > 0) timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-          else if (diffMins > 0) timeAgo = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  const handleOpenWorkspace = (wsId) => {
+    touchWorkspace(wsId);
+    navigate(`/workspaces/${wsId}`);
+  };
 
-          const colorClass = ws.colorTheme === 'primary' ? 'bg-primary/10 border border-primary/20 text-primary'
-            : ws.colorTheme === 'secondary' ? 'bg-secondary/10 border border-secondary/20 text-secondary'
-              : ws.colorTheme === 'tertiary' ? 'bg-tertiary/10 border border-tertiary/20 text-tertiary'
-                : 'bg-white/15 border border-white/20 text-white';
-
-          list.push({
-            id: t.id,
-            wsId: ws.id,
-            wsTitle: ws.title,
-            taskText: t.text,
-            timeAgo,
-            icon: 'check_circle',
-            colorClass,
-            completedTime: new Date(t.completedAt).getTime()
-          });
-        }
-      }
+  const filteredWorkspaces = useMemo(() => {
+    const categoryFiltered = (workspaces || []).filter(ws => {
+      if (activeFilter === 'All') return true;
+      return ws.category === activeFilter;
     });
-    return list.sort((a, b) => b.completedTime - a.completedTime);
-  }, [tasks, workspaces]);
+    return sortWorkspacesByRecentActivity(categoryFiltered);
+  }, [workspaces, activeFilter]);
 
-  // Get active workspaces sorted by custom visibility order
-  const featuredWorkspacesOrder = userProfile?.featuredWorkspaces || [];
-
-  const sortedWorkspaces = [...workspaces].sort((a, b) => {
-    const idxA = featuredWorkspacesOrder.indexOf(a.id);
-    const idxB = featuredWorkspacesOrder.indexOf(b.id);
-    if (idxA === -1 && idxB === -1) return 0;
-    if (idxA === -1) return 1;
-    if (idxB === -1) return -1;
-    return idxA - idxB;
-  });
-
-  const filteredWorkspaces = sortedWorkspaces.filter(ws => {
-    if (activeFilter === 'All') return true;
-    return ws.category === activeFilter;
-  });
-
-  const filteredCollaborated = (collaboratedWorkspaces || []).filter(ws => {
-    if (activeFilter === 'All') return true;
-    return ws.category === activeFilter;
-  });
+  const filteredCollaborated = useMemo(() => {
+    const categoryFiltered = (collaboratedWorkspaces || []).filter(ws => {
+      if (activeFilter === 'All') return true;
+      return ws.category === activeFilter;
+    });
+    return sortWorkspacesByRecentActivity(categoryFiltered);
+  }, [collaboratedWorkspaces, activeFilter]);
 
   if (isLoading) {
     return (
@@ -1240,7 +1204,7 @@ const Workspaces = () => {
               </div>
             ) : (
               filteredWorkspaces.map((ws) => (
-                <div key={ws.id} className="cursor-pointer" onClick={() => navigate(`/workspaces/${ws.id}`)}>
+                <div key={ws.id} className="cursor-pointer" onClick={() => handleOpenWorkspace(ws.id)}>
                   <WorkspaceCard
                     id={ws.id}
                     title={ws.title}
@@ -1286,7 +1250,7 @@ const Workspaces = () => {
                     const ownerObj = allUsers.find(u => u.uid === ws.ownerId);
                     const ownerName = ownerObj ? ownerObj.fullName : 'Owner';
                     return (
-                      <div key={ws.id} className="cursor-pointer" onClick={() => navigate(`/workspaces/${ws.id}`)}>
+                      <div key={ws.id} className="cursor-pointer" onClick={() => handleOpenWorkspace(ws.id)}>
                         <WorkspaceCard
                           id={ws.id}
                           title={ws.title}

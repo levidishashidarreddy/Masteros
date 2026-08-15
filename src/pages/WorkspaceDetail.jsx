@@ -217,6 +217,7 @@ const WorkspaceDetail = () => {
     collaboratedWorkspaces,
     currentUser,
     updateWorkspace, 
+    touchWorkspace,
     deleteWorkspace,
     toggleSubtopic,
     tasks, 
@@ -236,6 +237,12 @@ const WorkspaceDetail = () => {
   } = useContext(TaskContext);
 
   const ws = (workspaces || []).find(w => w.id === id) || (collaboratedWorkspaces || []).find(w => w.id === id);
+
+  useEffect(() => {
+    if (id) {
+      touchWorkspace(id);
+    }
+  }, [id]);
 
   // Pomodoro Study Timer states
   const [timerMinutes, setTimerMinutes] = useState(25);

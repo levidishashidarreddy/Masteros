@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import { TaskContext } from '../context/TaskContext';
 import { DashboardSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { sortWorkspacesByRecentActivity } from '../utils/workspaceUtils';
 
 const BADGE_DESCRIPTIONS = {
   '🥇': 'Rank #1: Top performer on the global boards.',
@@ -24,7 +25,7 @@ const BADGE_DESCRIPTIONS = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { tasks, toggleTask, workspaces, userProfile, exams, assignments, toggleAssignment, loading } = useContext(TaskContext);
+  const { tasks, toggleTask, workspaces, userProfile, exams, assignments, toggleAssignment, touchWorkspace, loading } = useContext(TaskContext);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -74,13 +75,11 @@ const Dashboard = () => {
     return userProfile?.featuredWorkspaces || [];
   }, [userProfile?.featuredWorkspaces]);
 
-  // Filter workspaces by visibility and sort by order
+  // Filter workspaces by visibility and sort by recent activity
   const dashboardWorkspaces = useMemo(() => {
-    return workspaces
-      .filter(ws => featuredWorkspacesOrder.includes(ws.id))
-      .sort((a, b) => {
-        return featuredWorkspacesOrder.indexOf(a.id) - featuredWorkspacesOrder.indexOf(b.id);
-      });
+    const featured = workspaces.filter(ws => featuredWorkspacesOrder.includes(ws.id));
+    const targetList = featured.length > 0 ? featured : workspaces;
+    return sortWorkspacesByRecentActivity(targetList);
   }, [workspaces, featuredWorkspacesOrder]);
 
   // Calculate Urgent Items (active database items that are upcoming within 7 days)
@@ -254,7 +253,10 @@ const Dashboard = () => {
                 dashboardWorkspaces.map(ws => (
                   <div 
                     key={ws.id} 
-                    onClick={() => navigate(`/workspaces/${ws.id}`)}
+                    onClick={() => {
+                      touchWorkspace(ws.id);
+                      navigate(`/workspaces/${ws.id}`);
+                    }}
                     className="p-6 bg-[#0D0D14]/30 border border-white/5 rounded-xl hover:border-primary/20 transition-all duration-300 cursor-pointer group flex flex-col justify-between h-44 animate-fade-in"
                   >
                     <div className="flex justify-between items-start">

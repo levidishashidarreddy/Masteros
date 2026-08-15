@@ -1558,6 +1558,9 @@ export const TaskProvider = ({ children }) => {
     if (newTask.workspaceId === null && newTask.isPinned) {
       await setDoc(doc(db, 'focusTasks', taskId), newTask);
     }
+    if (newTask.workspaceId) {
+      await touchWorkspace(newTask.workspaceId);
+    }
   };
 
   const editTask = async (id, updatedFields) => {
@@ -1578,13 +1581,20 @@ export const TaskProvider = ({ children }) => {
       } else {
         await deleteDoc(doc(db, 'focusTasks', id));
       }
+      if (taskData.workspaceId) {
+        await touchWorkspace(taskData.workspaceId);
+      }
     }
   };
 
   const deleteTask = async (id) => {
     if (!currentUser) return;
+    const taskToDelete = tasks.find(t => t.id === id);
     await deleteDoc(doc(db, 'tasks', id));
     await deleteDoc(doc(db, 'focusTasks', id));
+    if (taskToDelete && taskToDelete.workspaceId) {
+      await touchWorkspace(taskToDelete.workspaceId);
+    }
   };
 
   const toggleTask = async (id) => {
@@ -1603,6 +1613,10 @@ export const TaskProvider = ({ children }) => {
       
       if (task.workspaceId === null && task.isPinned) {
         await updateDoc(doc(db, 'focusTasks', id), updated);
+      }
+
+      if (task.workspaceId) {
+        await touchWorkspace(task.workspaceId);
       }
 
       if (nextDone) {
@@ -1792,6 +1806,7 @@ export const TaskProvider = ({ children }) => {
       return;
     }
 
+    const now = new Date().toISOString();
     const newWorkspace = {
       ownerId: currentUser.uid,
       title: workspace.title || '',
@@ -1812,7 +1827,9 @@ export const TaskProvider = ({ children }) => {
       resources: workspace.resources || [],
       projects: workspace.projects || [],
       milestones: workspace.milestones || [],
-      collaborators: workspace.collaborators || []
+      collaborators: workspace.collaborators || [],
+      createdAt: workspace.createdAt || now,
+      lastActivityAt: workspace.lastActivityAt || workspace.createdAt || now
     };
     await setDoc(doc(db, 'workspaces', wsId), newWorkspace);
 
@@ -1905,13 +1922,36 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
+  const touchWorkspace = async (wsId) => {
+    if (!wsId || !currentUser) return;
+    const now = new Date().toISOString();
+    setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, lastActivityAt: now } : w));
+    setCollaboratedWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, lastActivityAt: now } : w));
+    try {
+      await updateDoc(doc(db, 'workspaces', wsId), {
+        lastActivityAt: now
+      });
+    } catch (err) {
+      console.error("Error updating workspace activity timestamp:", err);
+    }
+  };
+
   const updateWorkspace = async (wsId, updatedFields) => {
     if (!currentUser) return;
-    await updateDoc(doc(db, 'workspaces', wsId), updatedFields);
+    const now = new Date().toISOString();
+    const fieldsToSave = {
+      lastActivityAt: now,
+      ...updatedFields
+    };
+
+    setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, ...fieldsToSave } : w));
+    setCollaboratedWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, ...fieldsToSave } : w));
+
+    await updateDoc(doc(db, 'workspaces', wsId), fieldsToSave);
 
     const wsObj = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
     if (wsObj) {
-      const mergedWs = { ...wsObj, ...updatedFields };
+      const mergedWs = { ...wsObj, ...fieldsToSave };
       if (mergedWs.isShared && mergedWs.shareId) {
         await syncSharedWorkspace(wsId, mergedWs);
       } else if (!mergedWs.isShared && wsObj.shareId) {
@@ -2011,10 +2051,10 @@ export const TaskProvider = ({ children }) => {
       }
     }
 
-    const updateLocalWorkspaces = (prevList, targetState) => {
-      return prevList.map((ws) => {
+    const updateLocalWorkspaces = (list, targetState) => {
+      const now = new Date().toISOString();
+      return list.map(ws => {
         if (ws.id !== wsId) return ws;
-
         const updatedRoadmaps = (ws.roadmaps || []).map((rm) => {
           if (rm.id !== roadmapId) return rm;
 
@@ -2049,7 +2089,8 @@ export const TaskProvider = ({ children }) => {
         return {
           ...ws,
           roadmaps: updatedRoadmaps,
-          progress: overallProgress
+          progress: overallProgress,
+          lastActivityAt: now
         };
       });
     };
@@ -2060,6 +2101,7 @@ export const TaskProvider = ({ children }) => {
 
     try {
       const wsRef = doc(db, 'workspaces', wsId);
+      const now = new Date().toISOString();
       
       // Calculate updated fields using localWs data
       const updatedRoadmaps = (localWs.roadmaps || []).map((rm) => {
@@ -2096,7 +2138,8 @@ export const TaskProvider = ({ children }) => {
       // Write directly to Firestore, bypassing additional slow getDoc reads
       await updateDoc(wsRef, {
         roadmaps: updatedRoadmaps,
-        progress: overallProgress
+        progress: overallProgress,
+        lastActivityAt: now
       });
 
       if (localWs.isShared && localWs.shareId) {
@@ -2750,6 +2793,7 @@ export const TaskProvider = ({ children }) => {
         toggleAssignment,
         addWorkspace,
         updateWorkspace,
+        touchWorkspace,
         deleteWorkspace,
         toggleSubtopic,
         syncSharedWorkspace,
