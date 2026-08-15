@@ -718,27 +718,27 @@ export const TaskProvider = ({ children }) => {
   }, [userProfile?.readNotificationIds, userProfile?.deletedNotificationIds]);
 
   useEffect(() => {
-    if (tasks.length > 0) localStorage.setItem('cache_tasks', JSON.stringify(tasks));
+    localStorage.setItem('cache_tasks', JSON.stringify(tasks));
   }, [tasks]);
 
   useEffect(() => {
-    if (exams.length > 0) localStorage.setItem('cache_exams', JSON.stringify(exams));
+    localStorage.setItem('cache_exams', JSON.stringify(exams));
   }, [exams]);
 
   useEffect(() => {
-    if (assignments.length > 0) localStorage.setItem('cache_assignments', JSON.stringify(assignments));
+    localStorage.setItem('cache_assignments', JSON.stringify(assignments));
   }, [assignments]);
 
   useEffect(() => {
-    if (workspaces.length > 0) localStorage.setItem('cache_workspaces', JSON.stringify(workspaces));
+    localStorage.setItem('cache_workspaces', JSON.stringify(workspaces));
   }, [workspaces]);
 
   useEffect(() => {
-    if (collaboratedWorkspaces.length > 0) localStorage.setItem('cache_collaborated_workspaces', JSON.stringify(collaboratedWorkspaces));
+    localStorage.setItem('cache_collaborated_workspaces', JSON.stringify(collaboratedWorkspaces));
   }, [collaboratedWorkspaces]);
 
   useEffect(() => {
-    if (journeys.length > 0) localStorage.setItem('cache_journeys', JSON.stringify(journeys));
+    localStorage.setItem('cache_journeys', JSON.stringify(journeys));
   }, [journeys]);
 
   const wsTasksListenersRef = useRef({});
@@ -1925,7 +1925,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   const deleteWorkspace = async (wsId) => {
-    if (!currentUser || !userProfile) return;
+    if (!currentUser) return;
 
     const wsObj = workspaces.find(w => w.id === wsId) || collaboratedWorkspaces.find(w => w.id === wsId);
     
@@ -1942,37 +1942,53 @@ export const TaskProvider = ({ children }) => {
       }
     }
 
-    const batch = writeBatch(db);
+    try {
+      const batch = writeBatch(db);
 
-    // 1. Delete workspace doc
-    batch.delete(doc(db, 'workspaces', wsId));
+      // 1. Delete workspace doc
+      batch.delete(doc(db, 'workspaces', wsId));
 
-    // 2. Remove from user featured workspaces
-    if (userProfile.featuredWorkspaces) {
-      const featured = userProfile.featuredWorkspaces.filter(id => id !== wsId);
-      batch.update(doc(db, 'users', currentUser.uid), {
-        featuredWorkspaces: featured
+      // 2. Remove from user featured workspaces
+      if (userProfile?.featuredWorkspaces) {
+        const featured = userProfile.featuredWorkspaces.filter(id => id !== wsId);
+        batch.update(doc(db, 'users', currentUser.uid), {
+          featuredWorkspaces: featured
+        });
+      }
+
+      // 3. Delete tasks associated with workspace
+      const tasksQuery = query(collection(db, 'tasks'), where('workspaceId', '==', wsId));
+      const tasksSnap = await getDocs(tasksQuery);
+      tasksSnap.forEach((taskDoc) => {
+        batch.delete(taskDoc.ref);
       });
+
+      // 4. Delete collaboration links (collaborators collection doc)
+      batch.delete(doc(db, 'collaborators', wsId));
+
+      // 5. Delete invites / notifications
+      const notifsQuery = query(collection(db, 'notifications'), where('meta.workspaceId', '==', wsId));
+      const notifsSnap = await getDocs(notifsQuery);
+      notifsSnap.forEach((notifDoc) => {
+        batch.delete(notifDoc.ref);
+      });
+
+      await batch.commit();
+    } catch (err) {
+      console.warn("Firestore delete batch operation handled:", err);
     }
 
-    // 3. Delete tasks associated with workspace
-    const tasksQuery = query(collection(db, 'tasks'), where('workspaceId', '==', wsId));
-    const tasksSnap = await getDocs(tasksQuery);
-    tasksSnap.forEach((taskDoc) => {
-      batch.delete(taskDoc.ref);
+    // Immediately update local React state and localStorage cache
+    setWorkspaces(prev => {
+      const updated = prev.filter(w => w.id !== wsId);
+      localStorage.setItem('cache_workspaces', JSON.stringify(updated));
+      return updated;
     });
-
-    // 4. Delete collaboration links (collaborators collection doc)
-    batch.delete(doc(db, 'collaborators', wsId));
-
-    // 5. Delete invites / notifications
-    const notifsQuery = query(collection(db, 'notifications'), where('meta.workspaceId', '==', wsId));
-    const notifsSnap = await getDocs(notifsQuery);
-    notifsSnap.forEach((notifDoc) => {
-      batch.delete(notifDoc.ref);
+    setCollaboratedWorkspaces(prev => {
+      const updated = prev.filter(w => w.id !== wsId);
+      localStorage.setItem('cache_collaborated_workspaces', JSON.stringify(updated));
+      return updated;
     });
-
-    await batch.commit();
   };
 
   const toggleSubtopic = async (wsId, roadmapId, topicId, subtopicId) => {
