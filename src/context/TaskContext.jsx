@@ -1805,8 +1805,7 @@ export const TaskProvider = ({ children }) => {
   const isAdmin = Boolean(
     currentUser && (
       currentUser.email === 'admin@masteros.com' ||
-      currentUserProfile?.role === 'admin' ||
-      userProfileData?.role === 'admin'
+      userProfile?.role === 'admin'
     )
   );
 
@@ -1851,7 +1850,7 @@ export const TaskProvider = ({ children }) => {
       id: feedbackId,
       userId: currentUser ? currentUser.uid : 'guest',
       userEmail: currentUser ? currentUser.email : 'guest@masteros.com',
-      userName: currentUserProfile?.displayName || currentUser?.displayName || 'User',
+      userName: userProfile?.fullName || currentUser?.displayName || 'User',
       type: reportData.type || 'problem',
       title: reportData.title.trim(),
       description: reportData.description.trim(),
