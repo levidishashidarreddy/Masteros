@@ -132,6 +132,13 @@ const detectCardTheme = (technology, technologySlug, technologyId, tag, category
     if (explicitTarget.includes('graphql')) return CARD_LANG_THEMES.graphql;
     if (explicitTarget.includes('linux')) return CARD_LANG_THEMES.linux;
     if (explicitTarget.includes('java') && !explicitTarget.includes('javascript')) return CARD_LANG_THEMES.java;
+    
+    // Custom/unlisted technology selected: Return generic technology theme with custom wordmark
+    return {
+      ...CARD_LANG_THEMES.default,
+      wordmark: explicitTarget.toUpperCase(),
+      iconSlug: explicitTarget.replace(/[^a-z0-9]/g, '')
+    };
   }
 
   // Step 2: Fallback check on Title & Description FIRST for exact programming languages (C++, JS, Python, Java, etc.)

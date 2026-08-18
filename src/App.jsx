@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { TaskProvider, TaskContext } from './context/TaskContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import PandaLoader from './components/PandaLoader';
+import PWAInstallBanner from './components/PWAInstallBanner';
 
 // Lazy loading all pages
 const Landing = React.lazy(() => import('./pages/Landing'));
@@ -18,6 +19,8 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 const SettingsCustomize = React.lazy(() => import('./pages/SettingsCustomize'));
 const Tasks = React.lazy(() => import('./pages/Tasks'));
 const Notifications = React.lazy(() => import('./pages/Notifications'));
+const Roadmaps = React.lazy(() => import('./pages/Roadmaps'));
+const RoadmapDetail = React.lazy(() => import('./pages/RoadmapDetail'));
 
 
 const ProtectedRoute = ({ children }) => {
@@ -36,69 +39,53 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const OnboardingRoute = ({ children }) => {
-  const { currentUser, loading } = React.useContext(TaskContext);
-  
+const PublicOnlyRoute = ({ children }) => {
+  const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
+
   if (loading) {
     return <PandaLoader appReady={false} />;
   }
-  
+
+  if (currentUser) {
+    if (!isOnboarded) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+const OnboardingRoute = ({ children }) => {
+  const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
+
+  if (loading) {
+    return <PandaLoader appReady={false} />;
+  }
+
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
+  }
+  if (isOnboarded) {
+    return <Navigate to="/dashboard" replace />;
   }
   return children;
 };
 
 function AppContent() {
-  const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
-  const [animationCompleted, setAnimationCompleted] = React.useState(false);
-
-  const showLoader = loading || !animationCompleted;
-
-  if (showLoader) {
-    return (
-      <PandaLoader
-        appReady={!loading}
-        onComplete={() => setAnimationCompleted(true)}
-      />
-    );
-  }
-
   return (
     <Router>
-      <Suspense fallback={<PandaLoader appReady={true} />}>
+      <PWAInstallBanner />
+      <Suspense fallback={<PandaLoader appReady={false} />}>
         <Routes>
           {/* Public Routes */}
-          <Route 
-            path="/" 
-            element={
-              currentUser ? (
-                isOnboarded ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />
-              ) : (
-                <Landing />
-              )
-            } 
-          />
-          <Route 
-            path="/auth" 
-            element={
-              currentUser ? (
-                isOnboarded ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />
-              ) : (
-                <Auth />
-              )
-            } 
-          />
-          
-          {/* Onboarding Flow (can access via interests or general onboarding) */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
           <Route path="/onboarding" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
-          <Route path="/onboarding/interests" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
-          <Route path="/onboarding/roadmap" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
-          <Route path="/onboarding/goal" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
-          <Route path="/onboarding/timeline" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
 
-          {/* Authenticated Application Pages */}
+          {/* Protected Main App Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/roadmaps" element={<ProtectedRoute><Roadmaps /></ProtectedRoute>} />
+          <Route path="/roadmaps/:id" element={<ProtectedRoute><RoadmapDetail /></ProtectedRoute>} />
           <Route path="/workspaces" element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
           <Route path="/workspaces/:id" element={<ProtectedRoute><WorkspaceDetail /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />

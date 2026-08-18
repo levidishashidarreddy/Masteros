@@ -7,6 +7,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
   const navigate = useNavigate();
   const {
     getNotifications,
+    userNotifications,
     userProfile,
     workspaces,
     collaboratedWorkspaces,
@@ -16,6 +17,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
   } = useContext(TaskContext);
 
   const alerts = getNotifications();
+  const unreadNotifCount = (userNotifications || []).filter(n => n.unread).length || alerts.filter(n => !n.read).length;
 
   // ── Global Search State ───────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
@@ -345,8 +347,10 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-white cursor-pointer hover:bg-white/5 active:scale-95 transition-all relative"
               >
                 <span className="material-symbols-outlined text-[20px]">notifications</span>
-                {alerts.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#8B5CF6]" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-primary text-black font-extrabold text-[9px] min-w-[16px] text-center leading-none shadow-[0_0_8px_#8B5CF6]">
+                    {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                  </span>
                 )}
               </button>
             </div>

@@ -871,10 +871,51 @@
     width: 100vw !important;
   }
 
-  /* 6. SIDEBAR MOBILE DRAWER DRAWER REDESIGN */
+  /* 6. SIDEBAR MOBILE DRAWER REDESIGN */
   aside.fixed {
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.8) !important;
     background: rgba(13, 13, 20, 0.96) !important;
     backdrop-filter: blur(28px) !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   MASTEROS ROADMAPS & TYPOGRAPHY SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+.font-space-grotesk {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+}
+
+.font-dm-sans {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Glowing current position pulse */
+@keyframes roadmap-glow-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5), 0 0 15px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0), 0 0 25px rgba(139, 92, 246, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0), 0 0 15px rgba(139, 92, 246, 0.3);
+  }
+}
+
+.roadmap-current-glow {
+  animation: roadmap-glow-pulse 2.5s infinite;
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  background: rgba(139, 92, 246, 0.12) !important;
+}
+
+/* Node connectors */
+.roadmap-connector-line {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.5) 0%, rgba(255, 255, 255, 0.1) 100%);
+}
+
+.roadmap-connector-horizontal {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(255, 255, 255, 0.1) 100%);
+}
+

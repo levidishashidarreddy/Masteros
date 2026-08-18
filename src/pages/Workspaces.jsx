@@ -1098,57 +1098,115 @@ const Workspaces = () => {
                 <span className="hidden md:inline">Add Workspace</span>
               </button>
 
-              {/* TWO-OPTION TOP-LEVEL PORTAL POPOVER */}
+              {/* TWO-OPTION PORTAL POPOVER / MOBILE BOTTOM SHEET */}
               {isAddMenuOpen && createPortal(
                 <>
-                  {/* Backdrop for outside click closing */}
-                  <div 
-                    className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-[1px]" 
-                    onClick={() => setIsAddMenuOpen(false)}
-                  />
-                  <div 
-                    ref={addWorkspacePopoverRef}
-                    style={popoverStyle}
-                    className="bg-[#111118] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(139,92,246,0.2)] z-[99999] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
-                  >
-                    <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none flex items-center justify-between">
-                      <span>Add Workspace</span>
-                      <span className="text-[9px] text-[#8B5CF6] font-bold">MasterOS</span>
+                  {/* Mobile Bottom Sheet (Screen width < 768px) */}
+                  <div className="md:hidden fixed inset-0 z-[99999] flex items-end justify-center">
+                    <div 
+                      className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
+                      onClick={() => setIsAddMenuOpen(false)}
+                    />
+                    <div className="relative w-full bg-[#111118] border-t border-white/10 rounded-t-3xl p-6 space-y-4 text-left z-10 shadow-2xl add-workspace-bottom-sheet">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-space-grotesk text-sm font-bold text-white uppercase tracking-wider">Add Workspace</span>
+                          <span className="text-[9px] text-[#8B5CF6] font-bold uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">MasterOS</span>
+                        </div>
+                        <button 
+                          onClick={() => setIsAddMenuOpen(false)}
+                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white"
+                        >
+                          <span className="material-symbols-outlined text-base">close</span>
+                        </button>
+                      </div>
+                      
+                      {/* Option 1: Create Workspace */}
+                      <button
+                        onClick={() => {
+                          setIsAddMenuOpen(false);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-full text-left p-4 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 transition-all flex items-start gap-3.5 cursor-pointer text-white"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shrink-0">
+                          <span className="material-symbols-outlined text-xl">create_new_folder</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-black uppercase tracking-wider text-white">Create Workspace</div>
+                          <div className="text-[11px] text-zinc-400 leading-relaxed font-medium">Start a new learning roadmap</div>
+                        </div>
+                      </button>
+                      
+                      {/* Option 2: Join / View Workspace */}
+                      <button
+                        onClick={() => {
+                          setIsAddMenuOpen(false);
+                          setIsJoinSharedModalOpen(true);
+                        }}
+                        className="w-full text-left p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-start gap-3.5 cursor-pointer text-white"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-[#8B5CF6] shrink-0">
+                          <span className="material-symbols-outlined text-xl">hub</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-black uppercase tracking-wider text-white">Join / View Workspace</div>
+                          <div className="text-[11px] text-zinc-400 leading-relaxed font-medium">Join or view a shared workspace</div>
+                        </div>
+                      </button>
                     </div>
-                    
-                    {/* Option 1: Create Workspace */}
-                    <button
-                      onClick={() => {
-                        setIsAddMenuOpen(false);
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/15 hover:border-[#8B5CF6]/50 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                  </div>
+
+                  {/* Desktop Popover (Screen width >= 768px) */}
+                  <div className="hidden md:block">
+                    <div 
+                      className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-[1px]" 
+                      onClick={() => setIsAddMenuOpen(false)}
+                    />
+                    <div 
+                      ref={addWorkspacePopoverRef}
+                      style={popoverStyle}
+                      className="bg-[#111118] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(139,92,246,0.2)] z-[99999] p-4 space-y-3 add-workspace-popover text-left animate-fade-in"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover/opt:scale-105 group-hover/opt:border-primary transition-all shrink-0">
-                        <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
+                      <div className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant mb-1 border-b border-white/5 pb-2 select-none flex items-center justify-between">
+                        <span>Add Workspace</span>
+                        <span className="text-[9px] text-[#8B5CF6] font-bold">MasterOS</span>
                       </div>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-primary transition-colors">Create Workspace</div>
-                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Start a new learning roadmap</div>
-                      </div>
-                    </button>
-                    
-                    {/* Option 2: Join / View Workspace */}
-                    <button
-                      onClick={() => {
-                        setIsAddMenuOpen(false);
-                        setIsJoinSharedModalOpen(true);
-                      }}
-                      className="w-full text-left p-3.5 rounded-xl border border-white/5 bg-[#0D0D14]/60 hover:bg-white/[0.06] hover:border-white/15 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] group-hover/opt:scale-105 group-hover/opt:border-[#8B5CF6] transition-all shrink-0">
-                        <span className="material-symbols-outlined text-[18px]">hub</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-[#8B5CF6] transition-colors">Join / View Workspace</div>
-                        <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Join or view a shared workspace</div>
-                      </div>
-                    </button>
+                      
+                      {/* Option 1: Create Workspace */}
+                      <button
+                        onClick={() => {
+                          setIsAddMenuOpen(false);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-full text-left p-3.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/15 hover:border-[#8B5CF6]/50 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover/opt:scale-105 group-hover/opt:border-primary transition-all shrink-0">
+                          <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-primary transition-colors">Create Workspace</div>
+                          <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Start a new learning roadmap</div>
+                        </div>
+                      </button>
+                      
+                      {/* Option 2: Join / View Workspace */}
+                      <button
+                        onClick={() => {
+                          setIsAddMenuOpen(false);
+                          setIsJoinSharedModalOpen(true);
+                        }}
+                        className="w-full text-left p-3.5 rounded-xl border border-white/5 bg-[#0D0D14]/60 hover:bg-white/[0.06] hover:border-white/15 transition-all flex items-start gap-3 cursor-pointer group/opt text-white border-0 bg-transparent"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8B5CF6] group-hover/opt:scale-105 group-hover/opt:border-[#8B5CF6] transition-all shrink-0">
+                          <span className="material-symbols-outlined text-[18px]">hub</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-black uppercase tracking-wider text-white group-hover/opt:text-[#8B5CF6] transition-colors">Join / View Workspace</div>
+                          <div className="text-[10px] text-on-surface-variant leading-relaxed font-medium">Join or view a shared workspace</div>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 </>,
                 document.body

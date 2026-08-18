@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, useLayoutEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -92,6 +93,12 @@ const detectLangTheme = (ws) => {
     if (target.includes('graphql')) return LANG_THEMES.graphql;
     if (target.includes('linux')) return LANG_THEMES.linux;
     if (target.includes('java') && !target.includes('javascript')) return LANG_THEMES.java;
+
+    return {
+      ...LANG_THEMES.default,
+      label: `${target.toUpperCase()} WORKSPACE`,
+      iconSlug: target.replace(/[^a-z0-9]/g, '')
+    };
   }
 
   // Step 2: Check Title & Description for language keywords
@@ -1202,100 +1209,18 @@ const WorkspaceDetail = () => {
                                     </button>
                                   </div>
 
-                                  {/* Mobile More-Actions Button & Bottom-anchored Dropdown */}
-                                  <div className="relative md:hidden shrink-0 ml-1">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveTopicMenu(activeTopicMenu === topic.id ? null : topic.id);
-                                      }}
-                                      className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                                      aria-label="Topic actions"
-                                    >
-                                      <span className="material-symbols-outlined text-[16px]">more_horiz</span>
-                                    </button>
-                                    {activeTopicMenu === topic.id && (
-                                      <>
-                                        {/* Full-screen backdrop */}
-                                        <div 
-                                          className="fixed inset-0 z-40" 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveTopicMenu(null);
-                                          }}
-                                        />
-                                        {/*
-                                          Dropdown: positioned right-0, but clamped so it never clips.
-                                          min-w keeps it readable, max-w keeps it from overflowing left.
-                                        */}
-                                        <div
-                                          className="absolute right-0 top-9 min-w-[160px] max-w-[220px] bg-[#111118] border border-white/10 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden"
-                                          style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
-                                        >
-                                          <div className="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest text-primary/70 border-b border-white/5 mb-1">
-                                            Topic Actions
-                                          </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setActiveTopicMenu(null);
-                                              handleOpenEditTopic(rm.id, topic);
-                                            }}
-                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
-                                          >
-                                            <span className="material-symbols-outlined text-[14px] shrink-0">edit</span>
-                                            Edit Topic
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setActiveTopicMenu(null);
-                                              setActiveTopicForSubtopic(topic.id);
-                                              setNewSubtopicText('');
-                                            }}
-                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
-                                          >
-                                            <span className="material-symbols-outlined text-[14px] shrink-0">add_circle</span>
-                                            Add Task
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setActiveTopicMenu(null);
-                                              handleReorderTopic(rm.id, topic.id, 'up');
-                                            }}
-                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
-                                          >
-                                            <span className="material-symbols-outlined text-[14px] shrink-0">arrow_upward</span>
-                                            Move Up
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setActiveTopicMenu(null);
-                                              handleReorderTopic(rm.id, topic.id, 'down');
-                                            }}
-                                            className="w-full text-left px-3 py-2.5 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
-                                          >
-                                            <span className="material-symbols-outlined text-[14px] shrink-0">arrow_downward</span>
-                                            Move Down
-                                          </button>
-                                          <div className="border-t border-white/5 my-1" />
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setActiveTopicMenu(null);
-                                              handleRemoveTopic(rm.id, topic.id);
-                                            }}
-                                            className="w-full text-left px-3 py-2.5 text-[12px] text-red-400 hover:text-red-300 hover:bg-red-500/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
-                                          >
-                                            <span className="material-symbols-outlined text-[14px] shrink-0">delete</span>
-                                            Delete
-                                          </button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
+                                  {/* Portal-backed Three-Dot Topic Actions Button & Viewport-aware Menu */}
+                                  <TopicActionButton
+                                    topic={topic}
+                                    rmId={rm.id}
+                                    activeTopicMenu={activeTopicMenu}
+                                    setActiveTopicMenu={setActiveTopicMenu}
+                                    handleOpenEditTopic={handleOpenEditTopic}
+                                    setActiveTopicForSubtopic={setActiveTopicForSubtopic}
+                                    setNewSubtopicText={setNewSubtopicText}
+                                    handleReorderTopic={handleReorderTopic}
+                                    handleRemoveTopic={handleRemoveTopic}
+                                  />
                                 </div>
 
                                 {/* Inline Subtopic Adder Form */}
@@ -2187,6 +2112,153 @@ const WorkspaceDetail = () => {
         type={toast.type}
         onClose={() => setToast({ message: '', type: 'success' })}
       />
+    </div>
+  );
+};
+
+/* ── Portal-backed Viewport-Aware Topic Action Menu Button Component ── */
+const TopicActionButton = ({
+  topic,
+  rmId,
+  activeTopicMenu,
+  setActiveTopicMenu,
+  handleOpenEditTopic,
+  setActiveTopicForSubtopic,
+  setNewSubtopicText,
+  handleReorderTopic,
+  handleRemoveTopic
+}) => {
+  const btnRef = useRef(null);
+  const isOpen = activeTopicMenu === topic.id;
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    if (!isOpen || !btnRef.current) return;
+
+    const updatePosition = () => {
+      if (!btnRef.current) return;
+      const rect = btnRef.current.getBoundingClientRect();
+      const menuWidth = 180;
+      const menuHeight = 220;
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+
+      let top = rect.bottom + 6;
+      if (vh - rect.bottom < menuHeight && rect.top > menuHeight) {
+        top = rect.top - menuHeight - 6;
+      }
+
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      if (left + menuWidth > vw - 10) left = vw - menuWidth - 10;
+
+      setCoords({ top, left });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative shrink-0 ml-1">
+      <button
+        ref={btnRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveTopicMenu(isOpen ? null : topic.id);
+        }}
+        className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+        aria-label="Topic actions"
+      >
+        <span className="material-symbols-outlined text-[16px]">more_vert</span>
+      </button>
+
+      {isOpen && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-[99990]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveTopicMenu(null);
+            }}
+          />
+          <div
+            className="fixed z-[99999] min-w-[170px] bg-[#111118] border border-white/10 rounded-xl shadow-2xl py-1.5 overflow-hidden text-left"
+            style={{
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.85)'
+            }}
+          >
+            <div className="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest text-primary/70 border-b border-white/5 mb-1">
+              Topic Actions
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTopicMenu(null);
+                handleOpenEditTopic(rmId, topic);
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] shrink-0">edit</span>
+              Edit Topic
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTopicMenu(null);
+                setActiveTopicForSubtopic(topic.id);
+                setNewSubtopicText('');
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] shrink-0">add_circle</span>
+              Add Task
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTopicMenu(null);
+                handleReorderTopic(rmId, topic.id, 'up');
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] shrink-0">arrow_upward</span>
+              Move Up
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTopicMenu(null);
+                handleReorderTopic(rmId, topic.id, 'down');
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] text-zinc-200 hover:text-white hover:bg-white/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] shrink-0">arrow_downward</span>
+              Move Down
+            </button>
+            <div className="border-t border-white/5 my-1" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTopicMenu(null);
+                handleRemoveTopic(rmId, topic.id);
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] text-red-400 hover:text-red-300 hover:bg-red-500/5 flex items-center gap-2.5 cursor-pointer border-0 bg-transparent transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] shrink-0">delete</span>
+              Delete
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 };

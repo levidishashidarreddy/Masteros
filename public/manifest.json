@@ -1,35 +1,29 @@
 {
-  "name": "MasterOS",
   "short_name": "MasterOS",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#08080C",
-  "theme_color": "#08080C",
-  "orientation": "portrait",
+  "name": "MasterOS - Ambitious Developer OS",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-maskable-192.png",
-      "sizes": "192x192",
+      "src": "/pwa-512x512.png",
       "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "/",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "description": "The Operating System for Ambitious Builders & Developers."
 }

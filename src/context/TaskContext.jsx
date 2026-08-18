@@ -18,6 +18,8 @@ import {
 } from 'firebase/firestore';
 
 
+import { normalizeRoadmapData } from '../utils/roadmapLayout';
+
 export const TaskContext = createContext();
 
 const todayStr = new Date().toISOString().split('T')[0];
@@ -663,8 +665,8 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_collaborated_workspaces');
     return cached ? JSON.parse(cached) : [];
   });
-  const [journeys, setJourneys] = useState(() => {
-    const cached = localStorage.getItem('cache_journeys');
+  const [userRoadmaps, setUserRoadmaps] = useState(() => {
+    const cached = localStorage.getItem('cache_userRoadmaps');
     return cached ? JSON.parse(cached) : [];
   });
   const [myCreatedTasks, setMyCreatedTasks] = useState([]);
@@ -738,8 +740,8 @@ export const TaskProvider = ({ children }) => {
   }, [collaboratedWorkspaces]);
 
   useEffect(() => {
-    localStorage.setItem('cache_journeys', JSON.stringify(journeys));
-  }, [journeys]);
+    localStorage.setItem('cache_userRoadmaps', JSON.stringify(userRoadmaps));
+  }, [userRoadmaps]);
 
   const wsTasksListenersRef = useRef({});
 
@@ -1135,182 +1137,14 @@ export const TaskProvider = ({ children }) => {
       setWorkspaces(list);
     });
 
-    // E3. Listen to journeys
-    const journeysQuery = query(collection(db, 'journeys'), where('userId', '==', uid));
-    const unsubscribeJourneys = onSnapshot(journeysQuery, (snapshot) => {
+    // E3. Listen to userRoadmaps
+    const roadmapsQuery = query(collection(db, 'userRoadmaps'), where('userId', '==', uid));
+    const unsubscribeJourneys = onSnapshot(roadmapsQuery, (snapshot) => {
       const list = [];
       snapshot.forEach((docSnap) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
-      setJourneys(list);
-      
-      // Auto-populate default Web Dev journey if the collection is empty
-      if (snapshot.empty) {
-        const defaultWebDevJourney = {
-          userId: uid,
-          title: 'Web Development',
-          description: 'Full Stack Web Engineering Track',
-          icon: 'conversion_path',
-          theme: 'purple',
-          coverColor: '#8B5CF6',
-          estDuration: '300 Hours',
-          difficulty: 'Intermediate',
-          nodes: [
-            {
-              id: 'c',
-              title: 'C Programming',
-              progress: 100,
-              status: 'Completed',
-              x: 160,
-              y: 120,
-              logoKey: 'c',
-              themeColor: '#00599C',
-              description: 'Learn the fundamentals of systems programming, memory management, pointers, and compilers using the C language.',
-              concepts: ['Variables & Syntax', 'Pointers & References', 'Memory Allocation (malloc/free)', 'Data Structures in C', 'Compilation Stages'],
-              estHours: 40,
-              xpReward: 500,
-              connections: ['python']
-            },
-            {
-              id: 'python',
-              title: 'Python Developer',
-              progress: 100,
-              status: 'Completed',
-              x: 390,
-              y: 190,
-              logoKey: 'python',
-              themeColor: '#3776AB',
-              description: 'Master clean, readable Python code. Discover scripting, standard library modules, object-oriented concepts, and package ecosystems.',
-              concepts: ['Control Structures', 'Lists, Dicts, Tuples', 'OOP: Classes & Inheritance', 'Virtual Environments', 'File I/O & Exceptions'],
-              estHours: 35,
-              xpReward: 400,
-              connections: ['sql']
-            },
-            {
-              id: 'sql',
-              title: 'SQL Databases',
-              progress: 90,
-              status: 'Completed',
-              x: 620,
-              y: 120,
-              logoKey: 'sql',
-              themeColor: '#00758F',
-              description: 'Understand relational databases, structure data, write efficient joins, handle indexing, transaction scopes, and design schemas.',
-              concepts: ['SELECT, WHERE, GROUP BY', 'JOIN Queries (Inner, Left, Outer)', 'Aggregate Functions', 'Database Normalization', 'Transactions & Indexes'],
-              estHours: 30,
-              xpReward: 350,
-              connections: ['html']
-            },
-            {
-              id: 'html',
-              title: 'HTML5 Foundations',
-              progress: 90,
-              status: 'Completed',
-              x: 850,
-              y: 190,
-              logoKey: 'html',
-              themeColor: '#E34F26',
-              description: 'Create the skeletal structure of websites. Master semantic elements, layout structuring, forms validation, and basic accessibility standards.',
-              concepts: ['HTML5 Semantic Elements', 'Document Structure', 'Forms & Inputs', 'SEO Core Tags', 'Accessibility (ARIA)'],
-              estHours: 15,
-              xpReward: 200,
-              connections: ['css']
-            },
-            {
-              id: 'css',
-              title: 'CSS3 Aesthetics',
-              progress: 85,
-              status: 'In Progress',
-              x: 1080,
-              y: 120,
-              logoKey: 'css',
-              themeColor: '#1572B6',
-              description: 'Bring style, motion, and layouts to life. Deep dive into Flexbox, CSS Grid, media queries, CSS variables, transitions, and keyframe animations.',
-              concepts: ['Box Model & Resetting', 'Flexbox & CSS Grid', 'Responsive Media Queries', 'CSS Custom Variables', 'Keyframe Animations'],
-              estHours: 25,
-              xpReward: 250,
-              connections: ['javascript']
-            },
-            {
-              id: 'javascript',
-              title: 'JavaScript Engine',
-              progress: 75,
-              status: 'In Progress',
-              x: 1160,
-              y: 340,
-              logoKey: 'javascript',
-              themeColor: '#F7DF1E',
-              description: 'Inject interaction and logic into frontend layouts. Explore DOM manipulation, event capturing, ES6+ features, asynchronous fetch, and execution contexts.',
-              concepts: ['Scope & Hoisting', 'DOM & Event Listeners', 'Promises & Async/Await', 'Closures & Callbacks', 'Local / Session Storage'],
-              estHours: 50,
-              xpReward: 600,
-              connections: ['react']
-            },
-            {
-              id: 'react',
-              title: 'React UI Framework',
-              progress: 60,
-              status: 'In Progress',
-              x: 930,
-              y: 400,
-              logoKey: 'react',
-              themeColor: '#61DAFB',
-              description: 'Construct modern component-based single page applications. Master React state management, hook hooks, routing lifecycle, and virtual DOM diffs.',
-              concepts: ['JSX & Component Design', 'useState & useEffect Hooks', 'Props & Event Passing', 'React Router Navigation', 'Context API State Management'],
-              estHours: 45,
-              xpReward: 550,
-              connections: ['node']
-            },
-            {
-              id: 'node',
-              title: 'Node.js Backend',
-              progress: 45,
-              status: 'In Progress',
-              x: 700,
-              y: 340,
-              logoKey: 'node',
-              themeColor: '#339933',
-              description: 'Build fast network servers using JavaScript. Discover NPM packages, Express routing controllers, server middlewares, and rest APIs.',
-              concepts: ['Event Loop & Non-blocking I/O', 'Express.js Routing', 'Middleware Architecture', 'Request/Response Controllers', 'RESTful API Design'],
-              estHours: 40,
-              xpReward: 500,
-              connections: ['mongodb']
-            },
-            {
-              id: 'mongodb',
-              title: 'MongoDB NoSQL',
-              progress: 30,
-              status: 'In Progress',
-              x: 470,
-              y: 400,
-              logoKey: 'mongodb',
-              themeColor: '#47A248',
-              description: 'Learn document-oriented database design. Store collections, design dynamic schemas, manage aggregate pipelines, and query JSON collections.',
-              concepts: ['Documents & Collections', 'CRUD Operations', 'Mongoose ODM Schema', 'Aggregation Pipelines', 'Referencing & Embedding Documents'],
-              estHours: 25,
-              xpReward: 300,
-              connections: ['aws']
-            },
-            {
-              id: 'aws',
-              title: 'AWS Cloud Services',
-              progress: 0,
-              status: 'Locked',
-              x: 240,
-              y: 460,
-              logoKey: 'aws',
-              themeColor: '#FF9900',
-              description: 'Deploy global production infrastructures on Amazon Web Services. Learn cloud scaling, compute virtualization, static CDNs, and database backends.',
-              concepts: ['Amazon EC2 Instances', 'S3 Storage Buckets', 'CloudFront Content CDN', 'IAM Security Roles', 'Lambda Serverless Functions'],
-              estHours: 35,
-              xpReward: 450,
-              connections: []
-            }
-          ],
-          createdAt: new Date().toISOString()
-        };
-        setDoc(doc(db, 'journeys', 'web-dev-default'), defaultWebDevJourney);
-      }
+      setUserRoadmaps(list);
     });
 
     // E2. Listen to collaborated workspaces
@@ -1532,235 +1366,585 @@ export const TaskProvider = ({ children }) => {
 
   // ================= TASK OPERATIONS =================
   const addTask = async (task) => {
-    if (!currentUser) return;
-    const taskId = `task-${Date.now()}`;
+    const taskId = task.id || `task-${Date.now()}`;
     const newTask = {
-      userId: currentUser.uid,
-      text: task.text || '',
-      done: false,
+      id: taskId,
+      userId: currentUser ? currentUser.uid : 'guest',
+      text: task.text || task.name || '',
+      done: Boolean(task.done),
       priority: task.priority || 'Low',
       dueDate: task.dueDate || '',
       dueTime: task.dueTime || '',
-      progress: 0,
+      type: task.type || 'General Task',
+      progress: task.progress || 0,
       isPinned: task.isPinned || false,
       workspaceId: task.workspaceId || null,
       recurring: task.recurring || 'None',
-      completedAt: null,
+      completedAt: task.done ? new Date().toISOString() : null,
       colorCategory: task.colorCategory || 'yellow'
     };
-    if (newTask.colorCategory === 'yellow') {
+
+    if (newTask.colorCategory === 'yellow' && !newTask.dueDate) {
       newTask.dueDate = todayStr;
       newTask.dueTime = '';
     }
     
-    await setDoc(doc(db, 'tasks', taskId), newTask);
-    
-    if (newTask.workspaceId === null && newTask.isPinned) {
-      await setDoc(doc(db, 'focusTasks', taskId), newTask);
+    // Update local state instantly
+    setMyCreatedTasks(prev => [newTask, ...prev]);
+
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'tasks', taskId), newTask);
+        if (newTask.workspaceId === null && newTask.isPinned) {
+          await setDoc(doc(db, 'focusTasks', taskId), newTask);
+        }
+        if (newTask.workspaceId) {
+          await touchWorkspace(newTask.workspaceId);
+        }
+      } catch (err) {
+        console.error("Firestore addTask error:", err);
+      }
     }
-    if (newTask.workspaceId) {
-      await touchWorkspace(newTask.workspaceId);
-    }
+    return taskId;
   };
 
   const editTask = async (id, updatedFields) => {
-    if (!currentUser) return;
-    const taskRef = doc(db, 'tasks', id);
     const mergedFields = { ...updatedFields };
     if (mergedFields.colorCategory === 'yellow') {
       mergedFields.dueDate = todayStr;
       mergedFields.dueTime = '';
     }
-    await updateDoc(taskRef, mergedFields);
-    
-    const taskSnap = await getDoc(taskRef);
-    if (taskSnap.exists()) {
-      const taskData = taskSnap.data();
-      if (taskData.workspaceId === null && taskData.isPinned) {
-        await setDoc(doc(db, 'focusTasks', id), taskData);
-      } else {
-        await deleteDoc(doc(db, 'focusTasks', id));
-      }
-      if (taskData.workspaceId) {
-        await touchWorkspace(taskData.workspaceId);
+
+    setMyCreatedTasks(prev => prev.map(t => t.id === id ? { ...t, ...mergedFields } : t));
+
+    if (currentUser) {
+      try {
+        const taskRef = doc(db, 'tasks', id);
+        await updateDoc(taskRef, mergedFields);
+        const taskSnap = await getDoc(taskRef);
+        if (taskSnap.exists()) {
+          const taskData = taskSnap.data();
+          if (taskData.workspaceId === null && taskData.isPinned) {
+            await setDoc(doc(db, 'focusTasks', id), taskData);
+          } else {
+            await deleteDoc(doc(db, 'focusTasks', id));
+          }
+          if (taskData.workspaceId) {
+            await touchWorkspace(taskData.workspaceId);
+          }
+        }
+      } catch (err) {
+        console.error("Firestore editTask error:", err);
       }
     }
   };
 
   const deleteTask = async (id) => {
-    if (!currentUser) return;
     const taskToDelete = tasks.find(t => t.id === id);
-    await deleteDoc(doc(db, 'tasks', id));
-    await deleteDoc(doc(db, 'focusTasks', id));
-    if (taskToDelete && taskToDelete.workspaceId) {
-      await touchWorkspace(taskToDelete.workspaceId);
+    setMyCreatedTasks(prev => prev.filter(t => t.id !== id));
+
+    if (currentUser) {
+      try {
+        await deleteDoc(doc(db, 'tasks', id));
+        await deleteDoc(doc(db, 'focusTasks', id));
+        if (taskToDelete && taskToDelete.workspaceId) {
+          await touchWorkspace(taskToDelete.workspaceId);
+        }
+      } catch (err) {
+        console.error("Firestore deleteTask error:", err);
+      }
     }
   };
 
   const toggleTask = async (id) => {
-    if (!currentUser) return;
-    const taskRef = doc(db, 'tasks', id);
-    const taskSnap = await getDoc(taskRef);
-    if (taskSnap.exists()) {
-      const task = taskSnap.data();
-      const nextDone = !task.done;
-      const updated = {
-        done: nextDone,
-        progress: nextDone ? 100 : 0,
-        completedAt: nextDone ? new Date().toISOString() : null
-      };
-      await updateDoc(taskRef, updated);
-      
-      if (task.workspaceId === null && task.isPinned) {
-        await updateDoc(doc(db, 'focusTasks', id), updated);
-      }
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const nextDone = !task.done;
+    const updated = {
+      done: nextDone,
+      progress: nextDone ? 100 : 0,
+      completedAt: nextDone ? new Date().toISOString() : null
+    };
 
-      if (task.workspaceId) {
-        await touchWorkspace(task.workspaceId);
-      }
+    setMyCreatedTasks(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t));
 
-      if (nextDone) {
-        await logProductiveActivity('task');
-        if (task.isPinned && task.workspaceId === null) {
-          await logProductiveActivity('focusTask');
+    if (currentUser) {
+      try {
+        const taskRef = doc(db, 'tasks', id);
+        await updateDoc(taskRef, updated);
+        if (task.workspaceId === null && task.isPinned) {
+          await updateDoc(doc(db, 'focusTasks', id), updated);
         }
-      } else {
-        if (userProfile) {
+        if (task.workspaceId) {
+          await touchWorkspace(task.workspaceId);
+        }
+
+        if (nextDone) {
+          await logProductiveActivity('task');
+          if (task.isPinned && task.workspaceId === null) {
+            await logProductiveActivity('focusTask');
+          }
+        } else if (userProfile) {
           const newXp = Math.max(0, (userProfile.xp || 0) - 15);
           await updateDoc(doc(db, 'users', currentUser.uid), { xp: newXp });
           if (userProfile.userId) {
             await setDoc(doc(db, 'leaderboards', userProfile.userId), { xp: newXp }, { merge: true });
           }
         }
+      } catch (err) {
+        console.error("Firestore toggleTask error:", err);
       }
     }
   };
 
   const togglePin = async (id) => {
-    if (!currentUser) return;
-    const taskRef = doc(db, 'tasks', id);
-    const taskSnap = await getDoc(taskRef);
-    if (taskSnap.exists()) {
-      const task = taskSnap.data();
-      if (!task.isPinned) {
-        const pinnedCount = tasks.filter((t) => t.isPinned && !t.workspaceId && !t.done).length;
-        if (pinnedCount >= 6) return;
-      }
-      const updatedPinned = !task.isPinned;
-      await updateDoc(taskRef, { isPinned: updatedPinned });
-      
-      if (task.workspaceId === null) {
-        if (updatedPinned) {
-          await setDoc(doc(db, 'focusTasks', id), { ...task, isPinned: true });
-        } else {
-          await deleteDoc(doc(db, 'focusTasks', id));
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    if (!task.isPinned) {
+      const pinnedCount = tasks.filter((t) => t.isPinned && !t.workspaceId && !t.done).length;
+      if (pinnedCount >= 6) return;
+    }
+    const updatedPinned = !task.isPinned;
+    setMyCreatedTasks(prev => prev.map(t => t.id === id ? { ...t, isPinned: updatedPinned } : t));
+
+    if (currentUser) {
+      try {
+        const taskRef = doc(db, 'tasks', id);
+        await updateDoc(taskRef, { isPinned: updatedPinned });
+        if (task.workspaceId === null) {
+          if (updatedPinned) {
+            await setDoc(doc(db, 'focusTasks', id), { ...task, isPinned: true });
+          } else {
+            await deleteDoc(doc(db, 'focusTasks', id));
+          }
         }
+      } catch (err) {
+        console.error("Firestore togglePin error:", err);
       }
     }
   };
 
   // ================= EXAM OPERATIONS =================
   const addExam = async (exam) => {
-    if (!currentUser) return;
     const examId = `exam-${Date.now()}`;
     const newExam = {
-      userId: currentUser.uid,
+      id: examId,
+      userId: currentUser ? currentUser.uid : 'guest',
       name: exam.name || '',
       subject: exam.subject || '',
       date: exam.date || '',
       status: 'Pending',
       prepProgress: exam.prepProgress || 0
     };
-    await setDoc(doc(db, 'exams', examId), newExam);
+    
+    // Update exams state immediately
+    setExams(prev => [newExam, ...prev]);
+
+    // Also add to tasks list so it appears everywhere and retains category
+    await addTask({
+      id: examId,
+      text: `${newExam.subject ? `${newExam.subject}: ` : ''}${newExam.name}`,
+      type: 'Exam',
+      dueDate: newExam.date,
+      colorCategory: 'red',
+      priority: 'High'
+    });
+
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'exams', examId), newExam);
+      } catch (err) {
+        console.error("Firestore addExam error:", err);
+      }
+    }
+    return examId;
   };
 
   const editExam = async (id, updatedFields) => {
-    if (!currentUser) return;
-    await updateDoc(doc(db, 'exams', id), updatedFields);
+    setExams(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
+    if (updatedFields.name || updatedFields.subject || updatedFields.date) {
+      const exam = exams.find(e => e.id === id);
+      const updatedName = updatedFields.name || exam?.name || '';
+      const updatedSub = updatedFields.subject || exam?.subject || '';
+      editTask(id, {
+        text: `${updatedSub ? `${updatedSub}: ` : ''}${updatedName}`,
+        dueDate: updatedFields.date || exam?.date || ''
+      });
+    }
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'exams', id), updatedFields);
+      } catch (err) {
+        console.error("Firestore editExam error:", err);
+      }
+    }
   };
 
   const deleteExam = async (id) => {
-    if (!currentUser) return;
-    await deleteDoc(doc(db, 'exams', id));
+    setExams(prev => prev.filter(e => e.id !== id));
+    deleteTask(id);
+
+    if (currentUser) {
+      try {
+        await deleteDoc(doc(db, 'exams', id));
+      } catch (err) {
+        console.error("Firestore deleteExam error:", err);
+      }
+    }
   };
 
   const toggleExam = async (id) => {
-    if (!currentUser) return;
-    const examRef = doc(db, 'exams', id);
-    const examSnap = await getDoc(examRef);
-    if (examSnap.exists()) {
-      const exam = examSnap.data();
-      const isCompleting = exam.status !== 'Completed';
-      await updateDoc(examRef, {
-        status: isCompleting ? 'Completed' : 'Pending'
-      });
+    const exam = exams.find(e => e.id === id);
+    if (!exam) return;
+    const isCompleting = exam.status !== 'Completed';
+    const updatedStatus = isCompleting ? 'Completed' : 'Pending';
 
-      if (isCompleting) {
-        await logProductiveActivity('exam');
-      } else {
-        if (userProfile) {
-          const newXp = Math.max(0, (userProfile.xp || 0) - 15);
-          await updateDoc(doc(db, 'users', currentUser.uid), { xp: newXp });
-          if (userProfile.userId) {
-            await setDoc(doc(db, 'leaderboards', userProfile.userId), { xp: newXp }, { merge: true });
-          }
+    setExams(prev => prev.map(e => e.id === id ? { ...e, status: updatedStatus } : e));
+    toggleTask(id);
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'exams', id), { status: updatedStatus });
+        if (isCompleting) {
+          await logProductiveActivity('exam');
         }
+      } catch (err) {
+        console.error("Firestore toggleExam error:", err);
       }
     }
   };
 
   // ================= ASSIGNMENT OPERATIONS =================
   const addAssignment = async (assign) => {
-    if (!currentUser) return;
     const assignId = `assign-${Date.now()}`;
     const newAssign = {
-      userId: currentUser.uid,
+      id: assignId,
+      userId: currentUser ? currentUser.uid : 'guest',
       name: assign.name || '',
       subject: assign.subject || '',
       dueDate: assign.dueDate || '',
       status: 'Pending',
       progress: assign.progress || 0
     };
-    await setDoc(doc(db, 'assignments', assignId), newAssign);
+
+    setAssignments(prev => [newAssign, ...prev]);
+
+    // Also add to tasks list so it appears in main task list and retains category
+    await addTask({
+      id: assignId,
+      text: `${newAssign.subject ? `${newAssign.subject}: ` : ''}${newAssign.name}`,
+      type: 'Assignment',
+      dueDate: newAssign.dueDate,
+      colorCategory: 'red',
+      priority: 'Med'
+    });
+
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'assignments', assignId), newAssign);
+      } catch (err) {
+        console.error("Firestore addAssignment error:", err);
+      }
+    }
+    return assignId;
   };
 
   const editAssignment = async (id, updatedFields) => {
-    if (!currentUser) return;
-    await updateDoc(doc(db, 'assignments', id), updatedFields);
-  };
-
-  const deleteAssignment = async (id) => {
-    if (!currentUser) return;
-    await deleteDoc(doc(db, 'assignments', id));
-  };
-
-  const toggleAssignment = async (id) => {
-    if (!currentUser) return;
-    const assignRef = doc(db, 'assignments', id);
-    const assignSnap = await getDoc(assignRef);
-    if (assignSnap.exists()) {
-      const assign = assignSnap.data();
-      const isSubmitting = assign.status !== 'Submitted';
-      await updateDoc(assignRef, {
-        status: isSubmitting ? 'Submitted' : 'Pending',
-        progress: isSubmitting ? 100 : 0
+    setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...updatedFields } : a));
+    if (updatedFields.name || updatedFields.subject || updatedFields.dueDate) {
+      const assign = assignments.find(a => a.id === id);
+      const updatedName = updatedFields.name || assign?.name || '';
+      const updatedSub = updatedFields.subject || assign?.subject || '';
+      editTask(id, {
+        text: `${updatedSub ? `${updatedSub}: ` : ''}${updatedName}`,
+        dueDate: updatedFields.dueDate || assign?.dueDate || ''
       });
+    }
 
-      if (isSubmitting) {
-        await logProductiveActivity('assignment');
-      } else {
-        if (userProfile) {
-          const newXp = Math.max(0, (userProfile.xp || 0) - 15);
-          await updateDoc(doc(db, 'users', currentUser.uid), { xp: newXp });
-          if (userProfile.userId) {
-            await setDoc(doc(db, 'leaderboards', userProfile.userId), { xp: newXp }, { merge: true });
-          }
-        }
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'assignments', id), updatedFields);
+      } catch (err) {
+        console.error("Firestore editAssignment error:", err);
       }
     }
   };
 
-  // ================= JOURNEY CRUD OPERATIONS =================
+  const deleteAssignment = async (id) => {
+    setAssignments(prev => prev.filter(a => a.id !== id));
+    deleteTask(id);
+
+    if (currentUser) {
+      try {
+        await deleteDoc(doc(db, 'assignments', id));
+      } catch (err) {
+        console.error("Firestore deleteAssignment error:", err);
+      }
+    }
+  };
+
+  const toggleAssignment = async (id) => {
+    const assign = assignments.find(a => a.id === id);
+    if (!assign) return;
+    const isSubmitting = assign.status !== 'Submitted';
+    const updatedFields = {
+      status: isSubmitting ? 'Submitted' : 'Pending',
+      progress: isSubmitting ? 100 : 0
+    };
+
+    setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...updatedFields } : a));
+    toggleTask(id);
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'assignments', id), updatedFields);
+        if (isSubmitting) {
+          await logProductiveActivity('assignment');
+        }
+      } catch (err) {
+        console.error("Firestore toggleAssignment error:", err);
+      }
+    }
+  };
+
+  // ================= ROADMAP CRUD OPERATIONS =================
+  const addRoadmap = async (roadmap) => {
+    const roadmapId = roadmap.id || `roadmap-${Date.now()}`;
+    const rawRoadmap = {
+      id: roadmapId,
+      userId: currentUser ? currentUser.uid : 'guest',
+      title: roadmap.title || 'New Roadmap',
+      description: roadmap.description || '',
+      category: roadmap.category || 'Learning',
+      isAiGenerated: Boolean(roadmap.isAiGenerated),
+      targetRole: roadmap.targetRole || roadmap.title || '',
+      estimatedTime: roadmap.estimatedTime || 'Flexible',
+      skills: roadmap.skills || [],
+      stages: roadmap.stages || [],
+      createdAt: new Date().toISOString()
+    };
+
+    const newRoadmap = normalizeRoadmapData(rawRoadmap);
+
+    setUserRoadmaps(prev => [newRoadmap, ...prev]);
+
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'userRoadmaps', roadmapId), newRoadmap);
+      } catch (err) {
+        console.error("Firestore addRoadmap error:", err);
+      }
+    }
+    return roadmapId;
+  };
+
+  const updateRoadmap = async (roadmapId, updatedFields) => {
+    let normalizedFields = { ...updatedFields };
+    if (updatedFields.skills) {
+      const tempNormalized = normalizeRoadmapData({ id: roadmapId, skills: updatedFields.skills });
+      normalizedFields.skills = tempNormalized.skills;
+    }
+
+    setUserRoadmaps(prev => prev.map(r => r.id === roadmapId ? { ...r, ...normalizedFields } : r));
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'userRoadmaps', roadmapId), normalizedFields);
+      } catch (err) {
+        console.error("Firestore updateRoadmap error:", err);
+      }
+    }
+  };
+
+  // STRICT RULE: Each roadmap has EXACTLY ONE "Current Focus" skill at a time.
+  const setCurrentFocusSkill = async (roadmapId, skillId) => {
+    const targetRm = userRoadmaps.find(r => r.id === roadmapId);
+    if (!targetRm || !targetRm.skills) return;
+
+    const updatedSkills = targetRm.skills.map(sk => ({
+      ...sk,
+      isCurrent: sk.id === skillId,
+      status: sk.done ? 'completed' : (sk.id === skillId ? 'current' : (sk.isParallel ? 'parallel' : 'future'))
+    }));
+
+    await updateRoadmap(roadmapId, { skills: updatedSkills });
+  };
+
+  const deleteRoadmap = async (roadmapId) => {
+    // Delete ONLY the roadmap document. Linked workspaces are NEVER touched or deleted!
+    setUserRoadmaps(prev => prev.filter(r => r.id !== roadmapId));
+
+    if (currentUser) {
+      try {
+        await deleteDoc(doc(db, 'userRoadmaps', roadmapId));
+      } catch (err) {
+        console.error("Firestore deleteRoadmap error:", err);
+      }
+    }
+  };
+
+  const linkSkillToWorkspace = async (roadmapId, skillId, workspaceId) => {
+    const targetRm = userRoadmaps.find(r => r.id === roadmapId);
+    if (!targetRm) return;
+
+    const updatedSkills = (targetRm.skills || []).map(skill => {
+      if (skill.id === skillId) {
+        return { ...skill, linkedWorkspaceId: workspaceId };
+      }
+      return skill;
+    });
+
+    await updateRoadmap(roadmapId, { skills: updatedSkills });
+  };
+
+  // ================= FEEDBACK & ERROR REPORTING & ADMIN NOTIFICATION ENGINE =================
+  const [feedbackReports, setFeedbackReports] = useState([]);
+  const [userNotifications, setUserNotifications] = useState([]);
+
+  const isAdmin = Boolean(
+    currentUser && (
+      currentUser.email === 'admin@masteros.com' ||
+      currentUserProfile?.role === 'admin' ||
+      userProfileData?.role === 'admin'
+    )
+  );
+
+  useEffect(() => {
+    if (!currentUser) {
+      setFeedbackReports([]);
+      setUserNotifications([]);
+      return;
+    }
+
+    const notifQuery = query(
+      collection(db, 'notifications'),
+      where('targetUserId', 'in', [currentUser.uid, 'admin', 'all'])
+    );
+    const unsubNotif = onSnapshot(notifQuery, (snapshot) => {
+      const list = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setUserNotifications(list);
+    }, (err) => console.error("Notifications snapshot error:", err));
+
+    const feedbackQuery = isAdmin
+      ? collection(db, 'feedback')
+      : query(collection(db, 'feedback'), where('userId', '==', currentUser.uid));
+
+    const unsubFeedback = onSnapshot(feedbackQuery, (snapshot) => {
+      const list = [];
+      snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setFeedbackReports(list);
+    }, (err) => console.error("Feedback snapshot error:", err));
+
+    return () => {
+      unsubNotif();
+      unsubFeedback();
+    };
+  }, [currentUser, isAdmin]);
+
+  const submitFeedback = async (reportData) => {
+    const feedbackId = `feedback-${Date.now()}`;
+    const newReport = {
+      id: feedbackId,
+      userId: currentUser ? currentUser.uid : 'guest',
+      userEmail: currentUser ? currentUser.email : 'guest@masteros.com',
+      userName: currentUserProfile?.displayName || currentUser?.displayName || 'User',
+      type: reportData.type || 'problem',
+      title: reportData.title.trim(),
+      description: reportData.description.trim(),
+      section: reportData.section || 'General',
+      stepsToReproduce: reportData.stepsToReproduce || '',
+      severity: reportData.severity || 'Normal',
+      status: 'NEW',
+      metadata: {
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        screenCategory: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Desktop',
+        pageUrl: typeof window !== 'undefined' ? window.location.pathname : '',
+        appVersion: '1.0.0'
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    setFeedbackReports(prev => [newReport, ...prev]);
+
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'feedback', feedbackId), newReport);
+
+        const notifId = `notif-${Date.now()}`;
+        const adminNotif = {
+          id: notifId,
+          targetUserId: 'admin',
+          type: reportData.type === 'problem' ? 'bug' : reportData.type === 'suggestion' ? 'suggestion' : 'feedback',
+          title: reportData.type === 'problem' ? '🐛 New problem report' : reportData.type === 'suggestion' ? '💡 New feature suggestion' : '💬 New user feedback',
+          message: `"${newReport.title}" - submitted by ${newReport.userName}`,
+          feedbackId: feedbackId,
+          unread: true,
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'notifications', notifId), adminNotif);
+      } catch (err) {
+        console.error("Firestore submitFeedback error:", err);
+      }
+    }
+    return feedbackId;
+  };
+
+  const updateFeedbackStatus = async (feedbackId, newStatus) => {
+    const targetReport = feedbackReports.find(f => f.id === feedbackId);
+    if (!targetReport) return;
+
+    setFeedbackReports(prev => prev.map(f => f.id === feedbackId ? { ...f, status: newStatus } : f));
+
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'feedback', feedbackId), { status: newStatus });
+
+        if (targetReport.userId && targetReport.userId !== 'guest') {
+          const notifId = `notif-user-${Date.now()}`;
+          const userNotif = {
+            id: notifId,
+            targetUserId: targetReport.userId,
+            type: 'feedback_update',
+            title: `🔔 Feedback Status Update: ${newStatus}`,
+            message: `Your reported issue "${targetReport.title}" is now marked as ${newStatus}.`,
+            feedbackId: feedbackId,
+            unread: true,
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(doc(db, 'notifications', notifId), userNotif);
+        }
+      } catch (err) {
+        console.error("Firestore updateFeedbackStatus error:", err);
+      }
+    }
+  };
+
+  const markNotificationAsRead = async (notifId) => {
+    setUserNotifications(prev => prev.map(n => n.id === notifId ? { ...n, unread: false } : n));
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'notifications', notifId), { unread: false });
+      } catch (err) {
+        console.error("Firestore markNotificationAsRead error:", err);
+      }
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setUserNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    if (currentUser) {
+      try {
+        const unreadList = userNotifications.filter(n => n.unread);
+        await Promise.all(unreadList.map(n => updateDoc(doc(db, 'notifications', n.id), { unread: false })));
+      } catch (err) {
+        console.error("Firestore markAllNotificationsAsRead error:", err);
+      }
+    }
+  };
   const addJourney = async (journey) => {
     if (!currentUser) return;
     const journeyId = journey.id || `journey-${Date.now()}`;
@@ -2799,10 +2983,12 @@ export const TaskProvider = ({ children }) => {
         syncSharedWorkspace,
         verifySharedWorkspace,
         requestCollaboration,
-        journeys,
-        addJourney,
-        updateJourney,
-        deleteJourney,
+        userRoadmaps,
+        addRoadmap,
+        updateRoadmap,
+        deleteRoadmap,
+        setCurrentFocusSkill,
+        linkSkillToWorkspace,
         workspaceTasksMap,
         sendFollowRequest,
         acceptFollowRequest,
@@ -2819,7 +3005,14 @@ export const TaskProvider = ({ children }) => {
         deleteNotification,
         getNotifications,
         submitDeveloperReport,
-        logProductiveActivity
+        logProductiveActivity,
+        isAdmin,
+        feedbackReports,
+        userNotifications,
+        submitFeedback,
+        updateFeedbackStatus,
+        markNotificationAsRead,
+        markAllNotificationsAsRead
       }}
     >
       {children}
