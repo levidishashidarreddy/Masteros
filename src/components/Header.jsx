@@ -13,7 +13,9 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
     collaboratedWorkspaces,
     tasks,
     exams,
-    assignments
+    assignments,
+    isGuestMode,
+    exitGuestMode
   } = useContext(TaskContext);
 
   const alerts = getNotifications();
@@ -313,6 +315,22 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
 
   return (
     <>
+      {/* GUEST MODE BANNER */}
+      {isGuestMode && (
+        <div className="w-full bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs font-bold text-amber-300 z-50 animate-slide-down">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">info</span>
+            <span>Guest Mode — Your changes are temporary.</span>
+          </div>
+          <button
+            onClick={() => { exitGuestMode(); navigate('/auth'); }}
+            className="px-3 py-1 bg-amber-500 text-black text-[11px] font-extrabold uppercase rounded-lg hover:opacity-90 transition-all cursor-pointer"
+          >
+            Sign In to Save
+          </button>
+        </div>
+      )}
+
       {/* MOBILE STABLE HEADER */}
       <div className="md:hidden w-full h-[56px] bg-[#0D0D14]/90 border-b border-white/5 flex items-center justify-between px-4 sticky top-0 z-40 backdrop-blur-md safe-area-inset-top shrink-0 select-none relative">
         {/* Left: Hamburger menu trigger */}

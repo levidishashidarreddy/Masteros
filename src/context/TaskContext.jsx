@@ -1,6 +1,16 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { auth, db, googleProvider } from '../firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  signOut, 
+  signInWithPopup, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  EmailAuthProvider, 
+  linkWithCredential, 
+  updatePassword 
+} from 'firebase/auth';
 import { 
   doc, 
   collection, 
@@ -635,6 +645,7 @@ export const getDefaultRoadmapForCategory = (cat) => {
 export const TaskProvider = ({ children }) => {
   // Authentication & Profile loading states
   const [currentUser, setCurrentUser] = useState(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [userProfile, setUserProfile] = useState(() => {
     const cached = localStorage.getItem('cache_userProfile');
     return cached ? JSON.parse(cached) : null;
@@ -643,6 +654,85 @@ export const TaskProvider = ({ children }) => {
     return localStorage.getItem('isOnboarded') === 'true';
   });
   const [loading, setLoading] = useState(true);
+
+  // Authentication provider status detection
+  const hasPasswordSet = Boolean(
+    currentUser && currentUser.providerData?.some(p => p.providerId === 'password')
+  );
+  const hasGoogleConnected = Boolean(
+    currentUser && currentUser.providerData?.some(p => p.providerId === 'google.com')
+  );
+
+  // Multi-method login helpers
+  const loginWithGoogle = async () => {
+    setIsGuestMode(false);
+    return await signInWithPopup(auth, googleProvider);
+  };
+
+  const loginWithEmail = async (email, password) => {
+    setIsGuestMode(false);
+    return await signInWithEmailAndPassword(auth, email.trim(), password);
+  };
+
+  const registerWithEmail = async (email, password, fullName = '') => {
+    setIsGuestMode(false);
+    const res = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    const user = res.user;
+    
+    const profileData = {
+      userId: user.uid,
+      fullName: fullName.trim() || email.split('@')[0],
+      email: user.email,
+      username: `@${email.split('@')[0]}`,
+      createdAt: new Date().toISOString()
+    };
+    await setDoc(doc(db, 'users', user.uid), profileData, { merge: true });
+    return res;
+  };
+
+  const sendResetPasswordEmail = async (email) => {
+    return await sendPasswordResetEmail(auth, email.trim());
+  };
+
+  const linkPasswordToAccount = async (newPassword) => {
+    if (!currentUser || !currentUser.email) {
+      throw new Error("No active user logged in.");
+    }
+    const credential = EmailAuthProvider.credential(currentUser.email, newPassword);
+    const res = await linkWithCredential(currentUser, credential);
+    return res;
+  };
+
+  const changeUserPassword = async (newPassword) => {
+    if (!currentUser) throw new Error("No active user logged in.");
+    return await updatePassword(currentUser, newPassword);
+  };
+
+  const loginAsGuest = () => {
+    setIsGuestMode(true);
+    setIsOnboarded(true);
+    setCurrentUser({
+      uid: 'guest-session',
+      email: 'guest@masteros.com',
+      displayName: 'Guest Builder',
+      isAnonymous: true,
+      providerData: []
+    });
+    setUserProfile({
+      userId: 'guest-session',
+      fullName: 'Guest Builder',
+      username: '@guest',
+      bio: 'Exploring MasterOS in Demo Mode',
+      avatar: '/avatars/avatar-1.png'
+    });
+  };
+
+  const exitGuestMode = () => {
+    setIsGuestMode(false);
+    setCurrentUser(null);
+    setUserProfile(null);
+    setIsOnboarded(false);
+  };
 
   // Firestore synced state variables
   const [tasks, setTasks] = useState(() => {
@@ -3011,7 +3101,18 @@ export const TaskProvider = ({ children }) => {
         submitFeedback,
         updateFeedbackStatus,
         markNotificationAsRead,
-        markAllNotificationsAsRead
+        markAllNotificationsAsRead,
+        isGuestMode,
+        hasPasswordSet,
+        hasGoogleConnected,
+        loginWithGoogle,
+        loginWithEmail,
+        registerWithEmail,
+        sendResetPasswordEmail,
+        linkPasswordToAccount,
+        changeUserPassword,
+        loginAsGuest,
+        exitGuestMode
       }}
     >
       {children}

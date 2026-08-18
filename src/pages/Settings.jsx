@@ -80,7 +80,11 @@ const Settings = () => {
     submitFeedback,
     updateFeedbackStatus,
     feedbackReports,
-    isAdmin
+    isAdmin,
+    hasPasswordSet,
+    hasGoogleConnected,
+    linkPasswordToAccount,
+    changeUserPassword
   } = useContext(TaskContext);
 
   // Profile fields
@@ -103,15 +107,21 @@ const Settings = () => {
   const [toast, setToast] = useState(null);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
 
-  // Feedback & Support Form State
-  const [feedbackType, setFeedbackType] = useState('problem'); // 'problem' | 'suggestion' | 'feedback'
+  // Feedback Form State
+  const [feedbackType, setFeedbackType] = useState('problem');
   const [feedbackTitle, setFeedbackTitle] = useState('');
   const [feedbackDescription, setFeedbackDescription] = useState('');
   const [feedbackSection, setFeedbackSection] = useState('Roadmaps');
   const [feedbackSteps, setFeedbackSteps] = useState('');
   const [feedbackSeverity, setFeedbackSeverity] = useState('Normal');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
-  const [selectedAdminReport, setSelectedAdminReport] = useState(null);
+
+  // Password Setup / Change Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (!userProfile) return;
@@ -219,7 +229,7 @@ const Settings = () => {
         severity: feedbackSeverity
       });
 
-      showToast('success', 'Thank you! Your feedback has been submitted to the admin team.');
+      showToast('success', 'Thank you! Your feedback has been submitted.');
       setFeedbackTitle('');
       setFeedbackDescription('');
       setFeedbackSteps('');
@@ -231,12 +241,44 @@ const Settings = () => {
     }
   };
 
+  const handleSavePassword = async (e) => {
+    e.preventDefault();
+    if (newPasswordInput.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setSavingPassword(true);
+    setPasswordError('');
+    try {
+      if (hasPasswordSet) {
+        await changeUserPassword(newPasswordInput);
+        showToast('success', 'Password updated successfully!');
+      } else {
+        await linkPasswordToAccount(newPasswordInput);
+        showToast('success', 'Password set up successfully! You can now log in with Email or Google.');
+      }
+      setIsPasswordModalOpen(false);
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+    } catch (err) {
+      console.error("Password link/change error:", err);
+      setPasswordError(err.message || 'Failed to save password.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const joinDate = userProfile?.createdAt
     ? new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Recently';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-on-surface radial-glow-bg select-none">
+    <div className="flex h-screen overflow-hidden bg-background text-on-surface radial-glow-bg select-none font-dm-sans">
       <Sidebar />
 
       <main className="flex-1 h-full overflow-y-auto overflow-x-hidden scroll-smooth relative z-10">
@@ -246,9 +288,9 @@ const Settings = () => {
 
           {/* Page title */}
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tight font-space-grotesk">SETTINGS & SUPPORT</h2>
+            <h2 className="text-2xl font-black text-white tracking-tight font-space-grotesk">SETTINGS & SECURITY</h2>
             <p className="text-xs text-on-surface-variant mt-1">
-              Manage profile settings, social links, account security, and feedback reporting.
+              Manage profile, social links, authentication login methods, and support.
             </p>
           </div>
 
@@ -266,7 +308,7 @@ const Settings = () => {
             </div>
           )}
 
-          {/* ══════════════════ A) PROFILE ══════════════════════════════════ */}
+          {/* PROFILE SECTION */}
           <Section title="Profile" icon="person">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 mb-6 pb-6 border-b border-white/5">
               <div className="shrink-0">
@@ -315,23 +357,14 @@ const Settings = () => {
 
                 {avatarMode === 'url' && (
                   <div className="space-y-1.5 w-full">
-                    <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                      Paste any public image URL (Imgur, Unsplash, etc.)
-                    </p>
                     <input
                       type="url"
                       value={avatarUrlInput}
                       onChange={e => { setAvatarUrlInput(e.target.value); setUrlError(''); }}
                       onBlur={e => validateUrl(e.target.value.trim())}
                       placeholder="https://i.imgur.com/example.jpg"
-                      className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary transition-colors"
+                      className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface focus:outline-none focus:border-primary"
                     />
-                    {urlError && (
-                      <p className="text-[10px] text-red-400 font-semibold flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">error</span>
-                        {urlError}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -369,7 +402,7 @@ const Settings = () => {
                   placeholder="Tell peers something about yourself…"
                   rows={3}
                   maxLength={160}
-                  className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary transition-colors resize-none"
+                  className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary resize-none"
                 />
               </div>
 
@@ -379,18 +412,90 @@ const Settings = () => {
             </div>
           </Section>
 
-          {/* ══════════════════ B) SOCIAL LINKS ═════════════════════════════ */}
+          {/* ══════════════════ REQUIREMENT 3 & 4: SECURITY / LOGIN METHODS ═════════════════════════ */}
+          <Section title="Security & Login Methods" icon="security">
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Manage authentication providers linked to your account. Multiple methods access the exact same profile & workspace data.
+              </p>
+
+              <div className="space-y-3">
+                
+                {/* 1. Google Authentication */}
+                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                      🌐
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Google Account</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        {hasGoogleConnected || currentUser?.email ? currentUser?.email : 'Google Authentication'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                    <span>✓ Connected</span>
+                  </span>
+                </div>
+
+                {/* 2. Password Authentication */}
+                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                      🔑
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Password Authentication</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        {hasPasswordSet ? 'Password configured for email sign-in' : 'No password set (Optional)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => { setPasswordError(''); setIsPasswordModalOpen(true); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      hasPasswordSet
+                        ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
+                        : 'bg-primary text-black font-extrabold uppercase shadow-[0_0_10px_rgba(139,92,246,0.3)]'
+                    }`}
+                  >
+                    {hasPasswordSet ? 'Change Password' : '+ Set a Password'}
+                  </button>
+                </div>
+
+                {/* 3. Passkey (Future) */}
+                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl opacity-60">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                      📱
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Passkey / Biometric</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">Not configured</p>
+                    </div>
+                  </div>
+
+                  <button
+                    disabled
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-zinc-500 cursor-not-allowed"
+                  >
+                    Set Up Passkey
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </Section>
+
+          {/* SOCIAL LINKS */}
           <Section title="Social Links" icon="share">
-            <p className="text-[11px] text-on-surface-variant mb-4 leading-relaxed">
-              Links appear as icons on your public profile.
-            </p>
             <div className="space-y-3">
               {SOCIAL_ICONS.map(({ key, icon, label, placeholder, color }) => (
                 <div key={key} className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/5 shrink-0"
-                    style={{ color }}
-                  >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/5 shrink-0" style={{ color }}>
                     <i className={`${icon} text-sm`} />
                   </div>
                   <input
@@ -399,9 +504,8 @@ const Settings = () => {
                     onChange={e => setSocialLinks(prev => ({ ...prev, [key]: e.target.value }))}
                     placeholder={placeholder}
                     aria-label={label}
-                    className="flex-1 bg-[#0D0D14] border border-white/5 rounded-lg px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/25 focus:outline-none focus:border-primary transition-colors"
+                    className="flex-1 bg-[#0D0D14] border border-white/5 rounded-lg px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary"
                   />
-                  <span className="text-[10px] font-bold text-on-surface-variant w-16 shrink-0 hidden sm:block">{label}</span>
                 </div>
               ))}
             </div>
@@ -410,129 +514,58 @@ const Settings = () => {
             </div>
           </Section>
 
-          {/* ══════════════════ REQUIREMENT 16: FEEDBACK AND ERROR REPORTING ═════════════════════════ */}
+          {/* FEEDBACK SECTION */}
           <Section title="Feedback & Support" icon="feedback">
-            <form onSubmit={handleSubmitFeedbackForm} className="space-y-5">
-              
-              {/* Type Selection */}
-              <div>
-                <FieldLabel>What would you like to submit?</FieldLabel>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFeedbackType('problem')}
-                    className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      feedbackType === 'problem'
-                        ? 'bg-rose-500/10 border-rose-500/40 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
-                        : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">🐛</span>
-                    <span>Report a Problem</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFeedbackType('suggestion')}
-                    className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      feedbackType === 'suggestion'
-                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                        : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">💡</span>
-                    <span>Suggest Improvement</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFeedbackType('feedback')}
-                    className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      feedbackType === 'feedback'
-                        ? 'bg-primary/10 border-primary/40 text-primary shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                        : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">💬</span>
-                    <span>General Feedback</span>
-                  </button>
-                </div>
+            <form onSubmit={handleSubmitFeedbackForm} className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackType('problem')}
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                    feedbackType === 'problem' ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' : 'bg-white/5 border-white/5 text-zinc-400'
+                  }`}
+                >
+                  🐛 Bug Report
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackType('suggestion')}
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                    feedbackType === 'suggestion' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-white/5 border-white/5 text-zinc-400'
+                  }`}
+                >
+                  💡 Suggestion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackType('feedback')}
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                    feedbackType === 'feedback' ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/5 text-zinc-400'
+                  }`}
+                >
+                  💬 Feedback
+                </button>
               </div>
 
-              {/* Form Inputs */}
-              <div>
-                <FieldLabel>{feedbackType === 'problem' ? 'What happened?' : 'Summary / Title'}</FieldLabel>
-                <TextInput
-                  value={feedbackTitle}
-                  onChange={(e) => setFeedbackTitle(e.target.value)}
-                  placeholder={feedbackType === 'problem' ? 'e.g. Tasks are not adding when selecting Exam category' : 'e.g. Add dark calendar mode'}
-                  maxLength={100}
-                />
-              </div>
+              <TextInput
+                value={feedbackTitle}
+                onChange={e => setFeedbackTitle(e.target.value)}
+                placeholder="Title / Summary"
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <FieldLabel>Where did it occur?</FieldLabel>
-                  <select
-                    value={feedbackSection}
-                    onChange={(e) => setFeedbackSection(e.target.value)}
-                    className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface focus:outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="Roadmaps">Roadmaps</option>
-                    <option value="Tasks">Tasks & Checklist</option>
-                    <option value="Workspaces">Workspaces</option>
-                    <option value="Dashboard">Dashboard</option>
-                    <option value="Settings">Settings</option>
-                    <option value="General">General App</option>
-                  </select>
-                </div>
+              <textarea
+                value={feedbackDescription}
+                onChange={e => setFeedbackDescription(e.target.value)}
+                placeholder="Details & Description..."
+                rows={3}
+                className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary resize-none"
+              />
 
-                {feedbackType === 'problem' && (
-                  <div>
-                    <FieldLabel>Severity</FieldLabel>
-                    <select
-                      value={feedbackSeverity}
-                      onChange={(e) => setFeedbackSeverity(e.target.value)}
-                      className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface focus:outline-none focus:border-primary cursor-pointer"
-                    >
-                      <option value="Minor">Minor (Cosmetic / Small glitch)</option>
-                      <option value="Normal">Normal (Feature bug)</option>
-                      <option value="Major">Major (Blocking error)</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <FieldLabel>Details & Description</FieldLabel>
-                <textarea
-                  value={feedbackDescription}
-                  onChange={(e) => setFeedbackDescription(e.target.value)}
-                  placeholder="Describe your issue or suggestion in detail..."
-                  rows={3}
-                  className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary transition-colors resize-none"
-                  required
-                />
-              </div>
-
-              {feedbackType === 'problem' && (
-                <div>
-                  <FieldLabel>Steps to reproduce (Optional)</FieldLabel>
-                  <input
-                    type="text"
-                    value={feedbackSteps}
-                    onChange={(e) => setFeedbackSteps(e.target.value)}
-                    placeholder="1. Open Tasks -> 2. Click Add Exam..."
-                    className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-1">
                 <button
                   type="submit"
                   disabled={submittingFeedback}
-                  className="px-6 py-2.5 bg-primary text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.3)] disabled:opacity-50"
+                  className="px-5 py-2 bg-primary text-black font-bold text-xs uppercase rounded-xl cursor-pointer"
                 >
                   {submittingFeedback ? 'Submitting...' : 'Submit Report'}
                 </button>
@@ -540,87 +573,43 @@ const Settings = () => {
             </form>
           </Section>
 
-          {/* ══════════════════ REQUIREMENT 17: ADMIN FEEDBACK MANAGEMENT PANEL ═════════════════════════ */}
+          {/* ADMIN MANAGEMENT PANEL */}
           {isAdmin && (
             <Section title="Admin Feedback Management" icon="admin_panel_settings">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    All User Reports ({feedbackReports.length})
-                  </span>
-                  <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full uppercase">
-                    Admin Verified
-                  </span>
-                </div>
-
-                {feedbackReports.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic py-2">No feedback reports submitted yet.</p>
-                ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto no-scrollbar">
-                    {feedbackReports.map((report) => (
-                      <div key={report.id} className="p-4 bg-[#0D0D14] border border-white/10 rounded-xl space-y-3 text-xs">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                report.type === 'problem' ? 'bg-rose-500/20 text-rose-300' : report.type === 'suggestion' ? 'bg-amber-500/20 text-amber-300' : 'bg-primary/20 text-primary'
-                              }`}>
-                                {report.type === 'problem' ? '🐛 Problem' : report.type === 'suggestion' ? '💡 Suggestion' : '💬 Feedback'}
-                              </span>
-                              <span className="text-[10px] text-zinc-500 font-mono">{report.section}</span>
-                            </div>
-                            <h4 className="font-bold text-white text-sm font-space-grotesk">{report.title}</h4>
-                            <p className="text-xs text-zinc-300 mt-1 leading-relaxed">{report.description}</p>
-                          </div>
-
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase shrink-0 ${
-                            report.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : report.status === 'IN PROGRESS' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-white/5 text-zinc-400 border border-white/10'
-                          }`}>
-                            {report.status}
-                          </span>
-                        </div>
-
-                        {/* User & Metadata details */}
-                        <div className="flex flex-wrap items-center gap-3 text-[10px] text-zinc-500 border-t border-white/5 pt-2">
-                          <span>User: <strong className="text-zinc-300">{report.userEmail}</strong></span>
-                          <span>Device: <strong className="text-zinc-300">{report.metadata?.screenCategory || 'Desktop'}</strong></span>
-                          <span>Submitted: <strong className="text-zinc-300">{new Date(report.createdAt).toLocaleDateString()}</strong></span>
-                        </div>
-
-                        {/* Status Change Buttons */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase mr-1">Update Status:</span>
-                          {['VIEWED', 'IN PROGRESS', 'RESOLVED', 'CLOSED'].map((status) => (
-                            <button
-                              key={status}
-                              onClick={() => updateFeedbackStatus(report.id, status)}
-                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                                report.status === status
-                                  ? 'bg-primary text-black font-black'
-                                  : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white'
-                              }`}
-                            >
-                              {status}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+              <div className="space-y-3 max-h-80 overflow-y-auto no-scrollbar">
+                {feedbackReports.map((report) => (
+                  <div key={report.id} className="p-3 bg-[#0D0D14] border border-white/10 rounded-xl space-y-2 text-xs">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-white">{report.title}</h4>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/20 text-primary">
+                        {report.status}
+                      </span>
+                    </div>
+                    <p className="text-zinc-400 text-[11px]">{report.description}</p>
+                    <div className="flex gap-2 pt-1">
+                      {['VIEWED', 'IN PROGRESS', 'RESOLVED', 'CLOSED'].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => updateFeedbackStatus(report.id, s)}
+                          className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-white/5 hover:bg-white/10 text-zinc-300"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </Section>
           )}
 
-          {/* ══════════════════ ACCOUNT DETAILS ══════════════════════════════ */}
+          {/* ACCOUNT DETAILS */}
           <Section title="Account" icon="manage_accounts">
             <div className="space-y-2.5">
               {[
-                { label: 'Email Address', value: currentUser?.email || '—',           icon: 'email'         },
-                { label: 'User ID',       value: userId || userProfile?.userId || '—', icon: 'badge'         },
-                { label: 'Member Since',  value: joinDate,                             icon: 'calendar_today' },
+                { label: 'Email Address', value: currentUser?.email || '—', icon: 'email' },
+                { label: 'User ID', value: userId || userProfile?.userId || '—', icon: 'badge' },
+                { label: 'Member Since', value: joinDate, icon: 'calendar_today' },
               ].map(({ label, value, icon }) => (
                 <div key={label} className="flex items-center gap-3 px-4 py-3 bg-[#0D0D14] rounded-xl border border-white/5">
                   <span className="material-symbols-outlined text-on-surface-variant text-base shrink-0">{icon}</span>
@@ -640,12 +629,77 @@ const Settings = () => {
               className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">logout</span>
-              Sign Out
+              Sign Out of MasterOS
             </button>
           </div>
 
         </div>
       </main>
+
+      {/* Password Setup / Change Modal */}
+      {isPasswordModalOpen && (
+        <Modal
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
+          title={hasPasswordSet ? "CHANGE PASSWORD" : "SET A PASSWORD FOR YOUR ACCOUNT"}
+          maxWidth="max-w-sm"
+        >
+          <form onSubmit={handleSavePassword} className="space-y-4 py-2 text-xs select-none">
+            <p className="text-zinc-400 leading-relaxed">
+              {hasPasswordSet
+                ? "Enter your new password below."
+                : "Setting a password allows you to log in with your email address while keeping Google Sign-In fully active."}
+            </p>
+
+            {passwordError && (
+              <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 font-semibold text-center">
+                {passwordError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-zinc-400 mb-1">New Password</label>
+              <input
+                type="password"
+                value={newPasswordInput}
+                onChange={e => setNewPasswordInput(e.target.value)}
+                placeholder="At least 6 characters"
+                className="w-full bg-[#0D0D14] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-primary"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-zinc-400 mb-1">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPasswordInput}
+                onChange={e => setConfirmPasswordInput(e.target.value)}
+                placeholder="Re-enter new password"
+                className="w-full bg-[#0D0D14] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-primary"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="px-3 py-1.5 rounded-xl text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingPassword}
+                className="px-5 py-1.5 rounded-xl bg-primary text-black font-bold uppercase"
+              >
+                {savingPassword ? 'Saving...' : 'Save Password'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Logout confirm modal */}
       {logoutConfirm && (
