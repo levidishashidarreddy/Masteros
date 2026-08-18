@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ShaderBackground from '../components/ShaderBackground';
 import ThreeJSAnimation from '../components/ThreeJSAnimation';
 import Button from '../components/Button';
 import MasterOSBrandLogo from '../components/MasterOSBrandLogo';
+import { TaskContext } from '../context/TaskContext';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { currentUser, isGuestMode } = useContext(TaskContext);
+  const isAuthenticated = Boolean(currentUser && !isGuestMode);
 
   return (
-    <div className="relative min-h-screen text-on-surface flex flex-col justify-between selection:bg-primary/30 radial-glow-bg">
+    <div className="relative min-h-screen text-on-surface flex flex-col justify-between selection:bg-primary/30 radial-glow-bg font-dm-sans select-none">
       {/* Top Navbar */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-background/60 border-b border-white/5 shadow-2xl landing-navbar">
         <div className="max-w-[1200px] mx-auto px-4 md:px-margin-desktop h-16 md:h-20 flex justify-between items-center">
@@ -17,7 +20,7 @@ const Landing = () => {
             <MasterOSBrandLogo
               size={32}
               showText
-              onClick={() => { if (window.location.pathname !== '/dashboard') navigate('/dashboard'); }}
+              onClick={() => { navigate(isAuthenticated ? '/dashboard' : '/'); }}
             />
             <div className="hidden md:flex gap-8">
               <a className="text-primary font-bold border-b border-primary pb-1 font-body-md text-sm transition-all" href="#features">Features</a>
@@ -26,15 +29,23 @@ const Landing = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <button 
-              onClick={() => navigate('/auth')}
-              className="text-on-surface-variant font-medium font-body-md text-sm px-4 py-2 hover:text-white transition-colors active:scale-95 cursor-pointer landing-nav-signin small-btn"
-            >
-              Sign In
-            </button>
-            <Button variant="primary" onClick={() => navigate('/auth')} className="landing-nav-signup small-btn">
-              Get Started
-            </Button>
+            {isAuthenticated ? (
+              <Button variant="primary" onClick={() => navigate('/dashboard')} className="landing-nav-signup small-btn">
+                Open Dashboard
+              </Button>
+            ) : (
+              <>
+                <button 
+                  onClick={() => navigate('/auth')}
+                  className="text-on-surface-variant font-medium font-body-md text-sm px-4 py-2 hover:text-white transition-colors active:scale-95 cursor-pointer landing-nav-signin small-btn"
+                >
+                  Sign In
+                </button>
+                <Button variant="primary" onClick={() => navigate('/auth')} className="landing-nav-signup small-btn">
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -64,11 +75,15 @@ const Landing = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-text-reveal landing-cta-container" style={{ animationDelay: '0.4s' }}>
-            <Button variant="primary" className="px-8 py-3.5 text-base" onClick={() => navigate('/auth')}>
-              Get Started for Free
+            <Button
+              variant="primary"
+              className="px-8 py-3.5 text-base cursor-pointer"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            >
+              {isAuthenticated ? 'Open Dashboard →' : 'Get Started for Free'}
             </Button>
             <a href="#features" className="landing-demo-link">
-              <Button variant="secondary" className="px-8 py-3.5 text-base w-full">
+              <Button variant="secondary" className="px-8 py-3.5 text-base w-full cursor-pointer">
                 Explore Demo
               </Button>
             </a>

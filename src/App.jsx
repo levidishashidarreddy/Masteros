@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { TaskProvider, TaskContext } from './context/TaskContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import PandaLoader from './components/PandaLoader';
@@ -22,16 +22,33 @@ const Notifications = React.lazy(() => import('./pages/Notifications'));
 const Roadmaps = React.lazy(() => import('./pages/Roadmaps'));
 const RoadmapDetail = React.lazy(() => import('./pages/RoadmapDetail'));
 
+const RootRoute = () => {
+  const { currentUser, isGuestMode, isOnboarded, loading } = React.useContext(TaskContext);
+
+  if (loading) {
+    return <PandaLoader appReady={false} />;
+  }
+
+  if (currentUser && !isGuestMode) {
+    if (!isOnboarded) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Landing />;
+};
 
 const ProtectedRoute = ({ children }) => {
   const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
+  const location = useLocation();
   
   if (loading) {
     return <PandaLoader appReady={false} />;
   }
   
   if (!currentUser) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
   if (!isOnboarded) {
     return <Navigate to="/onboarding" replace />;
@@ -40,13 +57,13 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const PublicOnlyRoute = ({ children }) => {
-  const { currentUser, isOnboarded, loading } = React.useContext(TaskContext);
+  const { currentUser, isGuestMode, isOnboarded, loading } = React.useContext(TaskContext);
 
   if (loading) {
     return <PandaLoader appReady={false} />;
   }
 
-  if (currentUser) {
+  if (currentUser && !isGuestMode) {
     if (!isOnboarded) {
       return <Navigate to="/onboarding" replace />;
     }
@@ -77,8 +94,8 @@ function AppContent() {
       <PWAInstallBanner />
       <Suspense fallback={<PandaLoader appReady={false} />}>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
+          {/* Public / Root Guard Route */}
+          <Route path="/" element={<RootRoute />} />
           <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
           <Route path="/onboarding" element={<OnboardingRoute><OnboardingFlow /></OnboardingRoute>} />
 

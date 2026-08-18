@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ShaderBackground from '../components/ShaderBackground';
 import MasterOSBrandLogo from '../components/MasterOSBrandLogo';
 import Modal from '../components/Modal';
@@ -7,6 +7,9 @@ import { TaskContext } from '../context/TaskContext';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const targetDestination = location.state?.from?.pathname || '/dashboard';
+
   const {
     loginWithGoogle,
     loginWithEmail,
@@ -15,7 +18,7 @@ const Auth = () => {
     loginAsGuest
   } = useContext(TaskContext);
 
-  const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'signup'
+  const [authMode, setAuthMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -37,7 +40,7 @@ const Auth = () => {
     setSuccessMsg('');
     try {
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate(targetDestination, { replace: true });
     } catch (err) {
       console.error("Google Sign-In Error:", err);
       let friendlyMessage = 'Authentication failed. Please try again.';
@@ -68,11 +71,11 @@ const Auth = () => {
     try {
       if (authMode === 'signin') {
         await loginWithEmail(email, password);
-        navigate('/dashboard');
+        navigate(targetDestination, { replace: true });
       } else {
         await registerWithEmail(email, password, fullName);
         setSuccessMsg('Account created successfully! Redirecting...');
-        setTimeout(() => navigate('/dashboard'), 1000);
+        setTimeout(() => navigate(targetDestination, { replace: true }), 1000);
       }
     } catch (err) {
       console.error("Email Auth Error:", err);
