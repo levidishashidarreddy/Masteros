@@ -38,25 +38,34 @@ const Sidebar = () => {
       {isExpanded && (
         <div 
           onClick={() => setIsExpanded(false)}
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-45 animate-fade-in"
+          className="md:hidden fixed inset-0 bg-black/75 backdrop-blur-md z-45 animate-fade-in"
         />
       )}
 
+      {/* MOBILE FLOATING PANDA AI AGENT BUTTON (< md) */}
+      <div 
+        className={`fixed right-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-40 md:hidden transition-all duration-300 ${
+          isExpanded ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+        }`}
+      >
+        <PandaCompanion onClick={() => setIsPandaModalOpen(true)} />
+      </div>
+
       {/* SINGLE IN-PLACE COLLAPSIBLE SIDEBAR CONTAINER */}
       <aside 
-        className={`fixed md:relative h-screen border-r border-white/5 bg-[#0D0D14]/85 md:bg-[#0D0D14]/80 backdrop-blur-xl shrink-0 z-50 md:z-40 select-none transition-all duration-300 ${
-          isExpanded ? 'translate-x-0 w-[280px]' : '-translate-x-full md:translate-x-0 md:w-[72px]'
+        className={`fixed top-0 bottom-0 left-0 h-screen max-h-screen border-r border-white/5 bg-[#0D0D14]/95 md:bg-[#0D0D14]/80 backdrop-blur-2xl shrink-0 z-50 md:z-40 select-none transition-transform duration-300 box-border overflow-y-auto no-scrollbar shadow-2xl md:shadow-none ${
+          isExpanded
+            ? 'translate-x-0 w-[280px] max-w-[calc(100vw-36px)]'
+            : '-translate-x-full md:translate-x-0 md:w-[72px] md:relative'
         }`}
         style={{ 
           transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' 
         }}
       >
         
-        {/* ================= STATIC ELEMENTS (Never move a single pixel) ================= */}
-        
         {/* Profile Avatar (Top-left) */}
         <div 
-          onClick={() => navigate('/profile')}
+          onClick={() => { setIsExpanded(false); navigate('/profile'); }}
           className="absolute left-[14px] top-6 h-11 w-11 rounded-full overflow-hidden border border-primary/20 p-[1.5px] cursor-pointer hover:border-primary transition-colors shadow-lg shadow-primary/5 z-10"
           title="Profile Page"
         >
@@ -80,38 +89,22 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Panda Companion (Bottom-left) */}
-        <div className="absolute left-[10px] bottom-5 z-10">
+        {/* Desktop Panda Companion (Bottom-left) */}
+        <div className="absolute left-[10px] bottom-5 z-10 hidden md:block">
           <PandaCompanion onClick={() => setIsPandaModalOpen(true)} />
         </div>
 
-        {/* ================= REVEALED EXPANDED ELEMENTS ================= */}
-
         {/* Close Button (✕) on the top-right of expanded menu */}
         <div 
-          className={`absolute right-4 top-6 z-10 transition-all duration-300 ${
+          className={`absolute right-3.5 top-6 z-10 transition-all duration-300 ${
             isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
           }`}
         >
           <button 
             onClick={() => setIsExpanded(false)}
-            className="group/close relative w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-white transition-all cursor-pointer rounded-full hover:scale-105"
+            className="group/close relative w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-white transition-all cursor-pointer rounded-full bg-white/5 border border-white/10 hover:border-primary/40 active:scale-95"
             title="Close Menu"
           >
-            {/* Circular outline that draws itself on hover */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
-              <circle
-                cx="20"
-                cy="20"
-                r="16"
-                fill="transparent"
-                stroke="#8B5CF6"
-                strokeWidth="1.5"
-                strokeDasharray="100.5" /* 2 * PI * 16 = 100.53 */
-                strokeDashoffset="100.5"
-                className="circle-draw transition-all duration-300 ease-out"
-              />
-            </svg>
             <span className="material-symbols-outlined text-[20px]">
               close
             </span>
@@ -120,13 +113,14 @@ const Sidebar = () => {
 
         {/* Navigation links list positioned directly under the avatar */}
         <div 
-          className={`absolute left-0 top-[148px] w-full px-3.5 transition-all duration-300 ${
+          className={`absolute left-0 top-[148px] w-full px-3.5 pb-24 transition-all duration-300 ${
             isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
           }`}
         >
-          <nav className="space-y-3 w-full">
+          <nav className="space-y-2.5 w-full">
             <NavLink
               to="/dashboard"
+              onClick={() => setIsExpanded(false)}
               onMouseEnter={() => prefetchRoute('/dashboard')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -143,6 +137,7 @@ const Sidebar = () => {
 
             <NavLink
               to="/workspaces"
+              onClick={() => setIsExpanded(false)}
               onMouseEnter={() => prefetchRoute('/workspaces')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -159,6 +154,7 @@ const Sidebar = () => {
 
             <NavLink
               to="/roadmaps"
+              onClick={() => setIsExpanded(false)}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
                   isActive
@@ -172,10 +168,9 @@ const Sidebar = () => {
               <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Roadmaps</span>
             </NavLink>
 
-
-
             <NavLink
               to="/tasks"
+              onClick={() => setIsExpanded(false)}
               onMouseEnter={() => prefetchRoute('/tasks')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -192,6 +187,7 @@ const Sidebar = () => {
 
             <NavLink
               to="/analytics"
+              onClick={() => setIsExpanded(false)}
               onMouseEnter={() => prefetchRoute('/analytics')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -213,6 +209,7 @@ const Sidebar = () => {
             {!isGuestMode && (
               <NavLink
                 to="/friends"
+                onClick={() => setIsExpanded(false)}
                 onMouseEnter={() => prefetchRoute('/friends')}
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -230,6 +227,7 @@ const Sidebar = () => {
 
             <NavLink
               to="/settings"
+              onClick={() => setIsExpanded(false)}
               onMouseEnter={() => prefetchRoute('/settings')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
@@ -246,7 +244,7 @@ const Sidebar = () => {
 
             {isGuestMode && (
               <button
-                onClick={() => { exitGuestMode(); navigate('/auth'); }}
+                onClick={() => { setIsExpanded(false); exitGuestMode(); navigate('/auth'); }}
                 className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border border-amber-500/20 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/40 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">login</span>

@@ -504,6 +504,12 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {totalYearTasks === 0 && (
+              <div className="p-3 text-center text-xs text-zinc-400 italic bg-white/[0.02] border border-white/5 rounded-xl">
+                No activity recorded yet. Complete tasks, study sessions, or roadmap items to log your commitment here.
+              </div>
+            )}
+
             {/* Heatmap Grid Container */}
             <div className="overflow-x-auto no-scrollbar relative w-full pt-2 pb-1">
               <div className="inline-block min-w-[780px] w-full">

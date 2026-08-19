@@ -33,10 +33,14 @@
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "background_color": "#050507",
   "theme_color": "#08080C",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
   "orientation": "portrait-primary",
   "description": "The Operating System for Ambitious Builders & Developers."
 }
-
