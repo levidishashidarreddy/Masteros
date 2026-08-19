@@ -42,12 +42,10 @@ const Tasks = () => {
     loading
   } = useContext(TaskContext);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(loading);
 
   useEffect(() => {
-    if (!loading) {
-      setIsLoading(false);
-    }
+    setIsLoading(loading);
   }, [loading]);
 
   // Filter and Sorting state for Personal Tasks

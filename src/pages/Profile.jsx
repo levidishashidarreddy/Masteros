@@ -11,7 +11,11 @@ import { AvatarImg, getAvatar } from '../components/Avatar';
 const Profile = () => {
   const { userProfile, setUserProfile, userId, friends, allUsers, tasks, workspaces, loading } = useContext(TaskContext);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(loading);
+
+  useEffect(() => {
+    setIsLoading(loading);
+  }, [loading]);
 
   const fullName = userProfile?.fullName || 'User';
   const username = userProfile?.username || '@user';
@@ -57,11 +61,7 @@ const Profile = () => {
     ];
   }, [globalRank, userProfile, tasks, workspaces]);
 
-  useEffect(() => {
-    if (!loading) {
-      setIsLoading(false);
-    }
-  }, [loading]);
+
 
 
 

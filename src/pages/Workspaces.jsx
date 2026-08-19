@@ -87,12 +87,10 @@ const Workspaces = () => {
   const navigate = useNavigate();
   const { workspaces, collaboratedWorkspaces, allUsers, addWorkspace, updateWorkspace, touchWorkspace, verifySharedWorkspace, requestCollaboration, userProfile, tasks, loading, addTask } = useContext(TaskContext);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(loading);
 
   useEffect(() => {
-    if (!loading) {
-      setIsLoading(false);
-    }
+    setIsLoading(loading);
   }, [loading]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);

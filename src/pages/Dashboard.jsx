@@ -27,12 +27,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { tasks, toggleTask, workspaces, userProfile, exams, assignments, toggleAssignment, touchWorkspace, loading } = useContext(TaskContext);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(loading);
 
   useEffect(() => {
-    if (!loading) {
-      setIsLoading(false);
-    }
+    setIsLoading(loading);
   }, [loading]);
 
   const today = new Date().toISOString().split('T')[0];

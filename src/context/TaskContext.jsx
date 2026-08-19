@@ -650,10 +650,28 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_userProfile');
     return cached ? JSON.parse(cached) : null;
   });
-  const [isOnboarded, setIsOnboarded] = useState(() => {
-    return localStorage.getItem('isOnboarded') === 'true';
+  const [authInitializing, setAuthInitializing] = useState(true);
+  const [userDataLoading, setUserDataLoading] = useState(true);
+
+  const initialDataStreamsRef = useRef({
+    profile: false,
+    tasks: false,
+    exams: false,
+    assignments: false,
+    workspaces: false,
+    userRoadmaps: false
   });
-  const [loading, setLoading] = useState(true);
+
+  const markDataStreamResolved = useCallback((streamKey) => {
+    initialDataStreamsRef.current[streamKey] = true;
+    const s = initialDataStreamsRef.current;
+    if (s.profile && s.tasks && s.exams && s.assignments && s.workspaces && s.userRoadmaps) {
+      setUserDataLoading(false);
+    }
+  }, []);
+
+  const appReady = !authInitializing && (!currentUser || isGuestMode || !userDataLoading);
+  const loading = !appReady;
 
   // Authentication provider status detection
   const hasPasswordSet = Boolean(
@@ -991,7 +1009,20 @@ export const TaskProvider = ({ children }) => {
       }
 
       setCurrentUser(user);
+      setAuthInitializing(false);
+
       if (user) {
+        // Reset stream resolution tracker for active authenticated session
+        initialDataStreamsRef.current = {
+          profile: false,
+          tasks: false,
+          exams: false,
+          assignments: false,
+          workspaces: false,
+          userRoadmaps: false
+        };
+        setUserDataLoading(true);
+
         // Listen to active user's profile doc in Firestore
         const profileRef = doc(db, 'users', user.uid);
         unsubscribeProfileRef.current = onSnapshot(profileRef, (docSnap) => {
@@ -1006,15 +1037,15 @@ export const TaskProvider = ({ children }) => {
             setIsOnboarded(false);
             localStorage.setItem('isOnboarded', 'false');
           }
-          setLoading(false);
+          markDataStreamResolved('profile');
         }, (error) => {
           console.error("Profile listen error:", error);
-          setLoading(false);
+          markDataStreamResolved('profile');
         });
       } else {
         setUserProfile(null);
         setIsOnboarded(false);
-        setLoading(false);
+        setUserDataLoading(false);
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('isOnboarded');
       }
@@ -1026,7 +1057,7 @@ export const TaskProvider = ({ children }) => {
         unsubscribeProfileRef.current();
       }
     };
-  }, []);
+  }, [markDataStreamResolved]);
 
   // Apply theme from localStorage instantly on mount to avoid flashes
   useEffect(() => {
@@ -1152,18 +1183,21 @@ export const TaskProvider = ({ children }) => {
 
   // 2. Real-time Firestore sync of user collections
   useEffect(() => {
-    if (!currentUser || !userProfile) {
-      setTasks([]);
-      setExams([]);
-      setAssignments([]);
-      setWorkspaces([]);
-      setNotifications([]);
-      setFriends([]);
-      setSentRequests([]);
-      setChats({});
-      setAllUsers([]);
-      setPresenceStates({});
-      setTypingStates({});
+    if (!currentUser || !userProfile || isGuestMode) {
+      if (!currentUser || isGuestMode) {
+        setTasks([]);
+        setExams([]);
+        setAssignments([]);
+        setWorkspaces([]);
+        setNotifications([]);
+        setFriends([]);
+        setSentRequests([]);
+        setChats({});
+        setAllUsers([]);
+        setPresenceStates({});
+        setTypingStates({});
+        setUserDataLoading(false);
+      }
       // Clean up any message subcollection listeners
       Object.values(msgListenersRef.current).forEach((unsub) => unsub());
       msgListenersRef.current = {};
@@ -1195,6 +1229,10 @@ export const TaskProvider = ({ children }) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
       setMyCreatedTasks(list);
+      markDataStreamResolved('tasks');
+    }, (err) => {
+      console.error("Error listening to tasks:", err);
+      markDataStreamResolved('tasks');
     });
 
     // C. Listen to exams
@@ -1205,6 +1243,10 @@ export const TaskProvider = ({ children }) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
       setExams(list);
+      markDataStreamResolved('exams');
+    }, (err) => {
+      console.error("Error listening to exams:", err);
+      markDataStreamResolved('exams');
     });
 
     // D. Listen to assignments
@@ -1215,6 +1257,10 @@ export const TaskProvider = ({ children }) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
       setAssignments(list);
+      markDataStreamResolved('assignments');
+    }, (err) => {
+      console.error("Error listening to assignments:", err);
+      markDataStreamResolved('assignments');
     });
 
     // E. Listen to workspaces
@@ -1225,6 +1271,10 @@ export const TaskProvider = ({ children }) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
       setWorkspaces(list);
+      markDataStreamResolved('workspaces');
+    }, (err) => {
+      console.error("Error listening to workspaces:", err);
+      markDataStreamResolved('workspaces');
     });
 
     // E3. Listen to userRoadmaps
@@ -1235,6 +1285,10 @@ export const TaskProvider = ({ children }) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
       setUserRoadmaps(list);
+      markDataStreamResolved('userRoadmaps');
+    }, (err) => {
+      console.error("Error listening to userRoadmaps:", err);
+      markDataStreamResolved('userRoadmaps');
     });
 
     // E2. Listen to collaborated workspaces
@@ -3029,6 +3083,9 @@ export const TaskProvider = ({ children }) => {
       value={{
         currentUser,
         loading,
+        authInitializing,
+        userDataLoading,
+        appReady,
         isOnboarded,
         userProfile,
         setUserProfile: setUserProfileWrapper,

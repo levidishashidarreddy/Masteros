@@ -33,13 +33,11 @@ const Notifications = () => {
 
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(loading);
   const [selectedReportModal, setSelectedReportModal] = useState(null);
 
   useEffect(() => {
-    if (!loading) {
-      setIsLoading(false);
-    }
+    setIsLoading(loading);
   }, [loading]);
 
   const rawAlerts = getNotifications();
