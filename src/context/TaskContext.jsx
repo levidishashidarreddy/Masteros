@@ -650,6 +650,9 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_userProfile');
     return cached ? JSON.parse(cached) : null;
   });
+  const [isOnboarded, setIsOnboarded] = useState(() => {
+    return localStorage.getItem('isOnboarded') === 'true';
+  });
   const [authInitializing, setAuthInitializing] = useState(true);
   const [userDataLoading, setUserDataLoading] = useState(true);
 
