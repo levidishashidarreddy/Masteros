@@ -110,10 +110,17 @@ const OnboardingRoute = ({ children }) => {
 };
 
 function AppContent() {
+  const { loading, appReady } = React.useContext(TaskContext);
+  const [loaderComplete, setLoaderComplete] = React.useState(false);
+
+  if (loading || !loaderComplete) {
+    return <PandaLoader appReady={appReady} onComplete={() => setLoaderComplete(true)} />;
+  }
+
   return (
     <Router>
       <PWAInstallBanner />
-      <Suspense fallback={<PandaLoader appReady={false} />}>
+      <Suspense fallback={<PandaLoader appReady={true} />}>
         <Routes>
           {/* Public / Root Guard Route */}
           <Route path="/" element={<RootRoute />} />

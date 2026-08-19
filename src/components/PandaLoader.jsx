@@ -58,9 +58,9 @@ const PandaLoader = ({ appReady = false, onComplete }) => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  /* ── minimum animation gate: 7.5 s ── */
+  /* ── minimum animation gate: 1.2 s ── */
   useEffect(() => {
-    const t = setTimeout(() => setAnimationCompleted(true), 7500);
+    const t = setTimeout(() => setAnimationCompleted(true), 1200);
     return () => clearTimeout(t);
   }, []);
 
