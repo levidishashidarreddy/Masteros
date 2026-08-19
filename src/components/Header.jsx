@@ -458,7 +458,7 @@ const Header = ({ hideSearch = false, hideStreak = false, hideLogo = false, hide
       )}
 
       {/* DESKTOP HEADER */}
-      <header className={`hidden md:flex w-full ${hideSearch ? 'h-14' : 'h-20'} bg-transparent justify-between items-center px-8 select-none transition-all duration-300 relative app-header`}>
+      <header className="hidden md:flex w-full h-20 bg-transparent justify-between items-center px-8 select-none relative app-header">
         
         {/* LEFT COL */}
         {!hideSearch && <div className="flex-1 flex justify-start"></div>}
