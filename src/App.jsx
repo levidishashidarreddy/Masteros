@@ -113,8 +113,12 @@ function AppContent() {
   const { loading, appReady } = React.useContext(TaskContext);
   const [loaderComplete, setLoaderComplete] = React.useState(false);
 
+  const handleLoaderComplete = React.useCallback(() => {
+    setLoaderComplete(true);
+  }, []);
+
   if (loading || !loaderComplete) {
-    return <PandaLoader appReady={appReady} onComplete={() => setLoaderComplete(true)} />;
+    return <PandaLoader appReady={appReady} onComplete={handleLoaderComplete} />;
   }
 
   return (

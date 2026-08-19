@@ -673,6 +673,16 @@ export const TaskProvider = ({ children }) => {
   const appReady = !authInitializing && (!currentUser || isGuestMode || !userDataLoading);
   const loading = !appReady;
 
+  // Safety timeout: Ensure userDataLoading resolves within 3.5s even on slow/offline networks
+  useEffect(() => {
+    if (currentUser && !isGuestMode && userDataLoading) {
+      const timer = setTimeout(() => {
+        setUserDataLoading(false);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentUser, isGuestMode, userDataLoading]);
+
   // Authentication provider status detection
   const hasPasswordSet = Boolean(
     currentUser && currentUser.providerData?.some(p => p.providerId === 'password')

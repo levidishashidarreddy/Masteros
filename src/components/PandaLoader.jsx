@@ -88,14 +88,21 @@ const PandaLoader = ({ appReady = false, onComplete }) => {
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   /* ── exit gate: both gates must clear ── */
   useEffect(() => {
     if (animationCompleted && appReady) {
       setIsExiting(true);
-      const t = setTimeout(() => { if (onComplete) onComplete(); }, 800);
+      const t = setTimeout(() => {
+        if (onCompleteRef.current) onCompleteRef.current();
+      }, 800);
       return () => clearTimeout(t);
     }
-  }, [animationCompleted, appReady, onComplete]);
+  }, [animationCompleted, appReady]);
 
   /* ── layout constants ── */
   const logoCount   = isMobile ? 14 : 20;
