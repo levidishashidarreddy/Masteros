@@ -123,6 +123,18 @@ const Dashboard = () => {
     return list.sort((a, b) => a.diffTime - b.diffTime);
   }, [exams, assignments]);
 
+  // Aggregate completed tasks per date for real activity calculation
+  const completedTaskCountsByDate = useMemo(() => {
+    const counts = {};
+    (tasks || []).forEach(t => {
+      if (t.done && t.completedAt) {
+        const dateStr = t.completedAt.split('T')[0];
+        counts[dateStr] = (counts[dateStr] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [tasks]);
+
   // Heatmap Cells Generation (53 columns * 7 rows = 371 cells)
   const heatmapData = useMemo(() => {
     const list = [];
@@ -138,30 +150,38 @@ const Dashboard = () => {
       const date = new Date(adjustedStartDate.getTime() + 86400000 * i);
       const isFuture = date > now;
       
-      const dateTooltipStr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const yyyymmdd = `${year}-${month}-${day}`;
 
-      const activityCount = activityHistory[yyyymmdd] || 0;
+      const fullDayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const displayDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const formattedDateWithDay = `${fullDayName}, ${displayDate}`;
+
+      const activityCount = Math.max(
+        activityHistory[yyyymmdd] || 0,
+        completedTaskCountsByDate[yyyymmdd] || 0
+      );
+      
       const tasksVal = activityCount;
-      const hoursVal = activityCount * 1.5; // Assume 1.5 study hours per activity
+      const hoursVal = activityCount * 1.5;
       const xpVal = activityCount * 15;
 
-      let colorShade = 'bg-white/5';
-      if (!isFuture && xpVal > 0) {
-        if (xpVal <= 15) colorShade = 'bg-primary/20';
-        else if (xpVal <= 30) colorShade = 'bg-primary/40';
-        else if (xpVal <= 45) colorShade = 'bg-primary/60';
-        else colorShade = 'bg-primary shadow-[0_0_8px_rgba(139,92,246,0.3)]';
+      let colorShade = 'bg-white/[0.03] border border-white/[0.06] hover:border-white/40';
+      if (isFuture) {
+        colorShade = 'bg-white/[0.015] border border-white/[0.03] opacity-40';
+      } else if (xpVal > 0) {
+        if (xpVal <= 15) colorShade = 'bg-primary/25 border border-primary/40 shadow-[0_0_6px_rgba(139,92,246,0.2)]';
+        else if (xpVal <= 30) colorShade = 'bg-primary/50 border border-primary/70 shadow-[0_0_8px_rgba(139,92,246,0.4)]';
+        else if (xpVal <= 45) colorShade = 'bg-primary/80 border border-primary shadow-[0_0_12px_rgba(139,92,246,0.6)]';
+        else colorShade = 'bg-primary border border-white shadow-[0_0_16px_rgba(139,92,246,0.9)]';
       }
 
       list.push({
-        date: dateTooltipStr,
-        dateStr: dateStr,
+        fullDateStr: yyyymmdd,
+        formattedDateWithDay: formattedDateWithDay,
+        displayDate: displayDate,
         tasks: tasksVal,
         hours: hoursVal,
         xp: xpVal,
@@ -170,7 +190,7 @@ const Dashboard = () => {
       });
     }
     return list;
-  }, [userProfile.activityHistory]);
+  }, [userProfile.activityHistory, completedTaskCountsByDate]);
 
   // Split cells into columns of 7
   const heatmapCols = useMemo(() => {
@@ -181,6 +201,26 @@ const Dashboard = () => {
     return cols;
   }, [heatmapData]);
 
+  // Calculate Month Label Positions for exact column alignment
+  const monthLabels = useMemo(() => {
+    const labels = [];
+    let lastMonth = -1;
+    heatmapCols.forEach((col, colIdx) => {
+      if (col && col.length > 0) {
+        const colDate = new Date(col[0].fullDateStr);
+        const month = colDate.getMonth();
+        if (month !== lastMonth) {
+          labels.push({
+            colIdx,
+            name: colDate.toLocaleString('en-US', { month: 'short' })
+          });
+          lastMonth = month;
+        }
+      }
+    });
+    return labels;
+  }, [heatmapCols]);
+
   // Hovered Cell Tooltip state
   const [hoveredCell, setHoveredCell] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -188,8 +228,8 @@ const Dashboard = () => {
   const handleCellMouseEnter = (e, cell) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltipPos({
-      x: rect.left + window.scrollX + rect.width / 2,
-      y: rect.top + window.scrollY - 110
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8
     });
     setHoveredCell(cell);
   };
@@ -433,58 +473,58 @@ const Dashboard = () => {
         );
 
       case 'activityHeatmap':
+        const totalYearTasks = heatmapData.reduce((acc, c) => acc + c.tasks, 0);
+        const activeDaysCount = heatmapData.filter(c => c.tasks > 0).length;
+
         return (
           <section key="activityHeatmap" className="bg-[#111118]/60 border border-white/[0.04] backdrop-blur-xl p-5 md:p-8 rounded-2xl space-y-6">
-            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
               <div>
-                <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
-                  Commitment Heatmap
-                </h3>
-                <p className="text-on-surface-variant text-[11px] mt-1 font-medium">Daily commitment heatmap logs, tasks resolved, and XP increments</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-display-lg text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
+                    Commitment Heatmap
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold">
+                    {totalYearTasks} submissions in past year
+                  </span>
+                </div>
+                <p className="text-on-surface-variant text-[11px] mt-1 font-medium">
+                  {activeDaysCount} active commitment days logged • Hover over any square to view date and details
+                </p>
               </div>
               
-              <div className="flex justify-end items-center gap-1.5 text-[9px] text-on-surface-variant uppercase tracking-widest font-black">
+              <div className="flex justify-end items-center gap-1.5 text-[9px] text-on-surface-variant uppercase tracking-widest font-black shrink-0">
                 <span>Less</span>
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-white/5"></div>
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/20"></div>
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/40"></div>
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/60"></div>
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-primary shadow-[0_0_8px_rgba(139,92,246,0.4)]"></div>
+                <div className="w-3 h-3 rounded-[3px] bg-white/[0.03] border border-white/[0.06]" />
+                <div className="w-3 h-3 rounded-[3px] bg-primary/25 border border-primary/40" />
+                <div className="w-3 h-3 rounded-[3px] bg-primary/50 border border-primary/70" />
+                <div className="w-3 h-3 rounded-[3px] bg-primary/80 border border-primary" />
+                <div className="w-3 h-3 rounded-[3px] bg-primary border border-white shadow-[0_0_8px_#8B5CF6]" />
                 <span>More</span>
               </div>
             </div>
 
             {/* Heatmap Grid Container */}
-            <div className="overflow-x-auto no-scrollbar relative w-full pt-2">
-              <div className="flex flex-col gap-1 min-w-[800px]">
+            <div className="overflow-x-auto no-scrollbar relative w-full pt-2 pb-1">
+              <div className="inline-block min-w-[780px] w-full">
                 
-                {/* Month Labels Row */}
-                <div className="flex text-[9px] text-on-surface-variant/60 font-bold uppercase tracking-wider mb-2">
-                  <div className="w-8 pr-2" /> {/* alignment spacer */}
-                  <div className="flex flex-1 justify-between select-none relative h-4">
-                    {heatmapCols.map((col, colIdx) => {
-                      const dateObj = new Date(col[0].dateStr);
-                      const prevCol = heatmapCols[colIdx - 1];
-                      const prevDateObj = prevCol ? new Date(prevCol[0].dateStr) : null;
-                      const isMonthStart = !prevDateObj || dateObj.getMonth() !== prevDateObj.getMonth();
-                      
-                      return (
-                        <div key={colIdx} className="w-3.5 relative">
-                          {isMonthStart && (
-                            <span className="absolute left-0 top-0 whitespace-nowrap text-[9px] font-bold text-on-surface-variant/80">
-                              {dateObj.toLocaleString('en-US', { month: 'short' })}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                {/* Month Labels Row aligned to exact columns */}
+                <div className="relative h-5 text-[10px] text-zinc-400 font-bold select-none mb-1.5 ml-8">
+                  {monthLabels.map((m, idx) => (
+                    <span
+                      key={idx}
+                      className="absolute uppercase tracking-wider text-[9px] font-mono"
+                      style={{ left: `${m.colIdx * 17.5}px` }}
+                    >
+                      {m.name}
+                    </span>
+                  ))}
                 </div>
 
                 {/* Heatmap Grid Layout with Row Labels */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-start">
                   {/* Weekday Labels Column */}
-                  <div className="flex flex-col justify-between text-[9px] text-on-surface-variant/60 font-bold uppercase w-8 h-[106px] pr-2 select-none py-0.5 text-right">
+                  <div className="flex flex-col justify-between text-[9px] text-zinc-400 font-bold uppercase w-6 h-[116px] select-none py-0.5 text-right shrink-0">
                     <span>Sun</span>
                     <span>Mon</span>
                     <span>Tue</span>
@@ -494,16 +534,16 @@ const Dashboard = () => {
                     <span>Sat</span>
                   </div>
 
-                  {/* Grid of Cells */}
-                  <div className="flex gap-1.5 flex-1 justify-between h-[106px]">
+                  {/* Grid of Columns (53 columns x 7 days) */}
+                  <div className="flex gap-[3.5px] flex-1 justify-between h-[116px]">
                     {heatmapCols.map((col, colIdx) => (
-                      <div key={colIdx} className="flex flex-col gap-1.5">
+                      <div key={colIdx} className="flex flex-col gap-[3.5px]">
                         {col.map((cell, rowIdx) => (
                           <div 
                             key={rowIdx} 
                             onMouseEnter={(e) => handleCellMouseEnter(e, cell)}
                             onMouseLeave={() => setHoveredCell(null)}
-                            className={`w-3.5 h-3.5 rounded-[2px] ${cell.colorClass} hover:scale-125 transition-transform duration-150 cursor-pointer`}
+                            className={`w-3.5 h-3.5 rounded-[3px] ${cell.colorClass} transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-primary hover:scale-125 hover:z-30 relative`}
                           />
                         ))}
                       </div>
@@ -636,7 +676,7 @@ const Dashboard = () => {
 
           {/* Stats Cards Row */}
           {hasActiveStatsWidgets && (
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in">
+            <section className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 animate-fade-in stats-cards-grid">
               {widgets.streak && (
                 <StatsCard title="Current Streak" value={(userProfile.streak || 0).toString()} unit="Days" icon="local_fire_department" progress={Math.min((userProfile.streak || 0) * 10, 100)} />
               )}
@@ -705,30 +745,40 @@ const Dashboard = () => {
 
         </div>
 
-        {/* Floating Tooltip Component */}
+        {/* LeetCode-Style Floating Tooltip Component */}
         {hoveredCell && (
           <div 
             style={{ 
-              position: 'absolute', 
+              position: 'fixed', 
               left: `${tooltipPos.x}px`, 
               top: `${tooltipPos.y}px`,
-              transform: 'translateX(-50%)'
+              transform: 'translate(-50%, -100%)'
             }}
-            className="bg-[#111118] border border-white/10 p-3.5 rounded-xl text-[10px] w-44 shadow-2xl z-[90] pointer-events-none backdrop-blur-xl animate-fade-in text-left font-semibold text-on-surface-variant"
+            className="bg-[#101018]/95 border border-primary/50 p-3 rounded-xl text-xs shadow-[0_10px_35px_rgba(0,0,0,0.85)] z-[9999] pointer-events-none backdrop-blur-2xl animate-fade-in text-left font-dm-sans select-none min-w-[210px] space-y-1.5 ring-1 ring-primary/30"
           >
-            <p className="font-bold text-white mb-2 border-b border-white/5 pb-1">{hoveredCell.date}</p>
-            <p className="flex justify-between items-center mt-1">
-              <span>Tasks completed:</span>
-              <span className="text-white font-bold">{hoveredCell.tasks}</span>
-            </p>
-            <p className="flex justify-between items-center mt-1 text-primary">
-              <span>XP earned:</span>
-              <span className="font-bold">+{hoveredCell.xp}</span>
-            </p>
-            <p className="flex justify-between items-center mt-1">
-              <span>Study hours:</span>
-              <span className="text-white font-bold">{hoveredCell.hours} hrs</span>
-            </p>
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1">
+              <span className="font-bold text-white text-xs font-space-grotesk">{hoveredCell.formattedDateWithDay}</span>
+              <span className={`w-2 h-2 rounded-full ${hoveredCell.tasks > 0 ? 'bg-emerald-400 shadow-[0_0_8px_#10B981]' : 'bg-zinc-600'}`} />
+            </div>
+
+            {hoveredCell.tasks > 0 ? (
+              <div className="space-y-1 text-[11px]">
+                <div className="flex justify-between items-center text-zinc-300 font-medium">
+                  <span>Commitments Resolved:</span>
+                  <span className="text-white font-bold font-mono">{hoveredCell.tasks} {hoveredCell.tasks === 1 ? 'task' : 'tasks'}</span>
+                </div>
+                <div className="flex justify-between items-center text-primary font-semibold">
+                  <span>XP Gained:</span>
+                  <span className="font-bold font-mono">+{hoveredCell.xp} XP</span>
+                </div>
+                <div className="flex justify-between items-center text-zinc-400">
+                  <span>Estimated Focus:</span>
+                  <span className="text-white font-bold font-mono">{hoveredCell.hours.toFixed(1)} hrs</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-zinc-400 italic">No commitments recorded on this day</p>
+            )}
           </div>
         )}
       </main>

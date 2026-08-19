@@ -610,8 +610,8 @@ const RoadmapDetail = () => {
               </div>
             </div>
 
-            {/* Interactive Graph Canvas Area */}
-            <div className="w-full overflow-x-auto overflow-y-auto no-scrollbar relative min-h-[480px] p-4 bg-[#050508]/60 rounded-xl border border-white/5">
+            {/* Interactive Graph Canvas Area - DESKTOP ONLY (md:block) */}
+            <div className="hidden md:block w-full overflow-x-auto overflow-y-auto no-scrollbar relative min-h-[480px] p-4 bg-[#050508]/60 rounded-xl border border-white/5">
               <div
                 className="relative mx-auto transition-all"
                 style={{
@@ -657,7 +657,7 @@ const RoadmapDetail = () => {
                   })}
                 </svg>
 
-                {/* REQUIREMENT 3: SVG Connection Line '+' Insert Control (In Edit Mode) */}
+                {/* SVG Connection Line '+' Insert Control (In Edit Mode) */}
                 {isEditMode && graphLayout.connections.map((conn) => (
                   <div
                     key={`insert-btn-${conn.id}`}
@@ -720,7 +720,7 @@ const RoadmapDetail = () => {
                           : 'bg-[#0B0B10] border-white/10 hover:border-white/25'
                       } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                     >
-                      {/* REQUIREMENT 4: Contextual Node Action Buttons (In Edit Mode on Hover) */}
+                      {/* Node Action Buttons (In Edit Mode on Hover) */}
                       {isEditMode && (
                         <div className="absolute inset-x-0 top-0 bg-[#0F0C22]/95 backdrop-blur border-b border-primary/30 p-1 flex items-center justify-around opacity-0 group-hover:opacity-100 transition-opacity z-30">
                           <button
@@ -777,7 +777,6 @@ const RoadmapDetail = () => {
                             </span>
                           )}
 
-                          {/* REQUIREMENT 7 & 11: Hover Percentage Reveal */}
                           {linkedWs ? (
                             <span className="text-[10px] font-bold text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-mono">
                               {wsProgress}%
@@ -793,7 +792,6 @@ const RoadmapDetail = () => {
                           )}
                         </div>
 
-                        {/* REQUIREMENT 7: Skill Name ALWAYS UPPERCASE */}
                         <h4 className={`font-space-grotesk text-xs font-bold truncate tracking-tight uppercase ${
                           isCompleted ? 'text-zinc-400 line-through' : 'text-white group-hover:text-primary transition-colors'
                         }`}>
@@ -826,6 +824,112 @@ const RoadmapDetail = () => {
                   );
                 })}
               </div>
+            </div>
+
+            {/* DEDICATED MOBILE VERTICAL FLOW ROADMAP GRAPH (< md) */}
+            <div className="block md:hidden space-y-2 py-2">
+              {skills.map((node, index) => {
+                const isCurrent = Boolean(node.isCurrent);
+                const isCompleted = Boolean(node.done);
+                const isParallel = Boolean(node.isParallel);
+                const linkedWs = node.linkedWorkspaceId ? (workspaces || []).find(w => w.id === node.linkedWorkspaceId) : null;
+                const wsProgress = isCompleted ? 100 : (linkedWs ? linkedWs.progress || 0 : 0);
+                const isSelected = selectedNode && selectedNode.id === node.id;
+                const nodeTitleUpper = normalizeSkillTitle(node.title);
+
+                return (
+                  <React.Fragment key={node.id}>
+                    {/* Mobile Skill Node Card */}
+                    <div
+                      onClick={() => setSelectedNode(node)}
+                      className={`w-full p-4 rounded-2xl border transition-all duration-300 cursor-pointer space-y-2.5 relative select-none ${
+                        isCurrent
+                          ? 'bg-[#0F0C22] border-primary shadow-[0_0_25px_rgba(139,92,246,0.35)] ring-1 ring-primary/50'
+                          : isCompleted
+                          ? 'bg-[#080B09] border-emerald-500/30'
+                          : isParallel
+                          ? 'bg-[#0A0A14] border-indigo-500/30 ml-3 w-[calc(100%-12px)]'
+                          : 'bg-[#0B0B10] border-white/10'
+                      } ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                    >
+                      {/* Badge Row */}
+                      <div className="flex items-center justify-between gap-2">
+                        {isCompleted ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            ✓ COMPLETED
+                          </span>
+                        ) : isCurrent ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-primary text-black tracking-wider flex items-center gap-1 shadow-[0_0_8px_rgba(139,92,246,0.6)] animate-pulse">
+                            ● CURRENT FOCUS
+                          </span>
+                        ) : isParallel ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            PARALLEL BRANCH
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-zinc-500">
+                            STEP {index + 1}
+                          </span>
+                        )}
+
+                        <span className="text-xs font-mono font-bold text-primary">
+                          {wsProgress}%
+                        </span>
+                      </div>
+
+                      {/* Title & Prerequisite */}
+                      <div>
+                        <h4 className={`font-space-grotesk text-base font-bold uppercase tracking-tight ${
+                          isCompleted ? 'text-zinc-400 line-through' : 'text-white'
+                        }`}>
+                          {nodeTitleUpper}
+                        </h4>
+                        <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                          {node.dependencies && node.dependencies.length > 0
+                            ? `After ${node.dependencies[0].toUpperCase()}`
+                            : 'Starting Skill'}
+                        </p>
+                      </div>
+
+                      {/* Explicit Progress Bar for Touch Devices */}
+                      <div className="space-y-1 pt-1">
+                        <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              isCompleted
+                                ? 'bg-emerald-400'
+                                : isCurrent
+                                ? 'bg-primary shadow-[0_0_10px_#8B5CF6]'
+                                : 'bg-indigo-500'
+                            }`}
+                            style={{ width: `${wsProgress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Workspace Link Badge */}
+                      {linkedWs && (
+                        <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs text-primary font-semibold">
+                          <span className="flex items-center gap-1.5 truncate">
+                            <span className="material-symbols-outlined text-sm">folder_open</span>
+                            {linkedWs.title}
+                          </span>
+                          <span className="text-[11px] font-bold">Open →</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical Connector Line between nodes on mobile */}
+                    {index < skills.length - 1 && (
+                      <div className="flex justify-center my-0.5">
+                        <div className="w-0.5 h-5 bg-gradient-to-b from-primary/60 to-white/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-[10px] text-primary/80 -rotate-90">chevron_right</span>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
 
           </div>

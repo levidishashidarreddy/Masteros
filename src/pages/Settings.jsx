@@ -412,7 +412,7 @@ const Settings = () => {
             </div>
           </Section>
 
-          {/* ══════════════════ REQUIREMENT 3 & 4: SECURITY / LOGIN METHODS ═════════════════════════ */}
+          {/* ══════════════════ SECURITY / LOGIN METHODS (Content-First -> Action Below) ═════════════════════════ */}
           <Section title="Security & Login Methods" icon="security">
             <div className="space-y-4">
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -422,41 +422,41 @@ const Settings = () => {
               <div className="space-y-3">
                 
                 {/* 1. Google Authentication */}
-                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                <div className="p-4 bg-[#0D0D14] border border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shrink-0">
                       🌐
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white">Google Account</h4>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-white leading-tight">Google Account</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
                         {hasGoogleConnected || currentUser?.email ? currentUser?.email : 'Google Authentication'}
                       </p>
                     </div>
                   </div>
 
-                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                  <span className="self-start sm:self-auto inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg shrink-0">
                     <span>✓ Connected</span>
                   </span>
                 </div>
 
                 {/* 2. Password Authentication */}
-                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                <div className="p-4 bg-[#0D0D14] border border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shrink-0">
                       🔑
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white">Password Authentication</h4>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-white leading-tight">Password Authentication</h4>
                       <p className="text-[11px] text-zinc-400 mt-0.5">
-                        {hasPasswordSet ? 'Password configured for email sign-in' : 'No password set (Optional)'}
+                        {hasPasswordSet ? 'Password configured' : 'Not configured'}
                       </p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => { setPasswordError(''); setIsPasswordModalOpen(true); }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shrink-0 ${
                       hasPasswordSet
                         ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
                         : 'bg-primary text-black font-extrabold uppercase shadow-[0_0_10px_rgba(139,92,246,0.3)]'
@@ -466,21 +466,21 @@ const Settings = () => {
                   </button>
                 </div>
 
-                {/* 3. Passkey (Future) */}
-                <div className="flex items-center justify-between p-4 bg-[#0D0D14] border border-white/5 rounded-xl opacity-60">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                {/* 3. Passkey / Biometric */}
+                <div className="p-4 bg-[#0D0D14] border border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 opacity-60">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shrink-0">
                       📱
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white">Passkey / Biometric</h4>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-white leading-tight">Passkey / Biometric</h4>
                       <p className="text-[11px] text-zinc-400 mt-0.5">Not configured</p>
                     </div>
                   </div>
 
                   <button
                     disabled
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-zinc-500 cursor-not-allowed"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/5 text-zinc-500 cursor-not-allowed flex items-center justify-center shrink-0"
                   >
                     Set Up Passkey
                   </button>

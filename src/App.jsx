@@ -5,6 +5,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PandaLoader from './components/PandaLoader';
 import PWAInstallBanner from './components/PWAInstallBanner';
 
+import AuthRequiredPage from './components/AuthRequiredPage';
+
 // Lazy loading all pages
 const Landing = React.lazy(() => import('./pages/Landing'));
 const Auth = React.lazy(() => import('./pages/Auth'));
@@ -53,6 +55,25 @@ const ProtectedRoute = ({ children }) => {
   if (!isOnboarded) {
     return <Navigate to="/onboarding" replace />;
   }
+  return children;
+};
+
+const SocialRouteGuard = ({ children }) => {
+  const { currentUser, isGuestMode, loading } = React.useContext(TaskContext);
+  const location = useLocation();
+
+  if (loading) {
+    return <PandaLoader appReady={false} />;
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  if (isGuestMode) {
+    return <AuthRequiredPage />;
+  }
+
   return children;
 };
 
@@ -108,7 +129,9 @@ function AppContent() {
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-          <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+          <Route path="/friends" element={<SocialRouteGuard><Friends /></SocialRouteGuard>} />
+          <Route path="/communities" element={<SocialRouteGuard><AuthRequiredPage /></SocialRouteGuard>} />
+          <Route path="/messages" element={<SocialRouteGuard><AuthRequiredPage /></SocialRouteGuard>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/settings/customize" element={<ProtectedRoute><SettingsCustomize /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

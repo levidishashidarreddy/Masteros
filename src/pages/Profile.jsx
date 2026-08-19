@@ -191,7 +191,7 @@ const Profile = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
             <StatsCard title="Total XP" value={xpValue} unit="XP" icon="workspace_premium" />
             <StatsCard title="Current Streak" value={streakValue} unit="Days" icon="local_fire_department" />
             <StatsCard title="Connections" value={connections.toString()} unit="Peers" icon="groups" />
@@ -206,7 +206,7 @@ const Profile = () => {
                 <span className="material-symbols-outlined">fitness_center</span>
                 <h4 className="font-bold text-xs uppercase tracking-widest text-white">Fitness Profiling Parameters</h4>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 <div className="space-y-1.5">
                   <span className="text-[9px] uppercase tracking-wider text-on-surface-variant block font-bold">Height</span>
                   <span className="text-base font-bold text-white">{fitness.height || '174cm'}</span>
@@ -234,7 +234,7 @@ const Profile = () => {
           {/* Core Info Panels */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Bio Card */}
-            <div className="lg:col-span-6 bg-[#111118] border border-white/5 p-8 rounded-2xl space-y-6 flex flex-col justify-between">
+            <div className="lg:col-span-6 bg-[#111118] border border-white/5 p-6 md:p-8 rounded-2xl space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/5 pb-4">
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">About Me &amp; Bio</h3>
@@ -249,14 +249,15 @@ const Profile = () => {
                 <p className="text-sm text-on-surface-variant leading-relaxed italic">
                   "{bio}"
                 </p>
+              </div>
 
-                <div className="pt-4 space-y-2">
-                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
-                    Known Skills {skills.length > 0 && <span className="text-on-surface-variant font-normal">({skills.length})</span>}
-                  </h4>
-                  {skills.length > 0 ? (
+              {/* Technical Skills Overview */}
+              <div className="pt-4 border-t border-white/5 space-y-3">
+                <div className="space-y-2">
+                  <h4 className="font-bold text-primary uppercase text-xs tracking-wider">Mastered Core Skills ({technicalSkills.length})</h4>
+                  {technicalSkills.length > 0 ? (
                     <div className="flex flex-wrap gap-2 pt-2">
-                      {skills.map((skill, idx) => (
+                      {technicalSkills.map((skill, idx) => (
                         <span key={idx} className="bg-primary/10 border border-primary/20 px-3 py-1 rounded text-xs font-semibold text-primary">
                           {skill}
                         </span>
@@ -268,7 +269,7 @@ const Profile = () => {
                 </div>
 
                 {currentlyLearning.length > 0 && (
-                  <div className="pt-4 space-y-2 border-t border-white/5">
+                  <div className="pt-2 space-y-2">
                     <h4 className="font-bold text-secondary uppercase text-xs tracking-wider">Currently Learning ({currentlyLearning.length})</h4>
                     <div className="flex flex-wrap gap-2 pt-2">
                       {currentlyLearning.map((topic, idx) => (
@@ -283,9 +284,9 @@ const Profile = () => {
             </div>
 
             {/* Badges System Card */}
-            <div className="lg:col-span-6 bg-[#111118] border border-white/5 p-8 rounded-2xl space-y-5">
+            <div className="lg:col-span-6 bg-[#111118] border border-white/5 p-6 md:p-8 rounded-2xl space-y-5">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-white/5 pb-4">Achievements &amp; Badges</h3>
-              <div className="grid grid-cols-4 gap-3.5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
                 {ALL_BADGES.map((badge) => (
                   <div 
                     key={badge.id} 

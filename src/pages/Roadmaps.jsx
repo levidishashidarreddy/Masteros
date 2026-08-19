@@ -142,7 +142,7 @@ const Roadmaps = () => {
             <Button
               variant="primary"
               icon="add"
-              className="py-2.5 px-5 font-space-grotesk text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+              className="w-full md:w-auto min-h-[44px] sm:min-h-0 py-2.5 px-5 font-space-grotesk text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(139,92,246,0.3)] flex items-center justify-center"
               onClick={() => handleOpenCreateModal('ai')}
             >
               + CREATE ROADMAP
