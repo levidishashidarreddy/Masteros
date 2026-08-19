@@ -58,9 +58,9 @@ const PandaLoader = ({ appReady = false, onComplete }) => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  /* ── minimum animation gate: 1.2 s ── */
+  /* ── minimum animation gate: 4.0 s (full sequence + hold) ── */
   useEffect(() => {
-    const t = setTimeout(() => setAnimationCompleted(true), 1200);
+    const t = setTimeout(() => setAnimationCompleted(true), 4000);
     return () => clearTimeout(t);
   }, []);
 
@@ -68,22 +68,38 @@ const PandaLoader = ({ appReady = false, onComplete }) => {
   useEffect(() => {
     const timers = [];
 
-    // First word appears at 0.5 s
+    // 1. MASTEROS (0.5s - 1.2s)
     timers.push(setTimeout(() => {
       setCurrentWord(WORDS[0]);
       setWordVisible(true);
     }, 500));
 
-    // Subsequent words
-    WORD_TRANSITIONS.forEach((fadeOutAt, i) => {
+    // 2. AIM (1.5s - 2.0s)
+    timers.push(setTimeout(() => {
+      setWordVisible(false);
       timers.push(setTimeout(() => {
-        setWordVisible(false);
-        timers.push(setTimeout(() => {
-          setCurrentWord(WORDS[i + 1]);
-          setWordVisible(true);
-        }, 300));
-      }, fadeOutAt));
-    });
+        setCurrentWord(WORDS[1]);
+        setWordVisible(true);
+      }, 300));
+    }, 1200));
+
+    // 3. LEARN (2.3s - 2.8s)
+    timers.push(setTimeout(() => {
+      setWordVisible(false);
+      timers.push(setTimeout(() => {
+        setCurrentWord(WORDS[2]);
+        setWordVisible(true);
+      }, 300));
+    }, 2000));
+
+    // 4. ACHIEVE (3.1s - 3.7s)
+    timers.push(setTimeout(() => {
+      setWordVisible(false);
+      timers.push(setTimeout(() => {
+        setCurrentWord(WORDS[3]);
+        setWordVisible(true);
+      }, 300));
+    }, 2800));
 
     return () => timers.forEach(clearTimeout);
   }, []);

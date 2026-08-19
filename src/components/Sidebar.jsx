@@ -34,17 +34,17 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Backdrop for mobile drawer */}
-      {isExpanded && (
-        <div 
-          onClick={() => setIsExpanded(false)}
-          className="md:hidden fixed inset-0 bg-black/75 backdrop-blur-md z-45 animate-fade-in"
-        />
-      )}
+      {/* Backdrop for mobile drawer — smooth fade in and out */}
+      <div 
+        onClick={() => setIsExpanded(false)}
+        className={`md:hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-45 transition-opacity duration-400 ${
+          isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
 
       {/* MOBILE FLOATING PANDA AI AGENT BUTTON (< md) */}
       <div 
-        className={`fixed right-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-40 md:hidden transition-all duration-300 ${
+        className={`fixed right-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-40 md:hidden transition-all duration-400 ${
           isExpanded ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
         }`}
       >
@@ -53,13 +53,13 @@ const Sidebar = () => {
 
       {/* SINGLE IN-PLACE COLLAPSIBLE SIDEBAR CONTAINER */}
       <aside 
-        className={`fixed top-0 bottom-0 left-0 h-screen max-h-screen border-r border-white/5 bg-[#0D0D14]/95 md:bg-[#0D0D14]/80 backdrop-blur-2xl shrink-0 z-50 md:z-40 select-none transition-transform duration-300 box-border overflow-y-auto no-scrollbar shadow-2xl md:shadow-none ${
+        className={`fixed top-0 bottom-0 left-0 h-screen max-h-screen border-r border-white/5 bg-[#0D0D14]/95 md:bg-[#0D0D14]/80 backdrop-blur-2xl shrink-0 z-50 md:z-40 select-none transition-transform duration-400 box-border overflow-y-auto no-scrollbar shadow-2xl md:shadow-none ${
           isExpanded
             ? 'translate-x-0 w-[280px] max-w-[calc(100vw-36px)]'
             : '-translate-x-full md:translate-x-0 md:w-[72px] md:relative'
         }`}
         style={{ 
-          transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' 
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' 
         }}
       >
         
