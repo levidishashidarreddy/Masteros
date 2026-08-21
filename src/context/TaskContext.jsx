@@ -540,17 +540,12 @@ export const getDefaultRoadmapForCategory = (cat) => {
     case 'DSA':
       return {
         id: `dsa-${Date.now()}`,
-        title: 'DSA',
+        title: '90 Days Interactive DSA Roadmap',
         topics: [
-          { id: 'arrays', title: 'Arrays', expanded: true, subtopics: [{ id: 'arr-1', title: 'Kadane\'s Algorithm', done: false }, { id: 'arr-2', title: 'Two Pointers', done: false }] },
-          { id: 'strings', title: 'Strings', expanded: false, subtopics: [{ id: 'str-1', title: 'Anagrams', done: false }, { id: 'str-2', title: 'Palindromes', done: false }] },
-          { id: 'recursion', title: 'Recursion', expanded: false, subtopics: [{ id: 'rec-1', title: 'Backtracking', done: false }] },
-          { id: 'linkedlists', title: 'Linked Lists', expanded: false, subtopics: [{ id: 'll-1', title: 'Reverse List', done: false }] },
-          { id: 'stack', title: 'Stack', expanded: false, subtopics: [{ id: 'st-1', title: 'Valid Parentheses', done: false }] },
-          { id: 'queue', title: 'Queue', expanded: false, subtopics: [{ id: 'qu-1', title: 'Queue using Stacks', done: false }] },
-          { id: 'trees', title: 'Trees', expanded: false, subtopics: [{ id: 'tr-1', title: 'Binary Trees', done: false }] },
-          { id: 'graphs', title: 'Graphs', expanded: false, subtopics: [{ id: 'gr-1', title: 'DFS and BFS', done: false }] },
-          { id: 'dp', title: 'Dynamic Programming', expanded: false, subtopics: [{ id: 'dp-1', title: 'Knapsack 0/1', done: false }] }
+          { id: 'phase-1-fund', title: 'Phase 1 — Fundamentals (Days 1–20)', expanded: true, subtopics: [{ id: 'p1-1', title: 'Days 1–3 Algorithmic Thinking & Complexity', done: false }, { id: 'p1-2', title: 'Days 4–7 Arrays & Techniques', done: false }, { id: 'p1-3', title: 'Days 8–10 Strings & Operations', done: false }, { id: 'p1-4', title: 'Days 11–14 Bit Manipulation', done: false }, { id: 'p1-5', title: 'Days 15–20 Linked Lists', done: false }] },
+          { id: 'phase-2-core', title: 'Phase 2 — Core DSA (Days 21–50)', expanded: false, subtopics: [{ id: 'p2-1', title: 'Days 21–25 Stacks', done: false }, { id: 'p2-2', title: 'Days 26–30 Queues', done: false }, { id: 'p2-3', title: 'Days 31–35 Hash Tables', done: false }, { id: 'p2-4', title: 'Days 36–40 Heaps & Priority Queues', done: false }, { id: 'p2-5', title: 'Days 41–45 Recursion & Backtracking', done: false }, { id: 'p2-6', title: 'Days 46–50 Sorting Algorithms', done: false }] },
+          { id: 'phase-3-adv', title: 'Phase 3 — Trees & Advanced Structures (Days 51–70)', expanded: false, subtopics: [{ id: 'p3-1', title: 'Days 51–55 Binary Trees & Traversals', done: false }, { id: 'p3-2', title: 'Days 56–60 Binary Search & Variations', done: false }, { id: 'p3-3', title: 'Days 61–65 Tries', done: false }, { id: 'p3-4', title: 'Days 66–70 Graph Theory Basics', done: false }] },
+          { id: 'phase-4-opt', title: 'Phase 4 — Algorithms & Optimization (Days 71–90)', expanded: false, subtopics: [{ id: 'p4-1', title: 'Greedy Algorithms Choice', done: false }, { id: 'p4-2', title: 'Dynamic Programming Memo & Tabulation', done: false }, { id: 'p4-3', title: 'Final Sprint Mock Contests & Revision', done: false }] }
         ]
       };
     case 'Python':

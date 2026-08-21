@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 import { TaskContext } from '../context/TaskContext';
+import DSAWorkspace from '../components/DSA/DSAWorkspace';
 import { calculateRoadmapGraphLayout, normalizeRoadmapData } from '../utils/roadmapLayout';
 import {
   normalizeSkillTitle,
@@ -26,6 +27,7 @@ const RoadmapDetail = () => {
     deleteRoadmap,
     setCurrentFocusSkill,
     workspaces,
+    updateWorkspace,
     addWorkspace,
     linkSkillToWorkspace
   } = useContext(TaskContext);
@@ -441,6 +443,12 @@ const RoadmapDetail = () => {
       <main className="flex-grow flex flex-col h-screen overflow-y-auto no-scrollbar relative z-10 animate-page-transition">
         <Header hideSearch={true} hideStreak={true} hideLogo={true} workspaceTitle={roadmap.title} />
 
+        {(id === 'dsa' || roadmap?.category === 'DSA' || roadmap?.title?.toLowerCase().includes('dsa')) ? (
+          <DSAWorkspace 
+            workspace={workspaces?.find(w => w.category === 'DSA' || w.id === 'dsa' || w.title?.toLowerCase().includes('dsa')) || { id: 'dsa' }}
+            updateWorkspace={updateWorkspace}
+          />
+        ) : (
         <div className="px-4 py-6 md:px-10 md:py-8 max-w-7xl w-full mx-auto space-y-6 pb-24">
 
           {/* Breadcrumb Navigation */}
@@ -935,6 +943,7 @@ const RoadmapDetail = () => {
           </div>
 
         </div>
+        )}
       </main>
 
       {/* NODE DETAIL POPOVER / DRAWER PANEL */}

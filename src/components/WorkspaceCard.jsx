@@ -53,10 +53,19 @@ const TECH_SVG_LOGOS = {
     <div className="w-[48px] h-[48px] bg-[#001824] border border-[#00758F]/40 rounded-xl flex items-center justify-center shadow-[0_0_18px_rgba(0,117,143,0.4)] group-hover:scale-110 transition-transform duration-300">
       <span className="font-black text-[#00758F] text-xs tracking-wider uppercase font-mono">SQL</span>
     </div>
+  ),
+  dsa: (
+    <div className="w-[48px] h-[48px] bg-gradient-to-br from-[#2D0B5A] to-[#120429] border border-[#A855F7]/50 rounded-2xl flex flex-col items-center justify-center p-1 shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover:scale-110 transition-transform duration-300">
+      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#A855F7] fill-none stroke-current stroke-[2.2] stroke-round stroke-linejoin-round">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+      <span className="text-[7px] font-black text-[#A855F7] tracking-widest uppercase font-mono mt-0.5">DSA</span>
+    </div>
   )
 };
 
 const CARD_LANG_THEMES = {
+  dsa:          { gradientFrom: '#1B0938', accent: '#A855F7', iconKey: 'dsa',        iconSlug: 'leetcode',   iconColor: 'FFA116', wordmark: 'DSA & ALGORITHMS' },
   cpp:          { gradientFrom: '#00243A', accent: '#00C8FF', iconKey: 'cpp',        iconSlug: 'cplusplus',   iconColor: '00C8FF', wordmark: 'C++' },
   c:            { gradientFrom: '#0D1E33', accent: '#5C9CD5', iconKey: null,       iconSlug: 'c',           iconColor: '5C9CD5', wordmark: 'C' },
   csharp:       { gradientFrom: '#150A2A', accent: '#512BD4', iconKey: 'csharp',     iconSlug: 'csharp',      iconColor: '512BD4', wordmark: 'C#' },
@@ -98,6 +107,7 @@ const detectCardTheme = (technology, technologySlug, technologyId, tag, category
   // Step 1: Explicit Technology property FIRST as single source of truth
   const explicitTarget = (technology || technologySlug || technologyId || '').toLowerCase().trim();
   if (explicitTarget) {
+    if (explicitTarget.includes('dsa') || explicitTarget.includes('data structure') || explicitTarget.includes('algorithm')) return CARD_LANG_THEMES.dsa;
     if (explicitTarget.includes('c++') || explicitTarget === 'cpp' || explicitTarget === 'cplusplus') return CARD_LANG_THEMES.cpp;
     if (explicitTarget.includes('c#') || explicitTarget === 'csharp' || explicitTarget === 'cs') return CARD_LANG_THEMES.csharp;
     if (explicitTarget === 'c' || explicitTarget === 'c language') return CARD_LANG_THEMES.c;

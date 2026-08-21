@@ -12,11 +12,13 @@ import { WorkspaceDetailSkeleton } from '../components/Skeleton';
 import ErrorState from '../components/ErrorState';
 
 import Toast from '../components/Toast';
+import DSAWorkspace from '../components/DSA/DSAWorkspace';
 
 import { AvatarImg, getAvatar } from '../components/Avatar';
 
 // ─── Language Visual Identity System ────────────────────────────────────────
 const LANG_THEMES = {
+  dsa:          { gradientFrom: '#1B0938', accent: '#A855F7', iconSlug: 'leetcode',   iconColor: 'FFA116', label: 'DSA & ALGORITHMS' },
   cpp:          { gradientFrom: '#00243A', accent: '#00C8FF', iconSlug: 'cplusplus',   iconColor: '00C8FF', label: 'C++ DEVELOPMENT' },
   c:            { gradientFrom: '#0D1E33', accent: '#5C9CD5', iconSlug: 'c',           iconColor: '5C9CD5', label: 'C LANGUAGE' },
   csharp:       { gradientFrom: '#150A2A', accent: '#512BD4', iconSlug: 'csharp',      iconColor: '512BD4', label: 'C# DEVELOPMENT' },
@@ -59,6 +61,7 @@ const detectLangTheme = (ws) => {
   // Step 1: Explicit technology property FIRST
   const target = (ws.technology || ws.technologySlug || ws.technologyId || '').toLowerCase().trim();
   if (target) {
+    if (target.includes('dsa') || target.includes('data structure') || target.includes('algorithm')) return LANG_THEMES.dsa;
     if (target.includes('c++') || target === 'cpp' || target === 'cplusplus') return LANG_THEMES.cpp;
     if (target.includes('c#') || target === 'csharp' || target === 'cs') return LANG_THEMES.csharp;
     if (target === 'c' || target === 'c language') return LANG_THEMES.c;
@@ -438,6 +441,14 @@ const WorkspaceDetail = () => {
     ws.id === 'fitness' || 
     ws.title.toLowerCase().includes('fitness') || 
     ws.title.toLowerCase().includes('gym');
+
+  // Check if DSA category or title
+  const isDSAWorkspace = 
+    ws.category === 'DSA' || 
+    ws.technology === 'DSA' || 
+    ws.id === 'dsa' || 
+    (ws.title && ws.title.toLowerCase().includes('dsa')) || 
+    (ws.title && ws.title.toLowerCase().includes('data structures'));
 
   const isWorkspaceOwner = !ws.ownerId || ws.ownerId === currentUser?.uid;
   const ownerUser = allUsers.find(u => u.uid === ws.ownerId);
@@ -895,6 +906,10 @@ const WorkspaceDetail = () => {
           </nav>
         </div>
 
+        {isDSAWorkspace ? (
+          <DSAWorkspace workspace={ws} updateWorkspace={updateWorkspace} />
+        ) : (
+          <>
         {/* Workspace Banner — Language-Themed Hero */}
         <div className="relative w-full h-[220px] md:h-[280px] overflow-hidden shrink-0 workspace-banner-container">
           {/* Base gradient tinted by detected language */}
@@ -1834,6 +1849,8 @@ const WorkspaceDetail = () => {
           </div>
 
         </div>
+        </>
+        )}
       </main>
 
       {/* Task Creation & Edit Modal */}
