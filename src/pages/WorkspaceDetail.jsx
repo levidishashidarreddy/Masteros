@@ -56,6 +56,23 @@ const LANG_THEMES = {
   default:      { gradientFrom: '#0D0822', accent: '#8B5CF6', iconSlug: null,          iconColor: '8B5CF6', label: 'WORKSPACE' },
 };
 
+const SQL_CURATED_RESOURCES = [
+  { name: 'SQLBolt', desc: 'Interactive browser SQL exercises', link: 'https://sqlbolt.com/', icon: 'terminal' },
+  { name: 'Mode Analytics SQL Tutorial', desc: 'Analytical queries & practical usage', link: 'https://mode.com/sql-tutorial/', icon: 'analytics' },
+  { name: 'LeetCode SQL 50', desc: 'Top 50 interview problem set', link: 'https://leetcode.com/studyplan/sql-50/', icon: 'code' },
+  { name: 'HackerRank SQL', desc: 'Domain practice problems', link: 'https://www.hackerrank.com/domains/sql', icon: 'quiz' },
+  { name: 'StrataScratch', desc: 'Real-world tech interview questions', link: 'https://www.stratascratch.com/', icon: 'work' },
+  { name: 'W3Schools SQL', desc: 'Beginner syntax reference', link: 'https://www.w3schools.com/sql/', icon: 'menu_book' },
+  { name: 'DataCamp SQL', desc: 'Guided data analysis track', link: 'https://www.datacamp.com/courses/tech:sql', icon: 'school' },
+  { name: 'PostgreSQL / pgAdmin', desc: 'Official DBMS management client', link: 'https://www.pgadmin.org/', icon: 'dns' },
+  { name: 'MySQL Workbench', desc: 'Visual database design tool', link: 'https://www.mysql.com/products/workbench/', icon: 'storage' },
+  { name: 'DBeaver', desc: 'Universal database management tool', link: 'https://dbeaver.io/', icon: 'database' },
+  { name: 'Google BigQuery', desc: 'Modern cloud data warehouse', link: 'https://cloud.google.com/bigquery', icon: 'cloud' },
+  { name: 'Data Analysts SQL Telegram Community', desc: 'SQL specialists telegram channel', link: 'https://t.me/sqlspecialist', icon: 'send' },
+  { name: 'Data Analysts WhatsApp Channel', desc: 'SQL, Tableau & Python updates', link: 'https://whatsapp.com/channel/0029VaGgzAk72WTmQFERKh02', icon: 'chat' },
+  { name: 'CodeWithHarry SQL Complete Course', desc: 'Full YouTube video tutorial', link: 'https://www.youtube.com/results?search_query=codewithharry+sql', icon: 'play_circle' }
+];
+
 const detectLangTheme = (ws) => {
   if (!ws) return LANG_THEMES.default;
   // Step 1: Explicit technology property FIRST
@@ -415,6 +432,7 @@ const WorkspaceDetail = () => {
   const [showPin, setShowPin] = useState(false);
   const [activeTopicMenu, setActiveTopicMenu] = useState(null);
   const [toast, setToast] = useState({ message: '', type: 'success' });
+  const [isSuggestedResourcesOpen, setIsSuggestedResourcesOpen] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -907,7 +925,7 @@ const WorkspaceDetail = () => {
         </div>
 
         {isDSAWorkspace ? (
-          <DSAWorkspace workspace={ws} updateWorkspace={updateWorkspace} />
+          <DSAWorkspace workspace={ws} updateWorkspace={updateWorkspace} deleteWorkspace={deleteWorkspace} />
         ) : (
           <>
         {/* Workspace Banner — Language-Themed Hero */}
@@ -1650,6 +1668,68 @@ const WorkspaceDetail = () => {
                   })
                 )}
               </div>
+
+              {/* ✨ Suggested by Master OS — Collapsible Line-by-Line SQL Resources */}
+              {(ws.category === 'SQL' || ws.technology === 'sql' || (ws.title && ws.title.toLowerCase().includes('sql'))) && (
+                <div className="pt-3 border-t border-white/10 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSuggestedResourcesOpen(!isSuggestedResourcesOpen)}
+                    className="w-full flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 transition-all cursor-pointer select-none group"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-xs text-amber-400">auto_awesome</span>
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                        Suggested by Master OS
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-zinc-500 font-mono">Curated SQL</span>
+                      <span 
+                        className="material-symbols-outlined text-zinc-400 text-sm transition-transform duration-200"
+                        style={{ transform: isSuggestedResourcesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      >
+                        expand_more
+                      </span>
+                    </div>
+                  </button>
+
+                  {isSuggestedResourcesOpen && (
+                    <div className="space-y-1.5 max-h-[300px] overflow-y-auto no-scrollbar pr-0.5 animate-fade-in pt-1">
+                      {SQL_CURATED_RESOURCES.map((item) => (
+                        <div 
+                          key={item.name} 
+                          className="p-2 bg-[#08080E] border border-white/[0.06] hover:border-blue-500/30 rounded-xl flex items-center justify-between gap-2.5 group transition-all"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="material-symbols-outlined text-sm text-blue-400 shrink-0">{item.icon}</span>
+                            <div className="min-w-0">
+                              <a
+                                href={item.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-bold text-white hover:text-blue-300 transition-colors truncate block leading-snug"
+                              >
+                                {item.name}
+                              </a>
+                              <span className="text-[9px] text-zinc-400 truncate block leading-tight">{item.desc}</span>
+                            </div>
+                          </div>
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-0.5 rounded-lg bg-blue-500/10 hover:bg-blue-500 text-blue-300 hover:text-black font-bold text-[9px] transition-all shrink-0 border border-blue-500/20 shadow-sm"
+                          >
+                            Open ↗
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* Collaborators */}

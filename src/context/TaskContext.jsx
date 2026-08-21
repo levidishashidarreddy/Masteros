@@ -29,6 +29,7 @@ import {
 
 
 import { normalizeRoadmapData } from '../utils/roadmapLayout';
+import { SQL_DEFAULT_ROADMAP_DATA } from '../data/sqlCentralStore';
 
 export const TaskContext = createContext();
 
@@ -40,6 +41,28 @@ const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 // ROADMAP GENERATOR HELPER
 
 export const getDefaultRoadmapForCategory = (cat) => {
+  if (cat === 'SQL' || cat === 'sql' || cat === 'SQL Learning Roadmap' || cat === 'SQL Master Learning Roadmap' || cat === 'SQL Database') {
+    return {
+      id: `sql-${Date.now()}`,
+      title: 'SQL Master Learning Roadmap',
+      category: 'SQL',
+      topics: SQL_DEFAULT_ROADMAP_DATA.tracks.map((track, trackIdx) => ({
+        id: track.id,
+        title: `TRACK ${track.number} — ${track.title}`,
+        badge: track.badge,
+        desc: track.desc,
+        expanded: trackIdx === 0,
+        subtopics: track.topics.flatMap((top, topIdx) => 
+          top.subtopics.map((sub, subIdx) => ({
+            id: `sub-${track.id}-${topIdx}-${subIdx}`,
+            title: `${top.name} — ${sub}`,
+            done: false
+          }))
+        )
+      }))
+    };
+  }
+
   if (cat === 'JavaScript' || cat === 'JavaScript Complete Mindmap') {
     return {
       id: `javascript-${Date.now()}`,
@@ -419,7 +442,7 @@ export const getDefaultRoadmapForCategory = (cat) => {
   }
 
   const isLanguageOrTech = [
-    'Python', 'Java', 'C++', 'C', 'TypeScript', 'Go', 'Rust', 'Kotlin', 'SQL', 'React', 'NodeJS', 'Node.js'
+    'Python', 'Java', 'C++', 'C', 'TypeScript', 'Go', 'Rust', 'Kotlin', 'React', 'NodeJS', 'Node.js'
   ].includes(cat);
 
   if (isLanguageOrTech) {

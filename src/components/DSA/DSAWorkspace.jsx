@@ -1,4 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { TaskContext } from '../../context/TaskContext';
+import Modal from '../Modal';
+import InputField from '../InputField';
+import Button from '../Button';
 import { 
   DSA_CENTRAL_STORE, 
   countTotalCentralLeafConcepts,
@@ -12,7 +17,30 @@ import {
 import GlobalDetailOverlay from './GlobalDetailOverlay';
 import DSAVisualMap from './DSAVisualMap';
 
-const DSAWorkspace = ({ workspace, updateWorkspace }) => {
+const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteWorkspace }) => {
+  const context = useContext(TaskContext);
+  const deleteWorkspace = propDeleteWorkspace || context?.deleteWorkspace;
+  const navigate = useNavigate();
+
+  // Double Confirmation Delete States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleFinalDeleteDSAWorkspace = async () => {
+    if (!workspace?.id || !deleteWorkspace) return;
+    try {
+      setIsDeleting(true);
+      await deleteWorkspace(workspace.id);
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      navigate('/workspaces');
+    } catch (err) {
+      console.error("Failed to delete DSA workspace:", err);
+      setIsDeleting(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState('ROADMAP'); // 'ROADMAP' | 'DATA STRUCTURES' | 'ALGORITHMS' | 'PATTERNS' | 'RESOURCES'
   const [roadmapView, setRoadmapView] = useState('learning'); // 'learning' | 'visual'
   const [resourceSubTab, setResourceSubTab] = useState('Patterns'); // 'Patterns' | 'Data Structures' | 'Algorithms' | 'Inspiration'
@@ -163,27 +191,40 @@ const DSAWorkspace = ({ workspace, updateWorkspace }) => {
             </p>
           </div>
 
-          {/* Stats Bar */}
-          <div className="flex items-center gap-4 sm:gap-6 bg-surface-bright/40 p-4 rounded-2xl border border-white/5 shrink-0">
-            <div className="space-y-0.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                Overall Progress
-              </span>
-              <div className="text-2xl font-black text-primary">
-                {overallProgressPct}%
+          {/* Action Bar & Stats Bar */}
+          <div className="flex flex-wrap items-center gap-4 shrink-0">
+            <div className="flex items-center gap-4 sm:gap-6 bg-surface-bright/40 p-4 rounded-2xl border border-white/5 shrink-0">
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  Overall Progress
+                </span>
+                <div className="text-2xl font-black text-primary">
+                  {overallProgressPct}%
+                </div>
+              </div>
+
+              <div className="w-[1px] h-10 bg-white/10" />
+
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  Concepts Completed
+                </span>
+                <div className="text-sm font-extrabold text-white">
+                  <span className="text-emerald-400">{completedCount}</span> / {totalLeafConcepts}
+                </div>
               </div>
             </div>
 
-            <div className="w-[1px] h-10 bg-white/10" />
-
-            <div className="space-y-0.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                Concepts Completed
-              </span>
-              <div className="text-sm font-extrabold text-white">
-                <span className="text-emerald-400">{completedCount}</span> / {totalLeafConcepts}
-              </div>
-            </div>
+            {/* Delete DSA Workspace Button */}
+            <button
+              type="button"
+              onClick={() => { setDeleteStep(1); setDeleteConfirmText(''); setIsDeleteModalOpen(true); }}
+              className="px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)] shrink-0"
+              title="Delete DSA Workspace"
+            >
+              <span className="material-symbols-outlined text-base">delete</span>
+              <span>Delete Workspace</span>
+            </button>
           </div>
         </div>
 
@@ -1002,6 +1043,95 @@ const DSAWorkspace = ({ workspace, updateWorkspace }) => {
         completedConceptsMap={completedConceptsMap}
         onToggleConcept={handleToggleConcept}
       />
+
+      {/* ─── DOUBLE CONFIRMATION DELETE WORKSPACE MODALS (ASK TWICE) ─────── */}
+      {/* STEP 1 MODAL */}
+      {isDeleteModalOpen && deleteStep === 1 && (
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          title="⚠️ Delete DSA Workspace? (Confirmation 1 of 2)"
+        >
+          <div className="space-y-5">
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+              <span className="material-symbols-outlined text-amber-400 text-2xl shrink-0">warning</span>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-amber-300">Are you sure you want to delete your DSA Workspace?</h4>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Deleting <span className="text-white font-bold">{workspace?.title || 'DSA Workspace'}</span> will remove all your tracked concepts ({completedCount}/{totalLeafConcepts}), solved pattern questions, and study notes.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-on-surface-variant font-medium text-center">
+              ⚠️ Double confirmation is required to permanently delete this workspace.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} className="text-xs font-bold uppercase">
+                Cancel / Keep Workspace
+              </Button>
+              <button
+                type="button"
+                onClick={() => { setDeleteStep(2); setDeleteConfirmText(''); }}
+                className="px-4 py-2 bg-amber-500 text-black hover:bg-amber-400 font-bold text-xs rounded-xl uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-500/20"
+              >
+                <span>Continue to Step 2</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* STEP 2 MODAL (FINAL CONFIRMATION) */}
+      {isDeleteModalOpen && deleteStep === 2 && (
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          title="🚨 Final Confirmation — Permanent Deletion (Step 2 of 2)"
+        >
+          <div className="space-y-5">
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3">
+              <span className="material-symbols-outlined text-red-400 text-2xl shrink-0">dangerous</span>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-red-400">THIS ACTION IS PERMANENT & CANNOT BE UNDONE!</h4>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Please type <span className="font-mono font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded">DELETE</span> in the box below to authorize permanent deletion.
+                </p>
+              </div>
+            </div>
+
+            <InputField
+              id="dsa-delete-confirm-input"
+              label="Type DELETE to confirm permanent deletion"
+              placeholder="DELETE"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+            />
+
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="ghost" onClick={() => setDeleteStep(1)} className="text-xs font-bold uppercase">
+                ← Back to Step 1
+              </Button>
+
+              <button
+                type="button"
+                disabled={deleteConfirmText.trim() !== 'DELETE' || isDeleting}
+                onClick={handleFinalDeleteDSAWorkspace}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
+                  deleteConfirmText.trim() === 'DELETE' && !isDeleting
+                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/30 scale-105'
+                    : 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">delete_forever</span>
+                <span>{isDeleting ? 'Deleting Workspace...' : 'Yes, Delete DSA Workspace'}</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
