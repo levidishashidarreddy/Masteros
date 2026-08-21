@@ -1954,8 +1954,14 @@ export const TaskProvider = ({ children }) => {
   const [feedbackReports, setFeedbackReports] = useState([]);
   const [userNotifications, setUserNotifications] = useState([]);
 
+  const ADMIN_RECIPIENT_ID = 'shashidar-admin';
+
   const isAdmin = Boolean(
     currentUser && (
+      currentUser.username === 'Shashidar' ||
+      currentUser.displayName === 'Shashidar' ||
+      userProfile?.username === 'Shashidar' ||
+      currentUser.email === 'shashidar@masteros.com' ||
       currentUser.email === 'admin@masteros.com' ||
       userProfile?.role === 'admin'
     )
@@ -1968,10 +1974,17 @@ export const TaskProvider = ({ children }) => {
       return;
     }
 
-    const notifQuery = query(
-      collection(db, 'notifications'),
-      where('targetUserId', 'in', [currentUser.uid, 'admin', 'all'])
-    );
+    // Private Notification Routing: Admins receive admin notifications, Users receive their own
+    const notifQuery = isAdmin
+      ? query(
+          collection(db, 'notifications'),
+          where('targetUserId', 'in', [currentUser.uid, ADMIN_RECIPIENT_ID, 'admin', 'all'])
+        )
+      : query(
+          collection(db, 'notifications'),
+          where('targetUserId', 'in', [currentUser.uid, 'all'])
+        );
+
     const unsubNotif = onSnapshot(notifQuery, (snapshot) => {
       const list = [];
       snapshot.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
@@ -1979,9 +1992,13 @@ export const TaskProvider = ({ children }) => {
       setUserNotifications(list);
     }, (err) => console.error("Notifications snapshot error:", err));
 
+    // Private Bug Reports Access Control: Admins see all, Users see ONLY their own
     const feedbackQuery = isAdmin
       ? collection(db, 'feedback')
-      : query(collection(db, 'feedback'), where('userId', '==', currentUser.uid));
+      : query(
+          collection(db, 'feedback'),
+          where('reporterId', '==', currentUser.uid)
+        );
 
     const unsubFeedback = onSnapshot(feedbackQuery, (snapshot) => {
       const list = [];
@@ -1997,26 +2014,40 @@ export const TaskProvider = ({ children }) => {
   }, [currentUser, isAdmin]);
 
   const submitFeedback = async (reportData) => {
-    const feedbackId = `feedback-${Date.now()}`;
+    const feedbackId = `report-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const reporterUserId = currentUser ? currentUser.uid : 'guest';
+    const reporterDisplayName = userProfile?.fullName || currentUser?.displayName || currentUser?.username || 'User';
+    const reporterUserEmail = currentUser ? currentUser.email : 'guest@masteros.com';
+
     const newReport = {
       id: feedbackId,
-      userId: currentUser ? currentUser.uid : 'guest',
-      userEmail: currentUser ? currentUser.email : 'guest@masteros.com',
-      userName: userProfile?.fullName || currentUser?.displayName || 'User',
-      type: reportData.type || 'problem',
+      reporterId: reporterUserId,
+      userId: reporterUserId, // Backwards compatibility
+      reporterName: reporterDisplayName,
+      userName: reporterDisplayName,
+      reporterEmail: reporterUserEmail,
+      userEmail: reporterUserEmail,
+      recipientId: ADMIN_RECIPIENT_ID,
+      visibility: 'private',
+
+      type: reportData.type || 'problem', // 'bug' | 'problem' | 'feedback' | 'suggestion'
       title: reportData.title.trim(),
       description: reportData.description.trim(),
       section: reportData.section || 'General',
       stepsToReproduce: reportData.stepsToReproduce || '',
       severity: reportData.severity || 'Normal',
-      status: 'NEW',
+      status: 'Open', // 'Open' | 'Under Review' | 'In Progress' | 'Resolved' | 'Closed'
+      adminNotes: '',
+      adminReply: '',
+      
       metadata: {
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
         screenCategory: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Desktop',
         pageUrl: typeof window !== 'undefined' ? window.location.pathname : '',
         appVersion: '1.0.0'
       },
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     setFeedbackReports(prev => [newReport, ...prev]);
@@ -2025,14 +2056,18 @@ export const TaskProvider = ({ children }) => {
       try {
         await setDoc(doc(db, 'feedback', feedbackId), newReport);
 
+        // Admin-ONLY Private Notification
         const notifId = `notif-${Date.now()}`;
         const adminNotif = {
           id: notifId,
-          targetUserId: 'admin',
-          type: reportData.type === 'problem' ? 'bug' : reportData.type === 'suggestion' ? 'suggestion' : 'feedback',
-          title: reportData.type === 'problem' ? '🐛 New problem report' : reportData.type === 'suggestion' ? '💡 New feature suggestion' : '💬 New user feedback',
-          message: `"${newReport.title}" - submitted by ${newReport.userName}`,
+          targetUserId: ADMIN_RECIPIENT_ID,
+          recipientId: ADMIN_RECIPIENT_ID,
+          visibility: 'private',
+          type: 'bug',
+          title: `🐛 New Report from ${newReport.reporterName}`,
+          message: `"${newReport.title}" (${newReport.type.toUpperCase()})`,
           feedbackId: feedbackId,
+          reportId: feedbackId,
           unread: true,
           createdAt: new Date().toISOString()
         };
@@ -2044,25 +2079,36 @@ export const TaskProvider = ({ children }) => {
     return feedbackId;
   };
 
-  const updateFeedbackStatus = async (feedbackId, newStatus) => {
+  const updateFeedbackStatus = async (feedbackId, newStatus, adminReply = '', adminNotes = '') => {
     const targetReport = feedbackReports.find(f => f.id === feedbackId);
     if (!targetReport) return;
 
-    setFeedbackReports(prev => prev.map(f => f.id === feedbackId ? { ...f, status: newStatus } : f));
+    const updatedData = {
+      status: newStatus,
+      updatedAt: new Date().toISOString()
+    };
+    if (adminReply !== undefined && adminReply !== '') updatedData.adminReply = adminReply;
+    if (adminNotes !== undefined && adminNotes !== '') updatedData.adminNotes = adminNotes;
+
+    setFeedbackReports(prev => prev.map(f => f.id === feedbackId ? { ...f, ...updatedData } : f));
 
     if (currentUser) {
       try {
-        await updateDoc(doc(db, 'feedback', feedbackId), { status: newStatus });
+        await updateDoc(doc(db, 'feedback', feedbackId), updatedData);
 
-        if (targetReport.userId && targetReport.userId !== 'guest') {
+        const targetUser = targetReport.reporterId || targetReport.userId;
+        if (targetUser && targetUser !== 'guest') {
           const notifId = `notif-user-${Date.now()}`;
           const userNotif = {
             id: notifId,
-            targetUserId: targetReport.userId,
+            targetUserId: targetUser,
+            recipientId: targetUser,
+            visibility: 'private',
             type: 'feedback_update',
-            title: `🔔 Feedback Status Update: ${newStatus}`,
-            message: `Your reported issue "${targetReport.title}" is now marked as ${newStatus}.`,
+            title: `🔔 Your Bug Report Was Updated`,
+            message: `Status: ${newStatus} for "${targetReport.title}"`,
             feedbackId: feedbackId,
+            reportId: feedbackId,
             unread: true,
             createdAt: new Date().toISOString()
           };

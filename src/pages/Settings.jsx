@@ -107,7 +107,8 @@ const Settings = () => {
   const [toast, setToast] = useState(null);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
 
-  // Feedback Form State
+  // Feedback Form & Reports View State
+  const [activeFeedbackTab, setActiveFeedbackTab] = useState('submit'); // 'submit' | 'my-reports'
   const [feedbackType, setFeedbackType] = useState('problem');
   const [feedbackTitle, setFeedbackTitle] = useState('');
   const [feedbackDescription, setFeedbackDescription] = useState('');
@@ -115,6 +116,8 @@ const Settings = () => {
   const [feedbackSteps, setFeedbackSteps] = useState('');
   const [feedbackSeverity, setFeedbackSeverity] = useState('Normal');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [adminStatusFilter, setAdminStatusFilter] = useState('All');
+  const [adminReplies, setAdminReplies] = useState({});
 
   // Password Setup / Change Modal State
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -229,10 +232,11 @@ const Settings = () => {
         severity: feedbackSeverity
       });
 
-      showToast('success', 'Thank you! Your feedback has been submitted.');
+      showToast('success', '✓ Report Sent Successfully - Your report has been sent privately to the Master OS admin.');
       setFeedbackTitle('');
       setFeedbackDescription('');
       setFeedbackSteps('');
+      setActiveFeedbackTab('my-reports');
     } catch (err) {
       console.error(err);
       showToast('error', 'Could not submit feedback.');
@@ -514,91 +518,283 @@ const Settings = () => {
             </div>
           </Section>
 
-          {/* FEEDBACK SECTION */}
-          <Section title="Feedback & Support" icon="feedback">
-            <form onSubmit={handleSubmitFeedbackForm} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFeedbackType('problem')}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                    feedbackType === 'problem' ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' : 'bg-white/5 border-white/5 text-zinc-400'
-                  }`}
-                >
-                  🐛 Bug Report
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedbackType('suggestion')}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                    feedbackType === 'suggestion' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-white/5 border-white/5 text-zinc-400'
-                  }`}
-                >
-                  💡 Suggestion
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedbackType('feedback')}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                    feedbackType === 'feedback' ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/5 text-zinc-400'
-                  }`}
-                >
-                  💬 Feedback
-                </button>
+          {/* PRIVATE BUG REPORT & SUPPORT SECTION */}
+          <Section title="Private Bug Reports & Support" icon="lock">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveFeedbackTab('submit')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      activeFeedbackTab === 'submit' 
+                        ? 'bg-primary text-black shadow-md' 
+                        : 'bg-white/5 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Submit Private Report
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFeedbackTab('my-reports')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeFeedbackTab === 'my-reports' 
+                        ? 'bg-primary text-black shadow-md' 
+                        : 'bg-white/5 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <span>View My Reports</span>
+                    {feedbackReports?.length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono font-bold">
+                        {feedbackReports.filter(r => r.reporterId === currentUser?.uid || r.userId === currentUser?.uid).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">verified_user</span>
+                  Private → Admin Only
+                </span>
               </div>
 
-              <TextInput
-                value={feedbackTitle}
-                onChange={e => setFeedbackTitle(e.target.value)}
-                placeholder="Title / Summary"
-              />
+              {activeFeedbackTab === 'submit' ? (
+                <form onSubmit={handleSubmitFeedbackForm} className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackType('problem')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                        feedbackType === 'problem' ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' : 'bg-white/5 border-white/5 text-zinc-400'
+                      }`}
+                    >
+                      🐛 Bug Report
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackType('suggestion')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                        feedbackType === 'suggestion' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-white/5 border-white/5 text-zinc-400'
+                      }`}
+                    >
+                      💡 Suggestion
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackType('feedback')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                        feedbackType === 'feedback' ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/5 text-zinc-400'
+                      }`}
+                    >
+                      💬 Feedback
+                    </button>
+                  </div>
 
-              <textarea
-                value={feedbackDescription}
-                onChange={e => setFeedbackDescription(e.target.value)}
-                placeholder="Details & Description..."
-                rows={3}
-                className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary resize-none"
-              />
+                  <TextInput
+                    value={feedbackTitle}
+                    onChange={e => setFeedbackTitle(e.target.value)}
+                    placeholder="Title / Summary of problem"
+                  />
 
-              <div className="flex justify-end pt-1">
-                <button
-                  type="submit"
-                  disabled={submittingFeedback}
-                  className="px-5 py-2 bg-primary text-black font-bold text-xs uppercase rounded-xl cursor-pointer"
-                >
-                  {submittingFeedback ? 'Submitting...' : 'Submit Report'}
-                </button>
-              </div>
-            </form>
+                  <textarea
+                    value={feedbackDescription}
+                    onChange={e => setFeedbackDescription(e.target.value)}
+                    placeholder="Detailed description of the issue..."
+                    rows={3}
+                    className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary resize-none"
+                  />
+
+                  <textarea
+                    value={feedbackSteps}
+                    onChange={e => setFeedbackSteps(e.target.value)}
+                    placeholder="Steps to reproduce (optional)..."
+                    rows={2}
+                    className="w-full bg-[#0D0D14] border border-white/5 rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary resize-none"
+                  />
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-zinc-500">
+                      🔒 Your report will be routed privately to the Master OS admin (Shashidar).
+                    </span>
+                    <button
+                      type="submit"
+                      disabled={submittingFeedback}
+                      className="px-5 py-2 bg-primary text-black font-bold text-xs uppercase rounded-xl cursor-pointer shadow-md"
+                    >
+                      {submittingFeedback ? 'Sending...' : 'Send Private Report'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* MY REPORTS VIEW */
+                <div className="space-y-3">
+                  {(() => {
+                    const myReports = feedbackReports.filter(r => r.reporterId === currentUser?.uid || r.userId === currentUser?.uid);
+                    if (myReports.length === 0) {
+                      return (
+                        <div className="p-8 text-center border border-white/5 rounded-xl space-y-2">
+                          <span className="material-symbols-outlined text-zinc-500 text-3xl">inbox</span>
+                          <p className="text-xs text-zinc-400">You haven't submitted any bug reports yet.</p>
+                        </div>
+                      );
+                    }
+                    return myReports.map((report) => (
+                      <div key={report.id} className="p-4 bg-[#0D0D14] border border-white/10 rounded-xl space-y-2.5 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/5 text-zinc-300">
+                              {report.type}
+                            </span>
+                            <h4 className="font-bold text-white">{report.title}</h4>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            report.status === 'Resolved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+                            report.status === 'In Progress' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' :
+                            report.status === 'Under Review' ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+                            report.status === 'Closed' ? 'bg-zinc-500/20 text-zinc-400 border-zinc-500/40' :
+                            'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          }`}>
+                            {report.status || 'Open'}
+                          </span>
+                        </div>
+                        <p className="text-zinc-300 leading-relaxed">{report.description}</p>
+                        {report.stepsToReproduce && (
+                          <div className="p-2.5 bg-black/40 rounded-lg text-[11px] text-zinc-400">
+                            <strong className="text-zinc-300">Steps to reproduce:</strong> {report.stepsToReproduce}
+                          </div>
+                        )}
+                        {report.adminReply && (
+                          <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl text-xs space-y-1">
+                            <span className="font-bold text-primary text-[10px] uppercase tracking-wider block">🛡️ Admin Response (Shashidar)</span>
+                            <p className="text-white">{report.adminReply}</p>
+                          </div>
+                        )}
+                        <div className="text-[10px] text-zinc-500 pt-1">
+                          Submitted: {new Date(report.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
           </Section>
 
-          {/* ADMIN MANAGEMENT PANEL */}
+          {/* ADMIN PRIVATE REPORTS DASHBOARD (SHASHIDAR) */}
           {isAdmin && (
-            <Section title="Admin Feedback Management" icon="admin_panel_settings">
-              <div className="space-y-3 max-h-80 overflow-y-auto no-scrollbar">
-                {feedbackReports.map((report) => (
-                  <div key={report.id} className="p-3 bg-[#0D0D14] border border-white/10 rounded-xl space-y-2 text-xs">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-white">{report.title}</h4>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/20 text-primary">
-                        {report.status}
-                      </span>
-                    </div>
-                    <p className="text-zinc-400 text-[11px]">{report.description}</p>
-                    <div className="flex gap-2 pt-1">
-                      {['VIEWED', 'IN PROGRESS', 'RESOLVED', 'CLOSED'].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => updateFeedbackStatus(report.id, s)}
-                          className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-white/5 hover:bg-white/10 text-zinc-300"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            <Section title="Admin Private Reports Dashboard (Shashidar)" icon="admin_panel_settings">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-white/5">
+                  {['All', 'Open', 'Under Review', 'In Progress', 'Resolved', 'Closed'].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setAdminStatusFilter(s)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        adminStatusFilter === s 
+                          ? 'bg-primary text-black' 
+                          : 'bg-white/5 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-4 max-h-96 overflow-y-auto no-scrollbar">
+                  {(() => {
+                    const filtered = feedbackReports.filter(r => 
+                      adminStatusFilter === 'All' ? true : (r.status || 'Open').toLowerCase() === adminStatusFilter.toLowerCase()
+                    );
+                    if (filtered.length === 0) {
+                      return <p className="text-xs text-zinc-500 py-4 text-center">No reports match filter "{adminStatusFilter}".</p>;
+                    }
+                    return filtered.map((report) => (
+                      <div key={report.id} className="p-4 bg-[#0D0D14] border border-white/10 rounded-2xl space-y-3 text-xs">
+                        <div className="flex justify-between items-start gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/20 text-primary border border-primary/30">
+                                {report.type}
+                              </span>
+                              <span className="text-[11px] text-zinc-400 font-semibold">
+                                From: <strong className="text-white">{report.reporterName || report.userName || 'User'}</strong> ({report.reporterEmail || report.userEmail})
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-white text-sm">{report.title}</h4>
+                          </div>
+
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 border ${
+                            report.status === 'Resolved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+                            report.status === 'In Progress' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' :
+                            report.status === 'Under Review' ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+                            report.status === 'Closed' ? 'bg-zinc-500/20 text-zinc-400 border-zinc-500/40' :
+                            'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          }`}>
+                            {report.status || 'Open'}
+                          </span>
+                        </div>
+
+                        <p className="text-zinc-300 leading-relaxed bg-black/30 p-3 rounded-xl border border-white/5">{report.description}</p>
+
+                        {report.stepsToReproduce && (
+                          <div className="p-2.5 bg-black/40 rounded-lg text-[11px] text-zinc-400">
+                            <strong className="text-zinc-300">Steps:</strong> {report.stepsToReproduce}
+                          </div>
+                        )}
+
+                        {/* Status Update Buttons */}
+                        <div className="space-y-2 pt-2 border-t border-white/5">
+                          <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                            Update Report Status:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {['Open', 'Under Review', 'In Progress', 'Resolved', 'Closed'].map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => updateFeedbackStatus(report.id, s, adminReplies[report.id] || report.adminReply || '')}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer border ${
+                                  report.status === s 
+                                    ? 'bg-primary text-black border-primary' 
+                                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10'
+                                }`}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Admin Reply Area */}
+                        <div className="space-y-2 pt-2">
+                          <label className="block text-[10px] font-bold text-primary uppercase tracking-wider">
+                            Admin Response (Visible to Reporter):
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={adminReplies[report.id] !== undefined ? adminReplies[report.id] : (report.adminReply || '')}
+                              onChange={(e) => setAdminReplies({ ...adminReplies, [report.id]: e.target.value })}
+                              placeholder="Write reply to reporter..."
+                              className="flex-1 px-3 py-1.5 rounded-xl bg-black/50 border border-white/10 text-xs text-white focus:outline-none focus:border-primary"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateFeedbackStatus(report.id, report.status || 'Open', adminReplies[report.id] || '');
+                                showToast('success', '✓ Response saved and reporter notified privately.');
+                              }}
+                              className="px-3 py-1.5 bg-primary text-black font-bold text-xs rounded-xl cursor-pointer shrink-0"
+                            >
+                              Send Reply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
             </Section>
           )}

@@ -68,6 +68,14 @@ const Notifications = () => {
   });
 
   const filteredNotifications = allNotifications.filter((notif) => {
+    // Privacy Filtering: Admin-only notifications vs User-only notifications
+    const targetUser = notif.rawNotif?.targetUserId || notif.rawNotif?.recipientId;
+    if (targetUser === 'shashidar-admin' || targetUser === 'admin') {
+      if (!isAdmin) return false;
+    } else if (targetUser && targetUser !== 'all' && targetUser !== currentUser?.uid) {
+      return false;
+    }
+
     const matchesCategory = activeCategory === 'All' || notif.type === activeCategory;
     const matchesSearch = notif.text.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
