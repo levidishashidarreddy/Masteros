@@ -17,6 +17,55 @@ import {
 import GlobalDetailOverlay from './GlobalDetailOverlay';
 import DSAVisualMap from './DSAVisualMap';
 
+// ─── Resource Service Branding System ───────────────────────────────────────
+const RESOURCE_SERVICES = [
+  { match: ['youtube.com', 'youtu.be'],            slug: 'youtube',        color: 'FF0000', label: 'YouTube' },
+  { match: ['github.com'],                          slug: 'github',         color: 'ffffff', label: 'GitHub' },
+  { match: ['drive.google.com'],                    slug: 'googledrive',    color: '4285F4', label: 'Google Drive' },
+  { match: ['docs.google.com'],                     slug: 'googledocs',     color: '4285F4', label: 'Google Docs' },
+  { match: ['notion.so', 'notion.com'],             slug: 'notion',         color: 'ffffff', label: 'Notion' },
+  { match: ['linkedin.com'],                        slug: 'linkedin',       color: '0A66C2', label: 'LinkedIn' },
+  { match: ['figma.com'],                           slug: 'figma',          color: 'F24E1E', label: 'Figma' },
+  { match: ['stackoverflow.com'],                   slug: 'stackoverflow',  color: 'F58025', label: 'Stack Overflow' },
+  { match: ['developer.mozilla.org', 'mdn.io'],     slug: 'mdnwebdocs',     color: 'ffffff', label: 'MDN Web Docs' },
+  { match: ['leetcode.com'],                        slug: 'leetcode',       color: 'FFA116', label: 'LeetCode' },
+  { match: ['codechef.com'],                        slug: 'codechef',       color: 'B92B27', label: 'CodeChef' },
+  { match: ['coursera.org'],                        slug: 'coursera',       color: '0056D2', label: 'Coursera' },
+  { match: ['udemy.com'],                           slug: 'udemy',          color: 'A435F0', label: 'Udemy' },
+  { match: ['npmjs.com'],                           slug: 'npm',            color: 'CB3837', label: 'npm' },
+  { match: ['medium.com'],                          slug: 'medium',         color: 'ffffff', label: 'Medium' },
+  { match: ['dev.to'],                              slug: 'devdotto',       color: 'ffffff', label: 'DEV Community' },
+  { match: ['twitter.com', 'x.com'],               slug: 'x',              color: 'ffffff', label: 'X / Twitter' },
+  { match: ['hackerrank.com'],                      slug: 'hackerrank',     color: '00EA64', label: 'HackerRank' },
+  { match: ['codeforces.com'],                      slug: 'codeforces',     color: '1F8ACB', label: 'Codeforces' },
+  { match: ['geeksforgeeks.org'],                   slug: 'geeksforgeeks',  color: '2F8D46', label: 'GeeksforGeeks' },
+  { match: ['freecodecamp.org'],                    slug: 'freecodecamp',   color: '0A0A23', label: 'freeCodeCamp' },
+  { match: ['replit.com'],                          slug: 'replit',         color: 'F26207', label: 'Replit' },
+  { match: ['codepen.io'],                          slug: 'codepen',        color: 'ffffff', label: 'CodePen' },
+];
+
+const CATEGORY_SLUG_MAP = {
+  'YouTube':       { slug: 'youtube',            color: 'FF0000' },
+  'LeetCode':      { slug: 'leetcode',           color: 'FFA116' },
+  'GitHub':        { slug: 'github',             color: 'ffffff' },
+  'GeeksforGeeks': { slug: 'geeksforgeeks',      color: '2F8D46' },
+  'HackerRank':    { slug: 'hackerrank',         color: '00EA64' },
+  'Codeforces':    { slug: 'codeforces',         color: '1F8ACB' },
+  'Google Drive':  { slug: 'googledrive',        color: '4285F4' },
+  'Documentation': { slug: 'readthedocs',       color: '8CA1AF' },
+  'PDF':           { slug: 'adobeacrobatreader', color: 'EC1C24' },
+};
+
+const getResourceMeta = (link, category) => {
+  let domain = '';
+  try { if (link) domain = new URL(link).hostname.replace('www.', ''); } catch (_) {}
+  const matched = RESOURCE_SERVICES.find(s => s.match.some(m => domain.includes(m)));
+  if (matched) return { iconUrl: `https://cdn.simpleicons.org/${matched.slug}/${matched.color}`, label: matched.label, domain: domain || category };
+  const catMatch = CATEGORY_SLUG_MAP[category];
+  if (catMatch) return { iconUrl: `https://cdn.simpleicons.org/${catMatch.slug}/${catMatch.color}`, label: category, domain: domain || category };
+  return { iconUrl: null, label: category || 'Resource', domain: domain || category };
+};
+
 const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteWorkspace }) => {
   const context = useContext(TaskContext);
   const deleteWorkspace = propDeleteWorkspace || context?.deleteWorkspace;
@@ -43,7 +92,61 @@ const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteW
   };
   const [activeTab, setActiveTab] = useState('ROADMAP'); // 'ROADMAP' | 'DATA STRUCTURES' | 'ALGORITHMS' | 'PATTERNS' | 'RESOURCES'
   const [roadmapView, setRoadmapView] = useState('learning'); // 'learning' | 'visual'
-  const [resourceSubTab, setResourceSubTab] = useState('Patterns'); // 'Patterns' | 'Data Structures' | 'Algorithms' | 'Inspiration'
+  const [resourceSubTab, setResourceSubTab] = useState('My Resources'); // 'My Resources' | 'Inspiration' | 'Patterns' | 'Data Structures' | 'Algorithms'
+
+  // Custom User Resource States
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceCategory, setResourceCategory] = useState('YouTube');
+  const [resourceLink, setResourceLink] = useState('');
+  const [resourceThumbnail, setResourceThumbnail] = useState('');
+
+  const handleOpenAddResource = () => {
+    setEditingResource(null);
+    setResourceTitle('');
+    setResourceCategory('YouTube');
+    setResourceLink('');
+    setResourceThumbnail('');
+    setIsResourceModalOpen(true);
+  };
+
+  const handleOpenEditResource = (res) => {
+    setEditingResource(res);
+    setResourceTitle(res.title);
+    setResourceCategory(res.category || 'YouTube');
+    setResourceLink(res.link);
+    setResourceThumbnail(res.thumbnail || '');
+    setIsResourceModalOpen(true);
+  };
+
+  const handleResourceSubmit = (e) => {
+    e.preventDefault();
+    if (!workspace?.id || !updateWorkspace) return;
+    const resData = {
+      id: editingResource ? editingResource.id : `res-${Date.now()}`,
+      title: resourceTitle,
+      category: resourceCategory,
+      link: resourceLink,
+      thumbnail: resourceThumbnail || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=150&q=80'
+    };
+
+    let updatedResources = [];
+    if (editingResource) {
+      updatedResources = (workspace.resources || []).map(r => r.id === editingResource.id ? resData : r);
+    } else {
+      updatedResources = [...(workspace.resources || []), resData];
+    }
+
+    updateWorkspace(workspace.id, { resources: updatedResources });
+    setIsResourceModalOpen(false);
+  };
+
+  const handleDeleteResource = (resId) => {
+    if (!workspace?.id || !updateWorkspace) return;
+    const updated = (workspace.resources || []).filter(r => r.id !== resId);
+    updateWorkspace(workspace.id, { resources: updated });
+  };
 
   // Expandable tree state for roadmap
   const [expandedNodes, setExpandedNodes] = useState({
@@ -823,13 +926,23 @@ const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteW
       {activeTab === 'RESOURCES' && (
         <div className="space-y-6 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-            <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-2xl">auto_awesome</span>
-              📚 RESOURCES
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-2xl">auto_awesome</span>
+                📚 RESOURCES
+              </h2>
+              <button
+                type="button"
+                onClick={handleOpenAddResource}
+                className="px-3 py-1.5 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all flex items-center gap-1.5 shadow-lg shadow-primary/20 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>Add Resource</span>
+              </button>
+            </div>
 
             <div className="flex items-center gap-2 bg-surface-bright/40 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
-              {['Inspiration', 'Patterns', 'Data Structures', 'Algorithms'].map((sub) => (
+              {['My Resources', 'Inspiration', 'Patterns', 'Data Structures', 'Algorithms'].map((sub) => (
                 <button
                   key={sub}
                   onClick={() => setResourceSubTab(sub)}
@@ -839,11 +952,135 @@ const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteW
                       : 'text-on-surface-variant hover:text-white'
                   }`}
                 >
-                  {sub === 'Inspiration' ? '✨ Inspiration' : sub}
+                  {sub === 'Inspiration' ? '✨ Inspiration' : sub === 'My Resources' ? '📌 My Resources' : sub}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* 📌 MY CUSTOM USER RESOURCES SECTION */}
+          {resourceSubTab === 'My Resources' && (
+            <div className="space-y-6">
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 via-purple-500/5 to-surface border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary text-2xl">bookmark_added</span>
+                  <div>
+                    <h3 className="text-base font-extrabold text-white">📌 My Custom Study Resources</h3>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      Add and manage your personal DSA cheat sheets, LeetCode list links, video tutorials, and reference documentation.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenAddResource}
+                  className="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-base">add_link</span>
+                  <span>Add New Resource</span>
+                </button>
+              </div>
+
+              {(workspace?.resources || []).length === 0 ? (
+                <div className="p-10 rounded-2xl bg-surface/40 border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl text-primary">link</span>
+                  </div>
+                  <div className="space-y-1 max-w-md">
+                    <h4 className="text-sm font-bold text-white">No custom resources added yet</h4>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      Keep all your DSA study guides, YouTube tutorials, LeetCode playlists, and Notion notes attached right here for fast access!
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddResource}
+                    className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    <span>Add Your First Resource</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(workspace.resources || []).map((res) => {
+                    const meta = getResourceMeta(res.link, res.category);
+                    return (
+                      <div key={res.id} className="p-5 rounded-2xl bg-surface/60 border border-white/10 hover:border-primary/40 transition-all flex flex-col justify-between gap-4 shadow-lg group">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0 overflow-hidden">
+                                {meta.iconUrl ? (
+                                  <img
+                                    src={meta.iconUrl}
+                                    alt={meta.label}
+                                    className="w-4 h-4 object-contain select-none"
+                                    draggable={false}
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
+                                  />
+                                ) : null}
+                                <span
+                                  className="material-symbols-outlined text-sm text-on-surface-variant/60"
+                                  style={{ display: meta.iconUrl ? 'none' : 'block' }}
+                                >
+                                  language
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/5 text-on-surface-variant border border-white/5 truncate">
+                                {res.category || meta.label}
+                              </span>
+                            </div>
+
+                            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditResource(res)}
+                                className="p-1.5 text-on-surface-variant hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                                title="Edit resource"
+                              >
+                                <span className="material-symbols-outlined text-xs">edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteResource(res.id)}
+                                className="p-1.5 text-on-surface-variant hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
+                                title="Delete resource"
+                              >
+                                <span className="material-symbols-outlined text-xs">delete</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-white group-hover:text-primary transition-colors line-clamp-2">
+                            {res.title}
+                          </h4>
+
+                          {meta.domain && (
+                            <span className="text-[10px] text-on-surface-variant/60 block truncate">
+                              {meta.domain}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                          <a
+                            href={res.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-1.5 rounded-xl bg-primary/10 text-primary border border-primary/20 font-bold text-xs hover:bg-primary/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <span>Open Resource</span>
+                            <span className="material-symbols-outlined text-xs">open_in_new</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 🌟 INSPIRATION & REFERENCES SECTION */}
           {resourceSubTab === 'Inspiration' && (
@@ -1132,6 +1369,79 @@ const DSAWorkspace = ({ workspace, updateWorkspace, deleteWorkspace: propDeleteW
           </div>
         </Modal>
       )}
+
+      {/* ─── ADD / EDIT CUSTOM RESOURCE MODAL ──────────────────────────── */}
+      <Modal
+        isOpen={isResourceModalOpen}
+        onClose={() => setIsResourceModalOpen(false)}
+        title={editingResource ? 'Edit Resource' : 'Add Custom Resource'}
+      >
+        <form onSubmit={handleResourceSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <InputField
+              id="dsa-res-link"
+              label="Link URL"
+              placeholder="https://leetcode.com/... or https://youtube.com/..."
+              value={resourceLink}
+              onChange={(e) => setResourceLink(e.target.value)}
+              required
+            />
+            {resourceLink && (() => {
+              const preview = getResourceMeta(resourceLink, resourceCategory);
+              return (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.07]">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    {preview.iconUrl ? (
+                      <img src={preview.iconUrl} alt={preview.label} className="w-4 h-4 object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                    ) : (
+                      <span className="material-symbols-outlined text-[15px] text-on-surface-variant">language</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant">{preview.label}</span>
+                  {preview.domain && <span className="text-[10px] text-on-surface-variant/50 ml-auto truncate">{preview.domain}</span>}
+                </div>
+              );
+            })()}
+          </div>
+
+          <InputField
+            id="dsa-res-title"
+            label="Resource Title"
+            placeholder="e.g. Striver's SDE Sheet LeetCode problems"
+            value={resourceTitle}
+            onChange={(e) => setResourceTitle(e.target.value)}
+            required
+          />
+
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-xs font-semibold">Category</label>
+            <select
+              value={resourceCategory}
+              onChange={(e) => setResourceCategory(e.target.value)}
+              className="w-full bg-[#111118] border border-white/5 rounded-lg p-3 text-on-surface focus:outline-none focus:border-primary text-xs"
+            >
+              <option value="YouTube">YouTube Video</option>
+              <option value="LeetCode">LeetCode Problem / List</option>
+              <option value="GitHub">GitHub Repository</option>
+              <option value="GeeksforGeeks">GeeksforGeeks Article</option>
+              <option value="HackerRank">HackerRank</option>
+              <option value="Codeforces">Codeforces</option>
+              <option value="Google Drive">Google Drive / Notes</option>
+              <option value="Documentation">Documentation</option>
+              <option value="Article">Article / Blog Post</option>
+              <option value="PDF">PDF / eBook</option>
+              <option value="Course">Online Course</option>
+              <option value="Tool">Tool / App</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setIsResourceModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary">{editingResource ? 'Save Changes' : 'Add Link'}</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
