@@ -6,20 +6,35 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [displayContent, setDisplayContent] = useState('');
+
+  const isLocalhost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   useEffect(() => {
     if (isOpen && content) {
       setLoading(true);
       setError(null);
 
-      QRCode.toDataURL(content, {
-        width: 320,
-        margin: 2,
+      // Resolve relative path to absolute URL if needed
+      let formattedContent = content;
+      if (typeof content === 'string' && content.startsWith('/')) {
+        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        formattedContent = `${baseUrl}${content}`;
+      }
+      setDisplayContent(formattedContent);
+
+      // Adjust error correction level based on payload length for maximum readability
+      const ecc = formattedContent.length > 200 ? 'L' : 'M';
+
+      QRCode.toDataURL(formattedContent, {
+        width: 360,
+        margin: 4, // ISO standard quiet zone for phone cameras
         color: {
-          dark: '#0f172a',
+          dark: '#000000',
           light: '#ffffff'
         },
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: ecc
       })
         .then(url => {
           setQrUrl(url);
@@ -32,6 +47,7 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
         });
     } else if (isOpen && !content) {
       setQrUrl('');
+      setDisplayContent('');
       setLoading(false);
       setError('No content available to generate QR code.');
     }
@@ -40,8 +56,8 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
   if (!isOpen) return null;
 
   const handleCopy = () => {
-    if (!content) return;
-    navigator.clipboard.writeText(content);
+    if (!displayContent) return;
+    navigator.clipboard.writeText(displayContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -56,6 +72,9 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
     document.body.removeChild(link);
   };
 
+  const isLocalhostUrl = typeof displayContent === 'string' && 
+    (displayContent.includes('localhost') || displayContent.includes('127.0.0.1'));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in select-none">
       <div onClick={onClose} className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
@@ -69,7 +88,7 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
             <span className="material-symbols-outlined text-primary text-xl">qr_code_2</span>
             <div>
               <h3 className="font-space-grotesk text-sm font-bold text-white uppercase">{title}</h3>
-              <p className="text-[11px] text-zinc-400">Scan to open on your camera or phone</p>
+              <p className="text-[11px] text-zinc-400">Scan with your phone camera</p>
             </div>
           </div>
           <button
@@ -81,7 +100,7 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
         </div>
 
         {/* QR Code Container */}
-        <div className="p-4 bg-white rounded-2xl inline-block shadow-lg border border-white/20 min-w-[216px] min-h-[216px]">
+        <div className="p-4 bg-white rounded-2xl inline-block shadow-xl border border-white/20 min-w-[216px] min-h-[216px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-8 gap-2 text-zinc-600 h-48 w-48">
               <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
@@ -96,16 +115,29 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
             <img
               src={qrUrl}
               alt="QR Code"
-              className="w-48 h-48 mx-auto object-contain"
+              className="w-48 h-48 mx-auto object-contain rounded-lg"
             />
           ) : null}
         </div>
 
+        {/* Localhost Warning Banner if applicable */}
+        {isLocalhostUrl && (
+          <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl text-left space-y-0.5">
+            <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px]">
+              <span className="material-symbols-outlined text-xs">warning</span>
+              <span>Mobile Connection Tip</span>
+            </div>
+            <p className="text-[11px] text-amber-200/80 leading-tight">
+              Phone cameras cannot open <code className="text-amber-300 font-mono">localhost</code> links. Use your local Wi-Fi IP (e.g. <code className="text-amber-300 font-mono">http://192.168.x.x:5173</code>) or set <code className="text-amber-300 font-mono">VITE_APP_URL</code> in <code className="text-amber-300 font-mono">.env</code>.
+            </p>
+          </div>
+        )}
+
         {/* Content Snippet */}
-        {content && (
+        {displayContent && (
           <div className="bg-[#111118] border border-white/5 p-3 rounded-xl text-left space-y-1">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Content</span>
-            <p className="text-xs text-zinc-300 font-mono line-clamp-2 break-all">{content}</p>
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Content Payload</span>
+            <p className="text-xs text-zinc-300 font-mono line-clamp-2 break-all">{displayContent}</p>
           </div>
         )}
 
@@ -113,7 +145,7 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
         <div className="flex justify-center gap-2 pt-1">
           <button
             onClick={handleCopy}
-            disabled={!content}
+            disabled={!displayContent}
             className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/10 text-xs font-semibold text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all"
           >
             <span className="material-symbols-outlined text-sm">
