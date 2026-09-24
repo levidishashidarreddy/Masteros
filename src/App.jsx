@@ -23,7 +23,7 @@ const Tasks = React.lazy(() => import('./pages/Tasks'));
 const Notifications = React.lazy(() => import('./pages/Notifications'));
 const Roadmaps = React.lazy(() => import('./pages/Roadmaps'));
 const RoadmapDetail = React.lazy(() => import('./pages/RoadmapDetail'));
-const Saved = React.lazy(() => import('./pages/Saved'));
+const Gurthu = React.lazy(() => import('./pages/Gurthu'));
 
 const RootRoute = () => {
   const { currentUser, isGuestMode, isOnboarded, loading } = React.useContext(TaskContext);
@@ -136,7 +136,8 @@ function AppContent() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/roadmaps" element={<ProtectedRoute><Roadmaps /></ProtectedRoute>} />
           <Route path="/roadmaps/:id" element={<ProtectedRoute><RoadmapDetail /></ProtectedRoute>} />
-          <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
+          <Route path="/gurthu" element={<ProtectedRoute><Gurthu /></ProtectedRoute>} />
+          <Route path="/saved" element={<Navigate to="/gurthu" replace />} />
           <Route path="/workspaces" element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
           <Route path="/workspaces/:id" element={<ProtectedRoute><WorkspaceDetail /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />

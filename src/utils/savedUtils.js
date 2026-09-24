@@ -1,6 +1,6 @@
 /**
- * Guruthu / Learning Vault Utilities
- * Auto-detection of resource types, domain extraction, and tag parsing.
+ * Gurthu — Personal Memory & Cross-Device Transfer Space Utilities
+ * Auto-detection of resource types, domain extraction, tag parsing, and transfer expiry helpers.
  */
 
 export const extractDomain = (urlStr) => {
@@ -81,7 +81,7 @@ export const generateDefaultTitle = (urlStr = '', textStr = '', type = 'link') =
     return firstLine;
   }
 
-  return 'Saved Item';
+  return 'Gurthu Item';
 };
 
 export const parseTags = (tagsInput) => {
@@ -114,4 +114,40 @@ export const getTypeMeta = (type = 'link') => {
     default:
       return { label: 'Note', icon: 'sticky_note_2', emoji: '📝', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' };
   }
+};
+
+/**
+ * Expiry helper functions for Klipit-style cross-device transfer items.
+ * Options: '1h', '24h', '7d', 'keep'
+ */
+export const calculateExpiryIso = (option = '24h') => {
+  if (option === 'keep') return null;
+  const now = Date.now();
+  let ms = 24 * 60 * 60 * 1000; // default 24h
+
+  if (option === '1h') ms = 1 * 60 * 60 * 1000;
+  else if (option === '24h') ms = 24 * 60 * 60 * 1000;
+  else if (option === '7d') ms = 7 * 24 * 60 * 60 * 1000;
+
+  return new Date(now + ms).toISOString();
+};
+
+export const formatTimeRemaining = (expiresAt) => {
+  if (!expiresAt) return 'No expiry';
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  if (diffMs <= 0) return 'Expired';
+
+  const mins = Math.floor(diffMs / (1000 * 60));
+  if (mins < 60) return `Expires in ${mins}m`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Expires in ${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  return `Expires in ${days}d`;
+};
+
+export const isTransferExpired = (expiresAt) => {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() <= Date.now();
 };

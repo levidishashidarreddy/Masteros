@@ -26,7 +26,7 @@ const Sidebar = () => {
     if (route === '/dashboard') import('../pages/Dashboard');
     else if (route === '/workspaces') import('../pages/Workspaces');
     else if (route === '/roadmaps') import('../pages/Roadmaps');
-    else if (route === '/saved') import('../pages/Saved');
+    else if (route === '/gurthu' || route === '/saved') import('../pages/Gurthu');
     else if (route === '/tasks') import('../pages/Tasks');
     else if (route === '/analytics') import('../pages/Analytics');
     else if (route === '/friends') import('../pages/Friends');
@@ -170,9 +170,9 @@ const Sidebar = () => {
             </NavLink>
 
             <NavLink
-              to="/saved"
+              to="/gurthu"
               onClick={() => setIsExpanded(false)}
-              onMouseEnter={() => prefetchRoute('/saved')}
+              onMouseEnter={() => prefetchRoute('/gurthu')}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
                   isActive
@@ -182,8 +182,8 @@ const Sidebar = () => {
               }
             >
               <span className="absolute left-0 top-3 bottom-3 w-[3px] bg-primary rounded-r transition-transform duration-300 origin-center scale-y-0 group-[.sidebar-link-active]:scale-y-100" />
-              <span className="material-symbols-outlined nav-bookmark-icon transition-all duration-300 group-[.sidebar-link-active]:scale-110 group-[.sidebar-link-active]:rotate-[5deg]">bookmark</span>
-              <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Saved</span>
+              <span className="material-symbols-outlined nav-pin-icon transition-all duration-300 group-[.sidebar-link-active]:scale-110 group-[.sidebar-link-active]:rotate-[5deg]">push_pin</span>
+              <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Gurthu</span>
             </NavLink>
 
             <NavLink

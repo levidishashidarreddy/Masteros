@@ -1076,20 +1076,20 @@ const RoadmapDetail = () => {
               )}
             </div>
 
-            {/* Saved Resources (Guruthu Learning Vault Connection) */}
+            {/* Saved Resources (Gurthu Connection) */}
             <div className="space-y-3 pt-3 border-t border-white/5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-primary text-sm">bookmark</span>
-                  My Saved Resources
+                  <span className="material-symbols-outlined text-primary text-sm">push_pin</span>
+                  📌 Gurthu Resources
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsQuickSaveOpen(true)}
                   className="px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-xs">bookmark_add</span>
-                  <span>🔖 Save to Vault</span>
+                  <span className="material-symbols-outlined text-xs">push_pin</span>
+                  <span>🔖 Save to Gurthu</span>
                 </button>
               </div>
 
@@ -1103,13 +1103,13 @@ const RoadmapDetail = () => {
                 if (topicSavedList.length === 0) {
                   return (
                     <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-center space-y-1">
-                      <p className="text-xs text-zinc-500">No saved resources for this topic yet.</p>
+                      <p className="text-xs text-zinc-500">No Gurthu items for this topic yet.</p>
                       <button
                         type="button"
                         onClick={() => setIsQuickSaveOpen(true)}
                         className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
                       >
-                        + Save a video, article or snippet for this topic
+                        + Add video, article, or snippet to Gurthu
                       </button>
                     </div>
                   );

@@ -30,6 +30,7 @@ import {
 
 import { normalizeRoadmapData } from '../utils/roadmapLayout';
 import { SQL_DEFAULT_ROADMAP_DATA } from '../data/sqlCentralStore';
+import { autoDetectSavedType, generateDefaultTitle, extractDomain, calculateExpiryIso } from '../utils/savedUtils';
 
 export const TaskContext = createContext();
 
@@ -812,6 +813,10 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_savedItems');
     return cached ? JSON.parse(cached) : [];
   });
+  const [transferItems, setTransferItems] = useState(() => {
+    const cached = localStorage.getItem('cache_transferItems');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [myCreatedTasks, setMyCreatedTasks] = useState([]);
   const [workspaceTasksMap, setWorkspaceTasksMap] = useState({});
   const [allUsers, setAllUsers] = useState([]);
@@ -889,6 +894,10 @@ export const TaskProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('cache_savedItems', JSON.stringify(savedItems));
   }, [savedItems]);
+
+  useEffect(() => {
+    localStorage.setItem('cache_transferItems', JSON.stringify(transferItems));
+  }, [transferItems]);
 
   const wsTasksListenersRef = useRef({});
 
@@ -1230,6 +1239,7 @@ export const TaskProvider = ({ children }) => {
         setWorkspaces([]);
         setNotifications([]);
         setSavedItems([]);
+        setTransferItems([]);
         setFriends([]);
         setSentRequests([]);
         setChats({});
@@ -1342,6 +1352,23 @@ export const TaskProvider = ({ children }) => {
       setSavedItems(list);
     }, (err) => {
       console.error("Error listening to savedItems:", err);
+    });
+
+    // E5. Listen to transferItems (Gurthu cross-device clipboard)
+    const transferQuery = query(collection(db, 'transferItems'), where('userId', '==', uid));
+    const unsubscribeTransfer = onSnapshot(transferQuery, (snapshot) => {
+      const list = [];
+      const now = Date.now();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (!data.expiresAt || new Date(data.expiresAt).getTime() > now) {
+          list.push({ id: docSnap.id, ...data });
+        }
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setTransferItems(list);
+    }, (err) => {
+      console.error("Error listening to transferItems:", err);
     });
 
     // E2. Listen to collaborated workspaces
@@ -1472,6 +1499,7 @@ export const TaskProvider = ({ children }) => {
       unsubscribeCollabWs();
       unsubscribeJourneys();
       unsubscribeSaved();
+      unsubscribeTransfer();
       unsubscribeNotif();
       unsubscribeFriends();
       unsubscribeSentReqs();
@@ -3287,6 +3315,72 @@ export const TaskProvider = ({ children }) => {
               console.error("Firestore deleteSavedItem error:", err);
             }
           }
+        },
+        transferItems,
+        addTransferItem: async ({ text = '', url = '', expiryOption = '24h' }) => {
+          const transferId = `transfer-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          const expiresAt = calculateExpiryIso(expiryOption);
+          const newItem = {
+            id: transferId,
+            userId: currentUser ? currentUser.uid : 'guest',
+            text: text.trim(),
+            url: url.trim(),
+            expiryOption,
+            expiresAt,
+            createdAt: new Date().toISOString()
+          };
+          setTransferItems(prev => [newItem, ...prev]);
+          if (currentUser && !isGuestMode) {
+            try {
+              await setDoc(doc(db, 'transferItems', transferId), newItem);
+              await logProductiveActivity('transfer_item');
+            } catch (err) {
+              console.error("Firestore addTransferItem error:", err);
+            }
+          }
+          return transferId;
+        },
+        deleteTransferItem: async (id) => {
+          setTransferItems(prev => prev.filter(t => t.id !== id));
+          if (currentUser && !isGuestMode) {
+            try {
+              await deleteDoc(doc(db, 'transferItems', id));
+            } catch (err) {
+              console.error("Firestore deleteTransferItem error:", err);
+            }
+          }
+        },
+        saveTransferToGurthu: async (transferItem) => {
+          const detectedType = autoDetectSavedType(transferItem.url, transferItem.text);
+          const defaultTitle = generateDefaultTitle(transferItem.url, transferItem.text, detectedType);
+          
+          const itemId = `saved-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          const newItem = {
+            id: itemId,
+            userId: currentUser ? currentUser.uid : 'guest',
+            url: transferItem.url || '',
+            text: transferItem.text || '',
+            title: defaultTitle,
+            tags: [],
+            type: detectedType,
+            domain: transferItem.url ? extractDomain(transferItem.url) : '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          setSavedItems(prev => [newItem, ...prev]);
+          setTransferItems(prev => prev.filter(t => t.id !== transferItem.id));
+
+          if (currentUser && !isGuestMode) {
+            try {
+              await setDoc(doc(db, 'savedItems', itemId), newItem);
+              await deleteDoc(doc(db, 'transferItems', transferItem.id));
+              await logProductiveActivity('saved_item');
+            } catch (err) {
+              console.error("Firestore saveTransferToGurthu error:", err);
+            }
+          }
+          return itemId;
         },
         linkSkillToWorkspace,
         workspaceTasksMap,

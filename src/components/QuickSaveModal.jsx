@@ -155,7 +155,7 @@ const QuickSaveModal = ({
       setIsSavedAnimating(true);
 
       setTimeout(() => {
-        if (onSuccess) onSuccess('✓ Saved to Vault');
+        if (onSuccess) onSuccess('🔖 Saved to Gurthu');
         onClose();
       }, 350);
     } catch (err) {
@@ -184,15 +184,15 @@ const QuickSaveModal = ({
               isSavedAnimating ? 'bg-primary text-black scale-110' : 'bg-primary/10 border-primary/20 text-primary'
             }`}>
               <span className={`material-symbols-outlined text-[20px] transition-transform ${isSavedAnimating ? 'rotate-[360deg]' : ''}`}>
-                {isSavedAnimating ? 'check' : 'bookmark_add'}
+                {isSavedAnimating ? 'check' : 'push_pin'}
               </span>
             </div>
             <div>
               <h3 className="font-space-grotesk text-lg font-bold text-white flex items-center gap-2">
-                {editItem ? 'Edit Saved Resource' : 'Save to Vault'}
+                {editItem ? 'Edit Gurthu Item' : 'Add to Gurthu'}
               </h3>
               <p className="text-[11px] text-zinc-400 font-normal">
-                {editItem ? 'Update your saved resource details' : 'Quickly save anything for future reference'}
+                {editItem ? 'Update your saved resource details' : 'Keep useful things here for later reference'}
               </p>
             </div>
           </div>
@@ -371,8 +371,8 @@ const QuickSaveModal = ({
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-sm">bookmark</span>
-                  <span>{editItem ? 'Update Vault Item' : 'Save to Vault'}</span>
+                  <span className="material-symbols-outlined text-sm">push_pin</span>
+                  <span>{editItem ? 'Update Gurthu Item' : 'Add to Gurthu'}</span>
                 </>
               )}
             </button>
