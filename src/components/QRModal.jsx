@@ -1,12 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 
 const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
-  if (!isOpen || !content) return null;
+  const [qrUrl, setQrUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(content)}`;
+  useEffect(() => {
+    if (isOpen && content) {
+      setLoading(true);
+      setError(null);
+
+      QRCode.toDataURL(content, {
+        width: 320,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        },
+        errorCorrectionLevel: 'M'
+      })
+        .then(url => {
+          setQrUrl(url);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('QR generation error:', err);
+          setError('Failed to generate QR code.');
+          setLoading(false);
+        });
+    } else if (isOpen && !content) {
+      setQrUrl('');
+      setLoading(false);
+      setError('No content available to generate QR code.');
+    }
+  }, [isOpen, content]);
+
+  if (!isOpen) return null;
 
   const handleCopy = () => {
+    if (!content) return;
     navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    if (!qrUrl) return;
+    const link = document.createElement('a');
+    link.href = qrUrl;
+    link.download = `${(title || 'qr-code').toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -34,32 +81,61 @@ const QRModal = ({ isOpen, onClose, content, title = 'Scan with Phone' }) => {
         </div>
 
         {/* QR Code Container */}
-        <div className="p-4 bg-white rounded-2xl inline-block shadow-lg border border-white/20">
-          <img
-            src={qrUrl}
-            alt="QR Code"
-            className="w-48 h-48 mx-auto object-contain"
-          />
+        <div className="p-4 bg-white rounded-2xl inline-block shadow-lg border border-white/20 min-w-[216px] min-h-[216px]">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center p-8 gap-2 text-zinc-600 h-48 w-48">
+              <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
+              <span className="text-xs font-medium">Generating QR...</span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center p-6 gap-2 text-red-500 text-center h-48 w-48">
+              <span className="material-symbols-outlined text-3xl">error_outline</span>
+              <span className="text-xs font-medium">{error}</span>
+            </div>
+          ) : qrUrl ? (
+            <img
+              src={qrUrl}
+              alt="QR Code"
+              className="w-48 h-48 mx-auto object-contain"
+            />
+          ) : null}
         </div>
 
         {/* Content Snippet */}
-        <div className="bg-[#111118] border border-white/5 p-3 rounded-xl text-left space-y-1">
-          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Content</span>
-          <p className="text-xs text-zinc-300 font-mono line-clamp-2 break-all">{content}</p>
-        </div>
+        {content && (
+          <div className="bg-[#111118] border border-white/5 p-3 rounded-xl text-left space-y-1">
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Content</span>
+            <p className="text-xs text-zinc-300 font-mono line-clamp-2 break-all">{content}</p>
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-3 pt-1">
+        <div className="flex justify-center gap-2 pt-1">
           <button
             onClick={handleCopy}
-            className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            disabled={!content}
+            className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/10 text-xs font-semibold text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all"
           >
-            <span className="material-symbols-outlined text-sm">content_copy</span>
-            Copy Content
+            <span className="material-symbols-outlined text-sm">
+              {copied ? 'check' : 'content_copy'}
+            </span>
+            {copied ? 'Copied!' : 'Copy Content'}
           </button>
+
+          {qrUrl && (
+            <button
+              onClick={handleDownload}
+              className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+              title="Download QR Image"
+            >
+              <span className="material-symbols-outlined text-sm">download</span>
+              Download
+            </button>
+          )}
+
           <button
             onClick={onClose}
-            className="py-2 px-5 rounded-xl bg-primary text-black font-space-grotesk text-xs font-bold uppercase tracking-wider cursor-pointer transition-all"
+            className="py-2 px-4 rounded-xl bg-primary text-black font-space-grotesk text-xs font-bold uppercase tracking-wider cursor-pointer transition-all hover:brightness-110"
           >
             Done
           </button>

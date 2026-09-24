@@ -484,7 +484,11 @@ const Gurthu = () => {
                                   <button
                                     onClick={() => {
                                       setActiveMenuId(null);
-                                      setQrModalState({ isOpen: true, content: item.url || item.text || item.title, title: item.title });
+                                      setQrModalState({ 
+                                        isOpen: true, 
+                                        content: item.url || item.text || item.code || item.description || item.note || item.title || '', 
+                                        title: item.title || 'QR Code' 
+                                      });
                                     }}
                                     className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer"
                                   >
@@ -604,7 +608,11 @@ const Gurthu = () => {
 
                           <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => setQrModalState({ isOpen: true, content: item.url || item.text || item.title, title: item.title })}
+                              onClick={() => setQrModalState({ 
+                                isOpen: true, 
+                                content: item.url || item.text || item.code || item.description || item.note || item.title || '', 
+                                title: item.title || 'QR Code' 
+                              })}
                               className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all font-semibold flex items-center gap-1 border border-white/5"
                               title="QR Code"
                             >
