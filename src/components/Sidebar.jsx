@@ -25,7 +25,8 @@ const Sidebar = () => {
   const prefetchRoute = (route) => {
     if (route === '/dashboard') import('../pages/Dashboard');
     else if (route === '/workspaces') import('../pages/Workspaces');
-
+    else if (route === '/roadmaps') import('../pages/Roadmaps');
+    else if (route === '/saved') import('../pages/Saved');
     else if (route === '/tasks') import('../pages/Tasks');
     else if (route === '/analytics') import('../pages/Analytics');
     else if (route === '/friends') import('../pages/Friends');
@@ -166,6 +167,23 @@ const Sidebar = () => {
               <span className="absolute left-0 top-3 bottom-3 w-[3px] bg-primary rounded-r transition-transform duration-300 origin-center scale-y-0 group-[.sidebar-link-active]:scale-y-100" />
               <span className="material-symbols-outlined nav-map-icon transition-all duration-300 group-[.sidebar-link-active]:scale-110 group-[.sidebar-link-active]:rotate-[5deg]">alt_route</span>
               <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Roadmaps</span>
+            </NavLink>
+
+            <NavLink
+              to="/saved"
+              onClick={() => setIsExpanded(false)}
+              onMouseEnter={() => prefetchRoute('/saved')}
+              className={({ isActive }) =>
+                `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative group border ${
+                  isActive
+                    ? 'sidebar-link-active text-primary font-bold border-primary/10 bg-primary-container/20 shadow-[inset_0_0_12px_rgba(139,92,246,0.03)]'
+                    : 'text-on-surface-variant font-medium border-transparent hover:bg-white/5 hover:border-white/5 hover:text-white hover:translate-x-0.5 hover:-translate-y-px hover:shadow-lg'
+                }`
+              }
+            >
+              <span className="absolute left-0 top-3 bottom-3 w-[3px] bg-primary rounded-r transition-transform duration-300 origin-center scale-y-0 group-[.sidebar-link-active]:scale-y-100" />
+              <span className="material-symbols-outlined nav-bookmark-icon transition-all duration-300 group-[.sidebar-link-active]:scale-110 group-[.sidebar-link-active]:rotate-[5deg]">bookmark</span>
+              <span className="font-label-md text-label-md transition-all duration-300 group-[.sidebar-link-active]:translate-x-1">Saved</span>
             </NavLink>
 
             <NavLink

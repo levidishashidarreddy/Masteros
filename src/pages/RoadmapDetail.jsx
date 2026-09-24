@@ -7,6 +7,7 @@ import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 import { TaskContext } from '../context/TaskContext';
 import DSAWorkspace from '../components/DSA/DSAWorkspace';
+import QuickSaveModal from '../components/QuickSaveModal';
 import { calculateRoadmapGraphLayout, normalizeRoadmapData } from '../utils/roadmapLayout';
 import {
   normalizeSkillTitle,
@@ -29,8 +30,11 @@ const RoadmapDetail = () => {
     workspaces,
     updateWorkspace,
     addWorkspace,
-    linkSkillToWorkspace
+    linkSkillToWorkspace,
+    savedItems
   } = useContext(TaskContext);
+
+  const [isQuickSaveOpen, setIsQuickSaveOpen] = useState(false);
 
   // Normalize roadmap data on load to strictly enforce single Current Focus & UPPERCASE
   const rawRoadmap = useMemo(() => {
@@ -1072,6 +1076,71 @@ const RoadmapDetail = () => {
               )}
             </div>
 
+            {/* Saved Resources (Guruthu Learning Vault Connection) */}
+            <div className="space-y-3 pt-3 border-t border-white/5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-sm">bookmark</span>
+                  My Saved Resources
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickSaveOpen(true)}
+                  className="px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-xs">bookmark_add</span>
+                  <span>🔖 Save to Vault</span>
+                </button>
+              </div>
+
+              {(() => {
+                const topicSavedList = (savedItems || []).filter(item => 
+                  item.relatedTopicId === selectedNode.id ||
+                  item.relatedTopicId === `roadmap-${roadmap.id}-skill-${selectedNode.id}` ||
+                  (item.relatedTopicLabel && item.relatedTopicLabel.toLowerCase().includes(selectedNode.title.toLowerCase()))
+                );
+
+                if (topicSavedList.length === 0) {
+                  return (
+                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-center space-y-1">
+                      <p className="text-xs text-zinc-500">No saved resources for this topic yet.</p>
+                      <button
+                        type="button"
+                        onClick={() => setIsQuickSaveOpen(true)}
+                        className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+                      >
+                        + Save a video, article or snippet for this topic
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                    {topicSavedList.map(res => (
+                      <div key={res.id} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate">{res.title}</p>
+                          <p className="text-[10px] text-zinc-400 font-mono truncate">{res.domain || res.url || 'Note'}</p>
+                        </div>
+                        {res.url && (
+                          <a
+                            href={res.url.startsWith('http') ? res.url : `https://${res.url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-primary/20 text-zinc-300 hover:text-primary transition-colors cursor-pointer shrink-0"
+                            title="Open Link"
+                          >
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Action Buttons */}
             <div className="flex items-center justify-between pt-4 border-t border-white/5">
               <button
@@ -1438,6 +1507,17 @@ const RoadmapDetail = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quick Save Modal Connection */}
+      {selectedNode && (
+        <QuickSaveModal
+          isOpen={isQuickSaveOpen}
+          initialTitle={selectedNode.title}
+          initialRelatedTopicId={`roadmap-${roadmap.id}-skill-${selectedNode.id}`}
+          onClose={() => setIsQuickSaveOpen(false)}
+          onSuccess={(msg) => showToast(msg || '✓ Saved to Vault')}
+        />
       )}
 
       {/* Toast notifications */}

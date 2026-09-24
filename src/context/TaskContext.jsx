@@ -808,6 +808,10 @@ export const TaskProvider = ({ children }) => {
     const cached = localStorage.getItem('cache_userRoadmaps');
     return cached ? JSON.parse(cached) : [];
   });
+  const [savedItems, setSavedItems] = useState(() => {
+    const cached = localStorage.getItem('cache_savedItems');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [myCreatedTasks, setMyCreatedTasks] = useState([]);
   const [workspaceTasksMap, setWorkspaceTasksMap] = useState({});
   const [allUsers, setAllUsers] = useState([]);
@@ -881,6 +885,10 @@ export const TaskProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('cache_userRoadmaps', JSON.stringify(userRoadmaps));
   }, [userRoadmaps]);
+
+  useEffect(() => {
+    localStorage.setItem('cache_savedItems', JSON.stringify(savedItems));
+  }, [savedItems]);
 
   const wsTasksListenersRef = useRef({});
 
@@ -1221,6 +1229,7 @@ export const TaskProvider = ({ children }) => {
         setAssignments([]);
         setWorkspaces([]);
         setNotifications([]);
+        setSavedItems([]);
         setFriends([]);
         setSentRequests([]);
         setChats({});
@@ -1320,6 +1329,19 @@ export const TaskProvider = ({ children }) => {
     }, (err) => {
       console.error("Error listening to userRoadmaps:", err);
       markDataStreamResolved('userRoadmaps');
+    });
+
+    // E4. Listen to savedItems
+    const savedQuery = query(collection(db, 'savedItems'), where('userId', '==', uid));
+    const unsubscribeSaved = onSnapshot(savedQuery, (snapshot) => {
+      const list = [];
+      snapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setSavedItems(list);
+    }, (err) => {
+      console.error("Error listening to savedItems:", err);
     });
 
     // E2. Listen to collaborated workspaces
@@ -1449,6 +1471,7 @@ export const TaskProvider = ({ children }) => {
       unsubscribeWs();
       unsubscribeCollabWs();
       unsubscribeJourneys();
+      unsubscribeSaved();
       unsubscribeNotif();
       unsubscribeFriends();
       unsubscribeSentReqs();
@@ -3211,6 +3234,60 @@ export const TaskProvider = ({ children }) => {
         updateRoadmap,
         deleteRoadmap,
         setCurrentFocusSkill,
+        savedItems,
+        addSavedItem: async (item) => {
+          const itemId = item.id || `saved-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          const newItem = {
+            id: itemId,
+            userId: currentUser ? currentUser.uid : 'guest',
+            url: item.url || '',
+            text: item.text || '',
+            title: item.title || 'Saved Resource',
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            type: item.type || 'link',
+            domain: item.domain || '',
+            relatedTopicId: item.relatedTopicId || null,
+            relatedTopicLabel: item.relatedTopicLabel || null,
+            relatedRoadmapId: item.relatedRoadmapId || null,
+            relatedWorkspaceId: item.relatedWorkspaceId || null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          setSavedItems(prev => [newItem, ...prev]);
+          if (currentUser && !isGuestMode) {
+            try {
+              await setDoc(doc(db, 'savedItems', itemId), newItem);
+              await logProductiveActivity('saved_item');
+            } catch (err) {
+              console.error("Firestore addSavedItem error:", err);
+            }
+          }
+          return itemId;
+        },
+        updateSavedItem: async (id, updatedFields) => {
+          const fieldsToUpdate = {
+            ...updatedFields,
+            updatedAt: new Date().toISOString()
+          };
+          setSavedItems(prev => prev.map(item => item.id === id ? { ...item, ...fieldsToUpdate } : item));
+          if (currentUser && !isGuestMode) {
+            try {
+              await updateDoc(doc(db, 'savedItems', id), fieldsToUpdate);
+            } catch (err) {
+              console.error("Firestore updateSavedItem error:", err);
+            }
+          }
+        },
+        deleteSavedItem: async (id) => {
+          setSavedItems(prev => prev.filter(item => item.id !== id));
+          if (currentUser && !isGuestMode) {
+            try {
+              await deleteDoc(doc(db, 'savedItems', id));
+            } catch (err) {
+              console.error("Firestore deleteSavedItem error:", err);
+            }
+          }
+        },
         linkSkillToWorkspace,
         workspaceTasksMap,
         sendFollowRequest,
