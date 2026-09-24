@@ -1,48 +1,49 @@
 import React, { useEffect } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
-  // Lock body scroll when modal is open
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
+  // Lock body scroll completely when modal is open to prevent background page bleeding
   useEffect(() => {
     if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
-      {/* Overlay backdrop with blur */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 select-none">
+      {/* Solid Backdrop Overlay — Isolated from modal scroll tree */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-md animate-modal-backdrop"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md animate-fade-in transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Modal box — scrollable, max 90vh */}
+      {/* Modal Dialog Shell */}
       <div
-        className="relative glass-panel rounded-2xl w-full max-w-lg border border-white/10 z-10 animate-modal-content shadow-2xl bg-[#121212]/90 flex flex-col my-auto"
-        style={{ maxHeight: '90vh' }}
+        className={`relative z-10 w-full ${maxWidth} bg-[#0D0D14] border border-white/10 rounded-3xl shadow-2xl flex flex-col max-h-[88vh] animate-scale-up overflow-hidden text-left`}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Sticky header — always visible at top */}
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 px-8 py-5 bg-[#121212]/95 backdrop-blur-sm rounded-t-2xl shrink-0">
-          <h3 className="text-xl font-bold font-headline-md text-white flex items-center gap-2">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-[#11111A] shrink-0">
+          <h3 className="text-base sm:text-lg font-bold font-space-grotesk text-white flex items-center gap-2 truncate">
             {title}
           </h3>
           <button 
             onClick={onClose} 
-            className="text-on-surface-variant hover:text-white transition-colors hover:bg-white/5 rounded-lg p-1 -mr-1"
+            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex items-center justify-center cursor-pointer shrink-0"
+            aria-label="Close modal"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined text-sm">close</span>
           </button>
         </div>
 
-        {/* Scrollable content area */}
-        <div className="overflow-y-auto px-8 py-6 flex-1 no-scrollbar">
+        {/* Independent Internal Scroll Area */}
+        <div className="overflow-y-auto p-6 flex-1 text-zinc-200 space-y-4 no-scrollbar">
           {children}
         </div>
       </div>
