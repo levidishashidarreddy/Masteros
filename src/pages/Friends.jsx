@@ -14,6 +14,7 @@ const renderAvatar = (src, sizeCls = 'w-10 h-10', iconCls = 'text-sm') =>
 
 // Helper: evaluate friend's presence state from presenceStates map
 const getFriendPresence = (presenceStates, friendId) => {
+  if (!presenceStates || !friendId) return { state: 'offline', lastSeen: null };
   const p = presenceStates[friendId];
   if (!p) return { state: 'offline', lastSeen: null };
   const dbStatus = p.status || (p.online ? 'online' : 'offline');
@@ -89,21 +90,27 @@ const Friends = () => {
   // Current user's stats for Leaderboard
   const myXP = userProfile?.xp || 0;
   const myStreak = userProfile?.streak || 0;
-  const myTasksCompleted = tasks.filter(t => t.done).length;
-  const myWorkspacesCompleted = workspaces.filter(w => w.progress === 100).length;
+  const myTasksCompleted = (tasks || []).filter(t => t?.done).length;
+  const myWorkspacesCompleted = (workspaces || []).filter(w => w?.progress === 100).length;
 
   const getUserTopBadges = (usr) => {
+    if (!usr) return [];
     const list = [];
-    if (usr.xp >= 30000) list.push('💎');
-    else if (usr.xp >= 20000) list.push('🥇');
-    else if (usr.xp >= 10000) list.push('🥈');
-    else if (usr.xp >= 5000) list.push('🥉');
+    const xp = usr.xp || 0;
+    const streak = usr.streak || 0;
+    const tasksDone = usr.tasksCompleted || 0;
+    const wsDone = usr.workspaceCompleted || 0;
+
+    if (xp >= 30000) list.push('💎');
+    else if (xp >= 20000) list.push('🥇');
+    else if (xp >= 10000) list.push('🥈');
+    else if (xp >= 5000) list.push('🥉');
     
-    if (usr.streak >= 30) list.push('🔥');
-    else if (usr.streak >= 7) list.push('🔥');
+    if (streak >= 30) list.push('🔥');
+    else if (streak >= 7) list.push('🔥');
     
-    if (usr.tasksCompleted >= 50) list.push('💻');
-    if (usr.workspaceCompleted >= 3) list.push('🚀');
+    if (tasksDone >= 50) list.push('💻');
+    if (wsDone >= 3) list.push('🚀');
     return list;
   };
 
@@ -171,10 +178,11 @@ const Friends = () => {
       return;
     }
 
-    const filtered = allUsers.filter((user) => 
-      user.fullName.toLowerCase().includes(query.toLowerCase()) ||
-      user.username.toLowerCase().includes(query.toLowerCase()) ||
-      user.userId.toLowerCase().includes(query.toLowerCase())
+    const q = query.toLowerCase();
+    const filtered = (allUsers || []).filter((user) => 
+      (user?.fullName || '').toLowerCase().includes(q) ||
+      (user?.username || '').toLowerCase().includes(q) ||
+      (user?.userId || user?.uid || '').toLowerCase().includes(q)
     );
     setSearchResults(filtered);
   };
@@ -263,7 +271,7 @@ const Friends = () => {
   const getLeaderboardList = () => {
     // Merge me + mock users
     const meObj = {
-      userId: userId,
+      userId: userId || 'me',
       fullName: myName,
       username: myUsername,
       university: myUniversity,
@@ -276,21 +284,21 @@ const Friends = () => {
       isMe: true
     };
 
-    const otherUsers = allUsers.filter(u => u.userId !== userId);
+    const otherUsers = (allUsers || []).filter(u => (u.userId || u.uid) !== userId);
     let fullList = [meObj, ...otherUsers];
 
     if (leaderboardFilter === 'University') {
       fullList = fullList.filter(u => u.university?.toLowerCase() === myUniversity?.toLowerCase() || u.isMe);
     } else if (leaderboardFilter === 'Friends') {
-      fullList = fullList.filter(u => friends.includes(u.userId) || u.isMe);
+      fullList = fullList.filter(u => (friends || []).includes(u.userId || u.uid) || u.isMe);
     }
 
     return [...fullList].sort((a, b) => (b.xp || 0) - (a.xp || 0));
   };
 
   // Retrieve incoming requests from system notifications
-  const incomingRequests = getNotifications().filter(
-    (n) => n.meta?.isFriendRequest && !n.read
+  const incomingRequests = (getNotifications?.() || []).filter(
+    (n) => n?.meta?.isFriendRequest && !n.read
   );
 
   const getPresetStyles = (avatarId) => {
@@ -390,31 +398,32 @@ const Friends = () => {
                 <p className="text-xs text-on-surface-variant italic p-2">No users found with details matching "{searchQuery}"</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {searchResults.map((user) => {
+                  {searchResults.map((user, sIdx) => {
                     const preset = getPresetStyles(user.profilePicture);
-                    const isFriend = friends.includes(user.userId);
-                    const isRequested = sentRequests.includes(user.userId);
+                    const uId = user.userId || user.uid || `user-${sIdx}`;
+                    const isFriend = (friends || []).includes(uId);
+                    const isRequested = (sentRequests || []).includes(uId);
                     
                     return (
-                      <div key={user.userId} className="p-4 bg-[#0D0D14]/80 border border-white/5 rounded-xl flex items-center justify-between gap-4">
+                      <div key={uId} className="p-4 bg-[#0D0D14]/80 border border-white/5 rounded-xl flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5 min-w-0 cursor-pointer" onClick={() => setSelectedProfileUser(user)}>
                           <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${preset.bg} flex items-center justify-center text-white shrink-0`}>
                             <span className="material-symbols-outlined text-lg">{preset.icon}</span>
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
-                              {user.fullName}
-                              <span className="text-[9px] text-on-surface-variant bg-white/5 px-1.5 py-0.5 rounded font-mono uppercase">{user.userId}</span>
+                              {user.fullName || 'User'}
+                              <span className="text-[9px] text-on-surface-variant bg-white/5 px-1.5 py-0.5 rounded font-mono uppercase">{uId}</span>
                             </h4>
-                            <p className="text-xs text-on-surface-variant mt-0.5 truncate">{user.username} · {user.university}</p>
-                            <p className="text-[10px] text-primary/70 font-semibold truncate mt-1">Skills: {user.skills.slice(0, 3).join(', ')}</p>
+                            <p className="text-xs text-on-surface-variant mt-0.5 truncate">{user.username || '@user'} · {user.university || ''}</p>
+                            <p className="text-[10px] text-primary/70 font-semibold truncate mt-1">Skills: {Array.isArray(user.skills) && user.skills.length > 0 ? user.skills.slice(0, 3).join(', ') : 'None'}</p>
                           </div>
                         </div>
 
                         <div className="shrink-0">
                           {isFriend ? (
                             <button
-                              onClick={() => unfollowFriend(user.userId)}
+                              onClick={() => unfollowFriend(uId)}
                               className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-red-500/20 hover:text-red-400 rounded-lg text-xs font-bold transition-all cursor-pointer"
                             >
                               Unfollow
@@ -423,7 +432,7 @@ const Friends = () => {
                             <span className="text-xs text-on-surface-variant font-bold px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg">Requested</span>
                           ) : (
                             <button
-                              onClick={() => sendFollowRequest(user.userId)}
+                              onClick={() => sendFollowRequest(uId)}
                               className="px-3 py-1.5 bg-primary/20 border border-primary text-white text-xs font-bold rounded-lg hover:bg-primary/30 transition-all cursor-pointer"
                             >
                               Follow
@@ -505,7 +514,7 @@ const Friends = () => {
                         
                         return (
                           <tr 
-                            key={user.userId}
+                            key={user.userId || user.uid || idx}
                             onClick={() => {
                               if (!isMe) {
                                 setSelectedProfileUser(user);
@@ -541,11 +550,11 @@ const Friends = () => {
                             <td className="p-4 hidden md:table-cell text-xs text-on-surface-variant">{user.university}</td>
                             <td className="p-4 text-center">
                               <span className="text-xs text-orange-400 font-bold flex items-center justify-center gap-1">
-                                ⚡ {user.streak}d
+                                ⚡ {user.streak || 0}d
                               </span>
                             </td>
-                            <td className="p-4 text-center text-xs text-white/80">{user.tasksCompleted}</td>
-                            <td className="p-4 text-right font-mono font-bold text-white">{user.xp.toLocaleString()} XP</td>
+                            <td className="p-4 text-center text-xs text-white/80">{user.tasksCompleted || 0}</td>
+                            <td className="p-4 text-right font-mono font-bold text-white">{(user.xp || 0).toLocaleString()} XP</td>
                           </tr>
                         );
                       })}
@@ -573,7 +582,7 @@ const Friends = () => {
                   </div>
                   
                   <div className="flex-1 overflow-y-auto divide-y divide-white/5">
-                    {friends.length === 0 ? (
+                    {(friends || []).length === 0 ? (
                       <div className="p-4">
                         <EmptyState 
                           icon="groups" 
@@ -583,11 +592,11 @@ const Friends = () => {
                       </div>
                     ) : (
                       (() => {
-                        const filteredFriends = friends.filter(friendId => {
-                          const userObj = allUsers.find(u => u.userId === friendId);
+                        const filteredFriends = (friends || []).filter(friendId => {
+                          const userObj = (allUsers || []).find(u => (u.userId || u.uid) === friendId);
                           if (!userObj) return false;
-                          return userObj.fullName.toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
-                                 userObj.username.toLowerCase().includes(chatSearchQuery.toLowerCase());
+                          return (userObj.fullName || '').toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
+                                 (userObj.username || '').toLowerCase().includes(chatSearchQuery.toLowerCase());
                         });
 
                         if (filteredFriends.length === 0) {
@@ -595,9 +604,9 @@ const Friends = () => {
                         }
 
                         return filteredFriends.map((friendId) => {
-                          const userObj = allUsers.find(u => u.userId === friendId);
+                          const userObj = (allUsers || []).find(u => (u.userId || u.uid) === friendId);
                           if (!userObj) return null;
-                          const chatHistory = chats[friendId] || [];
+                          const chatHistory = chats?.[friendId] || [];
                           const lastMsg = chatHistory[chatHistory.length - 1];
                           const isCurrent = activeChatFriendId === friendId;
 
@@ -696,8 +705,8 @@ const Friends = () => {
                 <div className={`md:col-span-8 flex flex-col min-h-0 bg-[#111118]/20 ${activeChatFriendId ? 'flex col-span-1 md:col-span-8' : 'hidden md:flex'}`}>
                   {activeChatFriendId ? (
                     (() => {
-                      const activeFriend = allUsers.find(u => u.userId === activeChatFriendId);
-                      const chatHistory = chats[activeChatFriendId] || [];
+                      const activeFriend = (allUsers || []).find(u => (u.userId || u.uid) === activeChatFriendId);
+                      const chatHistory = chats?.[activeChatFriendId] || [];
 
                       // Presence (3-state)
                       const activePres = getFriendPresence(presenceStates, activeChatFriendId);
@@ -707,7 +716,7 @@ const Friends = () => {
                       const activeFriendLastSeen  = activePres.lastSeen;
 
                       // Typing
-                      const friendTypingData = typingStates[activeChatFriendId];
+                      const friendTypingData = typingStates?.[activeChatFriendId];
                       const isFriendTyping = friendTypingData?.typing && 
                         (Date.now() - new Date(friendTypingData.updatedAt).getTime() < 10000);
                       
@@ -1140,27 +1149,31 @@ const Friends = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {allUsers.filter(u => u.userId !== userId && !friends.includes(u.userId)).map((user) => {
-                    const isRequested = sentRequests.includes(user.userId);
+                  {(allUsers || []).filter(u => {
+                    const uId = u.userId || u.uid;
+                    return uId !== userId && !(friends || []).includes(uId);
+                  }).map((user, uIdx) => {
+                    const uId = user.userId || user.uid || `peer-${uIdx}`;
+                    const isRequested = (sentRequests || []).includes(uId);
                     
                     return (
-                      <div key={user.userId} className="bg-[#111118]/80 border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-48 hover:border-primary/20 transition-all group relative">
+                      <div key={uId} className="bg-[#111118]/80 border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-48 hover:border-primary/20 transition-all group relative">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedProfileUser(user)}>
                             {renderAvatar(user.profilePicture, 'w-11 h-11', 'text-lg')}
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold text-white leading-tight flex items-center gap-1">
-                                {user.fullName}
-                                <span className="text-[8px] text-on-surface-variant bg-white/5 px-1 rounded font-mono uppercase shrink-0">{user.userId}</span>
+                                {user.fullName || 'User'}
+                                <span className="text-[8px] text-on-surface-variant bg-white/5 px-1 rounded font-mono uppercase shrink-0">{uId}</span>
                               </h4>
-                              <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">{user.username}</p>
-                              <p className="text-[9px] text-on-surface-variant font-medium mt-1 truncate">{user.university}</p>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">{user.username || '@user'}</p>
+                              <p className="text-[9px] text-on-surface-variant font-medium mt-1 truncate">{user.university || ''}</p>
                             </div>
                           </div>
                         </div>
 
                         <p className="text-[11px] text-on-surface-variant/80 italic leading-relaxed line-clamp-2 mt-2">
-                          "{user.bio}"
+                          "{user.bio || 'No profile bio provided.'}"
                         </p>
 
                         <div className="border-t border-white/5 pt-4 mt-3 flex justify-end">
@@ -1168,7 +1181,7 @@ const Friends = () => {
                             <span className="text-[10px] text-on-surface-variant font-bold px-3 py-1.5 bg-[#0D0D14] border border-white/5 rounded-lg">Requested</span>
                           ) : (
                             <button
-                              onClick={() => sendFollowRequest(user.userId)}
+                              onClick={() => sendFollowRequest(uId)}
                               className="px-3.5 py-1.5 bg-primary/20 border border-primary text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-primary/30 transition-all cursor-pointer"
                             >
                               Follow Request
@@ -1197,7 +1210,7 @@ const Friends = () => {
                 ) : (
                   <div className="space-y-3 max-w-xl mx-auto">
                     {incomingRequests.map((req) => {
-                      const userObj = allUsers.find(u => u.userId === req.meta.senderId);
+                      const userObj = (allUsers || []).find(u => (u.userId || u.uid) === req?.meta?.senderId);
                       
                       return (
                         <div key={req.id} className="p-4 bg-[#111118] border border-white/5 rounded-xl flex items-center justify-between gap-4">
@@ -1243,7 +1256,8 @@ const Friends = () => {
         title="Friend Profile View"
       >
         {selectedProfileUser && (() => {
-          const isFriend = friends.includes(selectedProfileUser.userId);
+          const friendTargetId = selectedProfileUser.userId || selectedProfileUser.uid;
+          const isFriend = (friends || []).includes(friendTargetId);
           
           return (
             <div className="space-y-6">
@@ -1276,11 +1290,11 @@ const Friends = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#0D0D14] border border-white/5 p-3.5 rounded-lg">
                   <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider block mb-1">XP Level</span>
-                  <span className="text-base font-bold text-white">{selectedProfileUser.xp.toLocaleString()} XP</span>
+                  <span className="text-base font-bold text-white">{(selectedProfileUser.xp || 0).toLocaleString()} XP</span>
                 </div>
                 <div className="bg-[#0D0D14] border border-white/5 p-3.5 rounded-lg">
                   <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider block mb-1">Streak</span>
-                  <span className="text-base font-bold text-orange-400">🔥 {selectedProfileUser.streak} Days</span>
+                  <span className="text-base font-bold text-orange-400">🔥 {selectedProfileUser.streak || 0} Days</span>
                 </div>
               </div>
 
@@ -1354,7 +1368,7 @@ const Friends = () => {
                   <Button
                     variant="ghost"
                     onClick={() => {
-                      unfollowFriend(selectedProfileUser.userId);
+                      unfollowFriend(friendTargetId);
                       setSelectedProfileUser(null);
                     }}
                     className="text-red-400 hover:text-red-300"
@@ -1365,7 +1379,7 @@ const Friends = () => {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      sendFollowRequest(selectedProfileUser.userId);
+                      sendFollowRequest(friendTargetId);
                       setSelectedProfileUser(null);
                     }}
                   >
