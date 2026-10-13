@@ -24,6 +24,7 @@ const Profile = () => {
   const branch = userProfile?.branchName || userProfile?.branch || '';
   const year = userProfile?.year || '';
   const skills = userProfile?.skills && userProfile?.skills.length > 0 ? userProfile?.skills : [];
+  const technicalSkills = skills;
   const currentlyLearning = userProfile?.currentlyLearning || [];
   const avatar = getAvatar(userProfile);
   const connections = friends ? friends.length : 0;
@@ -54,10 +55,10 @@ const Profile = () => {
       { id: 'xp-platinum', label: 'Platinum', category: 'XP', icon: '💎', desc: 'Accumulate over 25,000 focus XP points', unlocked: (userProfile?.xp || 0) >= 25000 },
       { id: 'xp-diamond', label: 'Diamond', category: 'XP', icon: '💠', desc: 'Accumulate over 50,000 focus XP points', unlocked: (userProfile?.xp || 0) >= 50000 },
 
-      { id: 'learn-html', label: 'Completed HTML', category: 'Learning', icon: '📚', desc: 'Tick off all HTML roadmap topics', unlocked: tasks.filter(t => t.done && t.text.toLowerCase().includes('html')).length > 0 },
-      { id: 'learn-proj', label: 'First Project', category: 'Learning', icon: '🚀', desc: 'Build and deploy your first roadmap project', unlocked: workspaces.length >= 1 },
-      { id: 'learn-tasks', label: 'First 100 Tasks', category: 'Learning', icon: '💻', desc: 'Complete 100 tasks on your todos list', unlocked: tasks.filter(t => t.done).length >= 100 },
-      { id: 'learn-goal', label: 'Goal Completed', category: 'Learning', icon: '🎯', desc: 'Fulfill your primary milestones', unlocked: tasks.filter(t => t.isPinned && t.done).length >= 1 }
+      { id: 'learn-html', label: 'Completed HTML', category: 'Learning', icon: '📚', desc: 'Tick off all HTML roadmap topics', unlocked: (tasks || []).filter(t => t?.done && t?.text?.toLowerCase().includes('html')).length > 0 },
+      { id: 'learn-proj', label: 'First Project', category: 'Learning', icon: '🚀', desc: 'Build and deploy your first roadmap project', unlocked: (workspaces || []).length >= 1 },
+      { id: 'learn-tasks', label: 'First 100 Tasks', category: 'Learning', icon: '💻', desc: 'Complete 100 tasks on your todos list', unlocked: (tasks || []).filter(t => t?.done).length >= 100 },
+      { id: 'learn-goal', label: 'Goal Completed', category: 'Learning', icon: '🎯', desc: 'Fulfill your primary milestones', unlocked: (tasks || []).filter(t => t?.isPinned && t?.done).length >= 1 }
     ];
   }, [globalRank, userProfile, tasks, workspaces]);
 
